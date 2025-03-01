@@ -1,8 +1,16 @@
 name: "Threat Hunt Submission"
 description: "Submit a new threat hunt for review"
 title: "[THREAT HUNT] <Short Title>"
-labels: ["threat-hunt"]
+labels:
+  - threat-hunt
 body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Threat Hunt Submission
+        Please fill in the details below. **Be sure to include the MITRE technique in the format:**
+        
+        **Technique: T####**
   - type: input
     id: technique
     attributes:
@@ -30,14 +38,14 @@ body:
   - type: textarea
     id: labels_list
     attributes:
-      label: "Labels"
+      label: "Additional Labels"
       description: "Enter any additional labels (comma-separated) relevant to this hunt (e.g., malware, network, endpoint)"
       placeholder: "malware, endpoint"
   - type: input
     id: hunt_platform
     attributes:
       label: "Hunt Platform"
-      description: "Specify the platform used (e.g., Splunk, ELK, SIEM)"
+      description: "Specify the platform used (e.g., Splunk, ELK, SIEM tool)"
       placeholder: "Splunk"
   - type: textarea
     id: hunter_notes
@@ -49,7 +57,7 @@ body:
     id: query
     attributes:
       label: "Hunt Query"
-      description: "Add your query or search script here."
+      description: "Add your threat hunt query or search script here."
       placeholder: |
         // Add your threat hunt query here
   - type: input
@@ -68,7 +76,7 @@ body:
     id: confidence
     attributes:
       label: "Confidence"
-      description: "Enter your confidence in the findings (e.g., High, Medium, Low or percentage)"
+      description: "Enter your confidence in the findings (e.g., High, Medium, Low or a percentage)"
       placeholder: "90%"
   - type: input
     id: status
@@ -92,7 +100,7 @@ body:
     id: detection_window
     attributes:
       label: "Detection Window"
-      description: "Specify the time period during which the activity was detected (e.g., Start Date - End Date)"
+      description: "Time period during which the activity was detected (e.g., Start Date - End Date)"
       placeholder: "2025-02-25 to 2025-03-01"
   - type: textarea
     id: observed_indicators
