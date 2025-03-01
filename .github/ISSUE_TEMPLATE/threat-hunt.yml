@@ -60,4 +60,59 @@ body:
     attributes:
       label: "Hunt Query"
       description: "Add your threat hunt query or search script here."
-      placehold
+      placeholder: |
+        // Add your threat hunt query here
+  - type: input
+    id: query_fidelity
+    attributes:
+      label: "Query Fidelity"
+      description: "How reliable is this query? (e.g., High, Medium, Low)"
+      placeholder: "High"
+  - type: input
+    id: severity
+    attributes:
+      label: "Severity"
+      description: "Enter the severity level (e.g., Critical, High, Medium, Low)"
+      placeholder: "High"
+  - type: input
+    id: confidence
+    attributes:
+      label: "Confidence"
+      description: "Enter your confidence in the findings (e.g., High, Medium, Low or a percentage)"
+      placeholder: "90%"
+  - type: input
+    id: status
+    attributes:
+      label: "Status"
+      description: "Current status of the hunt (e.g., In Progress, Completed, False Positive)"
+      placeholder: "Completed"
+  - type: input
+    id: threat_actor
+    attributes:
+      label: "Threat Actor"
+      description: "Specify any known or suspected threat actor(s), if applicable"
+      placeholder: "APT29"
+  - type: input
+    id: impacted_systems
+    attributes:
+      label: "Impacted Systems"
+      description: "List or describe the systems impacted"
+      placeholder: "Workstations, Servers, etc."
+  - type: input
+    id: detection_window
+    attributes:
+      label: "Detection Window"
+      description: "Specify the time period during which the activity was detected (e.g., Start Date - End Date)"
+      placeholder: "2025-02-25 to 2025-03-01"
+  - type: textarea
+    id: observed_indicators
+    attributes:
+      label: "Observed Indicators"
+      description: "List any indicators of compromise (IOCs) or key observations"
+      placeholder: "Indicator1, Indicator2, ..."
+  - type: textarea
+    id: visibility_gaps
+    attributes:
+      label: "Visibility Gaps"
+      description: "Note any gaps in detection or monitoring that were observed"
+      placeholder: "Enter any visibility gaps here..."
