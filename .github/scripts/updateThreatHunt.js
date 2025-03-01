@@ -1,11 +1,15 @@
 (async () => {
-  // Dynamically import Octokit from "@octokit/rest"
+  // Dynamically import Octokit from "@octokit/rest" and node-fetch
   const { Octokit } = await import("@octokit/rest");
+  const fetch = (await import("node-fetch")).default;
   const fs = require("fs");
   const path = require("path");
 
-  // Initialize Octokit with the GitHub token.
-  const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+  // Initialize Octokit with the GitHub token and pass the fetch implementation
+  const octokit = new Octokit({
+    auth: process.env.GITHUB_TOKEN,
+    request: { fetch }
+  });
 
   async function run() {
     const eventPath = process.env.GITHUB_EVENT_PATH;
