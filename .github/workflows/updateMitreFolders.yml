@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          persist-credentials: false  # Disable default GITHUB_TOKEN persistence
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -40,14 +40,16 @@ jobs:
           git config --global user.email "nvafiades@protonmail.com"
           echo "Before updating remote:"
           git remote -v
-          # Update remote URL to use the PAT only
+          # Update remote URL to use the PAT only (no trailing slash)
           git remote set-url origin "https://${PAT_TOKEN}@github.com/Nvafiades1/threat-hunt-library.git"
           echo "After updating remote:"
           git remote -v
-          if [ -n "$(git status --porcelain)" ]; then
-            git add techniques/
+          # Stage only changes in the techniques folder
+          git add techniques/
+          # Check if there are changes in the techniques folder
+          if [ -n "$(git status --porcelain techniques/)" ]; then
             git commit -m "Update MITRE technique folders"
             git push origin main
           else
-            echo "No changes to commit."
+            echo "No changes to commit in techniques folder."
           fi
