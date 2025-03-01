@@ -23,5 +23,8 @@ jobs:
 
       - name: Run updateThreatHunt Script
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+          BRANCH_NAME: main  # Change this if your default branch is not "main"
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
         run: node .github/scripts/updateThreatHunt.js
