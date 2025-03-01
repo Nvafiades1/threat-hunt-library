@@ -1,22 +1,26 @@
 name: Update Threat Hunt on Completion
-permissions:
-  contents: write
 on:
   issues:
     types: [edited, closed]
+
 jobs:
   update-technique:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "16"
-      - name: Install dependencies
-        run: npm install @octokit/rest
-      - name: Run update script
+
+      - name: Install Dependencies
+        run: npm install node-fetch@2
+
+      - name: Run updateThreatHunt Script
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node .github/scripts/updateThreatHunt.js
