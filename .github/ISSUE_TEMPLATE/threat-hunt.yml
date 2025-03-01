@@ -5,22 +5,37 @@ labels: ["threat-hunt"]
 body:
   - type: markdown
     attributes:
-      value: "### Threat Hunt Details\nPlease fill in the details below."
-  - type: input
-    id: technique
-    attributes:
-      label: "MITRE Technique ID (e.g., T1059)"
-      description: "Enter the MITRE ATT&CK technique this hunt corresponds to."
-      placeholder: "Txxxx"
+      value: |
+        ### Threat Hunt Details
+        Please provide the following information to document your threat hunt.
   - type: textarea
-    id: description
+    id: hunt_details
     attributes:
-      label: "Description & Findings"
-      description: "Detail your hunt, methodology, and findings."
-      placeholder: "Enter details here..."
-  - type: input
-    id: evidence
-    attributes:
-      label: "Evidence Links"
-      description: "Provide links to any relevant artifacts or reports."
-      placeholder: "https://..."
+      label: "Threat Hunt YAML"
+      description: "Fill in the details below. Edit or remove placeholders as needed."
+      placeholder: |
+        id: TH-YYYY-NNN
+        created: "YYYY-MM-DDTHH:MM:SSZ"
+        modified: "YYYY-MM-DDTHH:MM:SSZ"
+        
+        labels:
+          - example-label
+          - additional-label
+        
+        Hunt:
+          hunt_platform: "SIEM / Splunk / ELK etc."
+          hunter_notes: >-
+            Enter your detailed hunter notes here, including methodology, observations, and any anomalies.
+          query: |-
+            // Add your threat hunt query here
+          query_fidelity: "High / Medium / Low"
+          severity: "Critical / High / Medium / Low"
+          confidence: "High / Medium / Low or percentage"
+          status: "In Progress / Completed / False Positive"
+          threat_actor: "If applicable"
+          impacted_systems: "List affected systems"
+          detection_window: "Start Date - End Date"
+          observed_indicators: "List IOCs or key observations"
+          mitigation: "Mitigation steps taken or recommended"
+          recommendations: "Further recommendations for investigation or remediation"
+          visibility_gaps: "Any gaps in detection capabilities"
