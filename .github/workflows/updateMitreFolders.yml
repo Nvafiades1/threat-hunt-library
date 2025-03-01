@@ -1,7 +1,8 @@
 name: Update MITRE Folders
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   schedule:
     - cron: "0 0 * * 0"  # Weekly run; adjust as needed
 
@@ -23,17 +24,16 @@ jobs:
       - name: Run MITRE folder creation script
         run: node .github/scripts/createMitreFolders.js
 
-     - name: Commit and Push Changes
-  env:
-    PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
-  run: |
-    git config --global user.name "Nvafiades1"
-    git config --global user.email "nvafiades@protonmail.com"
-    if [ -n "$(git status --porcelain)" ]; then
-      git add techniques/
-      git commit -m "Update MITRE technique folders"
-      git push https://$PAT_TOKEN@github.com/Nvafiades1/threat-hunt-library.git
-    else
-      echo "No changes to commit."
-    fi
-
+      - name: Commit changes if any
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          git config --global user.name "Nvafiades1"
+          git config --global user.email "nvafiades@protonmail.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add techniques/
+            git commit -m "Update MITRE technique folders"
+            git push https://$PAT_TOKEN@github.com/Nvafiades1/threat-hunt-library.git
+          else
+            echo "No changes to commit."
+          fi
