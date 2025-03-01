@@ -18,7 +18,7 @@
     // Check if the event is for an issue being closed.
     if (event.issue && event.issue.state === "closed") {
       const issue = event.issue;
-      // Expect the issue body to include a line like "Technique: T1059"
+      // Expect the issue body to include a line like "Technique: T1003"
       const techniqueMatch = issue.body.match(/Technique:\s*(T\d{4})/i);
       if (!techniqueMatch) {
         console.log("No technique ID found in issue body.");
@@ -44,6 +44,7 @@
         path: filePath,
         message: commitMessage,
         content: Buffer.from(content).toString("base64"),
+        branch: "main", // explicitly specify the branch where the folder exists
         committer: {
           name: "Nvafiades1",
           email: "nvafiades@protonmail.com",
