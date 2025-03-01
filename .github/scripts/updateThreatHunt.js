@@ -1,4 +1,3 @@
-// Wrap the code in an async IIFE to allow for using await.
 (async () => {
   // Dynamically import Octokit from "@octokit/rest"
   const { Octokit } = await import("@octokit/rest");
@@ -23,6 +22,13 @@
       }
       const techniqueId = techniqueMatch[1].toUpperCase();
       const filePath = path.join("techniques", techniqueId, `threat-hunt-${issue.number}.md`);
+
+      // Ensure the directory exists before writing the file.
+      const dir = path.dirname(filePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
       const content = `# Threat Hunt ${issue.number}\n\n**Title:** ${issue.title}\n\n**Details:**\n${issue.body}\n\n**Status:** Completed\n`;
 
       fs.writeFileSync(filePath, content);
