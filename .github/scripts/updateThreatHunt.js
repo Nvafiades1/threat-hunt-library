@@ -5,11 +5,15 @@
   const fs = require("fs");
   const path = require("path");
 
-  // Use BRANCH_NAME from environment if provided, otherwise default to "main"
-  const defaultBranch = process.env.BRANCH_NAME || "main";
-  console.log("Using branch:", defaultBranch);
+  // Function to generate a slug from a string (issue title)
+  function generateSlug(title) {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric characters with dashes
+      .replace(/^-|-$/g, '');      // Remove leading and trailing dashes
+  }
 
-  // Initialize Octokit with your PAT_TOKEN and pass the fetch implementation
+  // Use the PAT_TOKEN (not GITHUB_TOKEN) for authentication
   const octokit = new Octokit({
     auth: process.env.PAT_TOKEN,
     request: { fetch }
@@ -29,19 +33,24 @@
         return;
       }
       const techniqueId = techniqueMatch[1].toUpperCase();
-      const filePath = path.join("techniques", techniqueId, `threat-hunt-${issue.number}.md`);
 
-      // Ensure local directory exists
+      // Generate a slug from the issue title
+      const titleSlug = generateSlug(issue.title);
+      // Create the file name using the technique ID, title slug, and issue number to avoid collisions
+      const fileName = `${techniqueId}-${titleSlug}-${issue.number}.md`;
+      const filePath = path.join("techniques", techniqueId, fileName);
+
+      // Ensure the local directory exists.
       const localDir = path.dirname(filePath);
       if (!fs.existsSync(localDir)) {
         fs.mkdirSync(localDir, { recursive: true });
       }
 
-      const content = `# Threat Hunt ${issue.number}\n\n**Title:** ${issue.title}\n\n**Details:**\n${issue.body}\n\n**Status:** Completed\n`;
+      const content = `# ${issue.title}\n\n**Technique:** ${techniqueId}\n\n**Details:**\n${issue.body}\n\n**Status:** Completed\n`;
       fs.writeFileSync(filePath, content);
 
       console.log("Attempting to update file at:", filePath);
-      console.log("Target branch:", defaultBranch);
+      console.log("Target branch:", "main");
 
       // Check if the file exists remotely on the target branch
       let fileExists = false;
@@ -51,7 +60,7 @@
           owner: process.env.GITHUB_REPOSITORY.split("/")[0],
           repo: process.env.GITHUB_REPOSITORY.split("/")[1],
           path: filePath,
-          branch: defaultBranch
+          branch: "main"
         });
         fileExists = true;
         sha = data.sha;
@@ -65,14 +74,14 @@
         }
       }
 
-      const commitMessage = `Add completed threat hunt #${issue.number} to ${techniqueId}`;
+      const commitMessage = `Add completed threat hunt #${issue.number} - ${issue.title} to ${techniqueId}`;
       const params = {
         owner: process.env.GITHUB_REPOSITORY.split("/")[0],
         repo: process.env.GITHUB_REPOSITORY.split("/")[1],
         path: filePath,
         message: commitMessage,
         content: Buffer.from(content).toString("base64"),
-        branch: defaultBranch,
+        branch: "main",
         committer: {
           name: "Nvafiades1",
           email: "nvafiades@protonmail.com",
@@ -89,7 +98,7 @@
       }
 
       await octokit.repos.createOrUpdateFileContents(params);
-      console.log(`Threat hunt #${issue.number} added to ${techniqueId}`);
+      console.log(`Threat hunt file created/updated: ${fileName}`);
     } else {
       console.log("Event does not match criteria.");
     }
