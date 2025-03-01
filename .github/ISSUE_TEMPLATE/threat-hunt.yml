@@ -1,0 +1,26 @@
+name: "Threat Hunt Submission"
+description: "Submit a new threat hunt for review"
+title: "[THREAT HUNT] <Short Title>"
+labels: ["threat-hunt"]
+body:
+  - type: markdown
+    attributes:
+      value: "### Threat Hunt Details\nPlease fill in the details below."
+  - type: input
+    id: technique
+    attributes:
+      label: "MITRE Technique ID (e.g., T1059)"
+      description: "Enter the MITRE ATT&CK technique this hunt corresponds to."
+      placeholder: "Txxxx"
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description & Findings"
+      description: "Detail your hunt, methodology, and findings."
+      placeholder: "Enter details here..."
+  - type: input
+    id: evidence
+    attributes:
+      label: "Evidence Links"
+      description: "Provide links to any relevant artifacts or reports."
+      placeholder: "https://..."
