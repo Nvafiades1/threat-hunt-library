@@ -1,0 +1,6 @@
+# Data Transfer Size Limits
+
+**Technique ID:** T1030
+
+**Description:**
+An adversary may exfiltrate data in fixed size chunks instead of whole files or limit packet sizes below certain thresholds. This approach may be used to avoid triggering network data transfer threshold alerts.

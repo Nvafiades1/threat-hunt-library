@@ -1,0 +1,8 @@
+# Launchctl
+
+**Technique ID:** T1152
+
+**Description:**
+Launchctl controls the macOS launchd process which handles things like launch agents and launch daemons, but can execute other commands or programs itself. Launchctl supports taking subcommands on the command-line, interactively, or even redirected from standard input. By loading or reloading launch agents or launch daemons, adversaries can install persistence or execute changes they made  (Citation: Sofacy Komplex Trojan). Running a command from launchctl is as simple as <code>launchctl submit -l <labelName> -- /Path/to/thing/to/execute "arg" "arg" "arg"</code>. Loading, unloading, or reloading launch agents or launch daemons can require elevated privileges. 
+
+Adversaries can abuse this functionality to execute code or even bypass whitelisting if launchctl is an allowed process.
