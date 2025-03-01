@@ -5,9 +5,9 @@
   const fs = require("fs");
   const path = require("path");
 
-  // Initialize Octokit with the GitHub token and pass the fetch implementation
+  // Initialize Octokit with the PAT_TOKEN (not GITHUB_TOKEN) and pass the fetch implementation
   const octokit = new Octokit({
-    auth: process.env.GITHUB_TOKEN,
+    auth: process.env.PAT_TOKEN,
     request: { fetch }
   });
 
