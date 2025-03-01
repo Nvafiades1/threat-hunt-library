@@ -3,51 +3,118 @@ description: "Submit a new threat hunt for review"
 title: "[THREAT HUNT] <Short Title>"
 labels: ["threat-hunt"]
 body:
-  - type: markdown
-    attributes:
-      value: |
-        ## Threat Hunt Submission
-        Please fill in the following details. Make sure to include the MITRE technique in the format:
-        
-        **Technique: T####**
-        
-        This is required for automated processing.
   - type: input
     id: technique
     attributes:
       label: "MITRE Technique ID"
-      description: "Enter the technique ID (e.g., T1003)"
+      description: "Enter the technique ID in the format T#### (e.g., T1003). This is required for automated processing."
       placeholder: "T1003"
-  - type: textarea
-    id: hunt_details
+  - type: input
+    id: hunt_id
     attributes:
-      label: "Threat Hunt YAML Details"
-      description: "Fill in the details below. Edit or remove placeholders as needed."
+      label: "Threat Hunt ID"
+      description: "Enter a unique hunt identifier (e.g., TH-2025-001)"
+      placeholder: "TH-2025-001"
+  - type: datetime
+    id: created
+    attributes:
+      label: "Created"
+      description: "Date/time the hunt was initiated (ISO 8601 format)"
+      placeholder: "2025-03-01T12:00:00Z"
+  - type: datetime
+    id: modified
+    attributes:
+      label: "Modified"
+      description: "Date/time the hunt was last updated (ISO 8601 format)"
+      placeholder: "2025-03-01T12:00:00Z"
+  - type: textarea
+    id: labels_list
+    attributes:
+      label: "Labels"
+      description: "Enter any additional labels (comma-separated) relevant to this hunt (e.g., malware, network, endpoint)"
+      placeholder: "malware, endpoint"
+  - type: input
+    id: hunt_platform
+    attributes:
+      label: "Hunt Platform"
+      description: "Specify the platform used (e.g., Splunk, ELK, SIEM)"
+      placeholder: "Splunk"
+  - type: textarea
+    id: hunter_notes
+    attributes:
+      label: "Hunter Notes"
+      description: "Enter detailed notes about your methodology, observations, and any anomalies."
+      placeholder: "Enter your detailed hunter notes here..."
+  - type: textarea
+    id: query
+    attributes:
+      label: "Hunt Query"
+      description: "Add your query or search script here."
       placeholder: |
-        Technique: T1003
-        
-        id: TH-YYYY-NNN
-        created: "YYYY-MM-DDTHH:MM:SSZ"
-        modified: "YYYY-MM-DDTHH:MM:SSZ"
-        
-        labels:
-          - example-label
-          - additional-label
-        
-        Hunt:
-          hunt_platform: "SIEM / Splunk / ELK etc."
-          hunter_notes: >-
-            Enter your detailed hunter notes here, including methodology, observations, and any anomalies.
-          query: |-
-            // Add your threat hunt query here
-          query_fidelity: "High / Medium / Low"
-          severity: "Critical / High / Medium / Low"
-          confidence: "High / Medium / Low or percentage"
-          status: "In Progress / Completed / False Positive"
-          threat_actor: "If applicable"
-          impacted_systems: "List affected systems"
-          detection_window: "Start Date - End Date"
-          observed_indicators: "List IOCs or key observations"
-          mitigation: "Mitigation steps taken or recommended"
-          recommendations: "Further recommendations for investigation or remediation"
-          visibility_gaps: "Any gaps in detection capabilities"
+        // Add your threat hunt query here
+  - type: input
+    id: query_fidelity
+    attributes:
+      label: "Query Fidelity"
+      description: "How reliable is this query? (e.g., High, Medium, Low)"
+      placeholder: "High"
+  - type: input
+    id: severity
+    attributes:
+      label: "Severity"
+      description: "Enter the severity level (e.g., Critical, High, Medium, Low)"
+      placeholder: "High"
+  - type: input
+    id: confidence
+    attributes:
+      label: "Confidence"
+      description: "Enter your confidence in the findings (e.g., High, Medium, Low or percentage)"
+      placeholder: "90%"
+  - type: input
+    id: status
+    attributes:
+      label: "Status"
+      description: "Current status of the hunt (e.g., In Progress, Completed, False Positive)"
+      placeholder: "Completed"
+  - type: input
+    id: threat_actor
+    attributes:
+      label: "Threat Actor"
+      description: "Specify any known or suspected threat actor(s), if applicable"
+      placeholder: "APT29"
+  - type: input
+    id: impacted_systems
+    attributes:
+      label: "Impacted Systems"
+      description: "List or describe the systems impacted"
+      placeholder: "Workstations, Servers, etc."
+  - type: input
+    id: detection_window
+    attributes:
+      label: "Detection Window"
+      description: "Specify the time period during which the activity was detected (e.g., Start Date - End Date)"
+      placeholder: "2025-02-25 to 2025-03-01"
+  - type: textarea
+    id: observed_indicators
+    attributes:
+      label: "Observed Indicators"
+      description: "List any indicators of compromise (IOCs) or key observations"
+      placeholder: "Indicator1, Indicator2, ..."
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: "Mitigation"
+      description: "Detail any mitigation steps taken or recommended"
+      placeholder: "Enter mitigation steps here..."
+  - type: textarea
+    id: recommendations
+    attributes:
+      label: "Recommendations"
+      description: "Provide additional recommendations for remediation or further investigation"
+      placeholder: "Enter recommendations here..."
+  - type: textarea
+    id: visibility_gaps
+    attributes:
+      label: "Visibility Gaps"
+      description: "Note any gaps in detection or monitoring that were observed"
+      placeholder: "Enter any visibility gaps here..."
