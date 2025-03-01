@@ -1,0 +1,17 @@
+# Confluence
+
+**Technique ID:** T1213.001
+
+**Description:**
+
+Adversaries may leverage Confluence repositories to mine valuable information. Often found in development environments alongside Atlassian JIRA, Confluence is generally used to store development-related documentation, however, in general may contain more diverse categories of useful information, such as:
+
+* Policies, procedures, and standards
+* Physical / logical network diagrams
+* System architecture diagrams
+* Technical system documentation
+* Testing / development credentials (i.e., [Unsecured Credentials](https://attack.mitre.org/techniques/T1552))
+* Work / project schedules
+* Source code snippets
+* Links to network shares and other internal resources
+

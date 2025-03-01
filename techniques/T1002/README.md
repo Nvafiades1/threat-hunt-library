@@ -1,0 +1,6 @@
+# Data Compressed
+
+**Technique ID:** T1002
+
+**Description:**
+An adversary may compress data (e.g., sensitive documents) that is collected prior to exfiltration in order to make it portable and minimize the amount of data sent over the network. The compression is done separately from the exfiltration channel and is performed using a custom program or algorithm, or a more common compression library or utility such as 7zip, RAR, ZIP, or zlib.
