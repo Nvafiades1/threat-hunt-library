@@ -37,6 +37,10 @@
 
       fs.writeFileSync(filePath, content);
 
+      // Debug: Print the file path and target branch
+      console.log("Attempting to update file at:", filePath);
+      console.log("Target branch:", "main");
+
       const commitMessage = `Add completed threat hunt #${issue.number} to ${techniqueId}`;
       await octokit.repos.createOrUpdateFileContents({
         owner: process.env.GITHUB_REPOSITORY.split("/")[0],
