@@ -30,6 +30,8 @@ jobs:
         run: |
           git config --global user.name "Nvafiades1"
           git config --global user.email "nvafiades@protonmail.com"
+          # Update the remote URL to use the PAT for authentication
+          git remote set-url origin https://${{ secrets.PAT_TOKEN }}@github.com/Nvafiades1/threat-hunt-library.git
           if [ -n "$(git status --porcelain)" ]; then
             git add techniques/
             git commit -m "Update MITRE technique folders"
