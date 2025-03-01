@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/threat-hunt-library/static/css/main.f855e6bc.css",
+    "main.js": "/threat-hunt-library/static/js/main.a539213a.js",
+    "static/js/488.3e1981f1.chunk.js": "/threat-hunt-library/static/js/488.3e1981f1.chunk.js",
+    "static/media/logo.svg": "/threat-hunt-library/static/media/logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg",
+    "index.html": "/threat-hunt-library/index.html",
+    "main.f855e6bc.css.map": "/threat-hunt-library/static/css/main.f855e6bc.css.map",
+    "main.a539213a.js.map": "/threat-hunt-library/static/js/main.a539213a.js.map",
+    "488.3e1981f1.chunk.js.map": "/threat-hunt-library/static/js/488.3e1981f1.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f855e6bc.css",
+    "static/js/main.a539213a.js"
+  ]
+}
