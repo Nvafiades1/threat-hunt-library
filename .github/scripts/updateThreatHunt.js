@@ -5,7 +5,11 @@
   const fs = require("fs");
   const path = require("path");
 
-  // Initialize Octokit with your PAT_TOKEN (not GITHUB_TOKEN) and pass the fetch implementation
+  // Use BRANCH_NAME from environment if provided, otherwise default to "main"
+  const defaultBranch = process.env.BRANCH_NAME || "main";
+  console.log("Using branch:", defaultBranch);
+
+  // Initialize Octokit with your PAT_TOKEN and pass the fetch implementation
   const octokit = new Octokit({
     auth: process.env.PAT_TOKEN,
     request: { fetch }
@@ -37,9 +41,9 @@
       fs.writeFileSync(filePath, content);
 
       console.log("Attempting to update file at:", filePath);
-      console.log("Target branch:", "main");
+      console.log("Target branch:", defaultBranch);
 
-      // Check if the file exists remotely (on branch "main")
+      // Check if the file exists remotely on the target branch
       let fileExists = false;
       let sha;
       try {
@@ -47,15 +51,15 @@
           owner: process.env.GITHUB_REPOSITORY.split("/")[0],
           repo: process.env.GITHUB_REPOSITORY.split("/")[1],
           path: filePath,
-          branch: "main"
+          branch: defaultBranch
         });
         fileExists = true;
         sha = data.sha;
-        console.log("File already exists, will update it.");
+        console.log("File already exists; will update it.");
       } catch (error) {
         if (error.status === 404) {
           fileExists = false;
-          console.log("File does not exist, will create it.");
+          console.log("File does not exist; will create it.");
         } else {
           throw error;
         }
@@ -68,7 +72,7 @@
         path: filePath,
         message: commitMessage,
         content: Buffer.from(content).toString("base64"),
-        branch: "main",
+        branch: defaultBranch,
         committer: {
           name: "Nvafiades1",
           email: "nvafiades@protonmail.com",
@@ -79,7 +83,7 @@
         },
       };
 
-      // If updating an existing file, include the file's sha.
+      // If updating an existing file, include its SHA.
       if (fileExists) {
         params.sha = sha;
       }
