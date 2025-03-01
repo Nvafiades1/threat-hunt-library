@@ -9,13 +9,15 @@ body:
       value: |
         ## Threat Hunt Submission
         Please fill in the details below. **Be sure to include the MITRE technique in the format:**
-        
+
         **Technique: T####**
+
+        This is required for automated processing.
   - type: input
     id: technique
     attributes:
       label: "MITRE Technique ID"
-      description: "Enter the technique ID in the format T#### (e.g., T1003). This is required for automated processing."
+      description: "Enter the technique ID in the format T#### (e.g., T1003)."
       placeholder: "T1003"
   - type: input
     id: hunt_id
@@ -23,17 +25,17 @@ body:
       label: "Threat Hunt ID"
       description: "Enter a unique hunt identifier (e.g., TH-2025-001)"
       placeholder: "TH-2025-001"
-  - type: datetime
+  - type: input
     id: created
     attributes:
       label: "Created"
-      description: "Date/time the hunt was initiated (ISO 8601 format)"
+      description: "Date/time the hunt was initiated in ISO 8601 format (e.g., 2025-03-01T12:00:00Z)"
       placeholder: "2025-03-01T12:00:00Z"
-  - type: datetime
+  - type: input
     id: modified
     attributes:
       label: "Modified"
-      description: "Date/time the hunt was last updated (ISO 8601 format)"
+      description: "Date/time the hunt was last updated in ISO 8601 format (e.g., 2025-03-01T12:00:00Z)"
       placeholder: "2025-03-01T12:00:00Z"
   - type: textarea
     id: labels_list
@@ -100,7 +102,7 @@ body:
     id: detection_window
     attributes:
       label: "Detection Window"
-      description: "Time period during which the activity was detected (e.g., Start Date - End Date)"
+      description: "Specify the time period during which the activity was detected (e.g., Start Date - End Date)"
       placeholder: "2025-02-25 to 2025-03-01"
   - type: textarea
     id: observed_indicators
