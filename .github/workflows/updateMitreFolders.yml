@@ -1,0 +1,36 @@
+name: Update MITRE Folders
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 0 * * 0"  # Weekly run; adjust as needed
+
+jobs:
+  generate-folders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+
+      - name: Install dependencies
+        run: npm install node-fetch@2
+
+      - name: Run MITRE folder creation script
+        run: node .github/scripts/createMitreFolders.js
+
+      - name: Commit changes if any
+        run: |
+          git config --global user.name "Nvafiades1"
+          git config --global user.email "nvafiades@protonmail.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add techniques/
+            git commit -m "Update MITRE technique folders"
+            git push
+          else
+            echo "No changes to commit."
+          fi
