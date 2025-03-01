@@ -6,14 +6,26 @@ body:
   - type: markdown
     attributes:
       value: |
-        ### Threat Hunt Details
-        Please provide the following information to document your threat hunt.
+        ## Threat Hunt Submission
+        Please fill in the following details. Make sure to include the MITRE technique in the format:
+        
+        **Technique: T####**
+        
+        This is required for automated processing.
+  - type: input
+    id: technique
+    attributes:
+      label: "MITRE Technique ID"
+      description: "Enter the technique ID (e.g., T1003)"
+      placeholder: "T1003"
   - type: textarea
     id: hunt_details
     attributes:
-      label: "Threat Hunt YAML"
+      label: "Threat Hunt YAML Details"
       description: "Fill in the details below. Edit or remove placeholders as needed."
       placeholder: |
+        Technique: T1003
+        
         id: TH-YYYY-NNN
         created: "YYYY-MM-DDTHH:MM:SSZ"
         modified: "YYYY-MM-DDTHH:MM:SSZ"
