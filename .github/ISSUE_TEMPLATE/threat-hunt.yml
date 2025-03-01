@@ -9,15 +9,15 @@ body:
       value: |
         ## Threat Hunt Submission
         Please fill in the details below. **Be sure to include the MITRE technique in the format:**
-
+        
         **Technique: T####**
-
+        
         This is required for automated processing.
   - type: input
     id: technique
     attributes:
       label: "MITRE Technique ID"
-      description: "Enter the technique ID in the format T#### (e.g., T1003)."
+      description: "Enter the technique ID in the format T#### (e.g., T1003). **Note:** This must exactly match the syntax 'Technique: T###' in your issue description for automated processing."
       placeholder: "T1003"
   - type: input
     id: hunt_id
@@ -127,4 +127,4 @@ body:
     attributes:
       label: "Visibility Gaps"
       description: "Note any gaps in detection or monitoring that were observed"
-      placeholder: "Enter any visibility gaps here..."
+ 
