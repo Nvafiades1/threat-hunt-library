@@ -30,12 +30,19 @@ jobs:
         run: |
           git config --global user.name "Nvafiades1"
           git config --global user.email "nvafiades@protonmail.com"
+          
+          # Debug: Print PAT token length (should be nonzero)
+          echo "PAT token length: ${#PAT_TOKEN}"
+          
           echo "Before updating remote:"
           git remote -v
-          # Update remote URL to use the PAT for authentication (no trailing slash)
-          git remote set-url origin https://${PAT_TOKEN}@github.com/Nvafiades1/threat-hunt-library.git
+          
+          # Update remote URL using double quotes for proper substitution
+          git remote set-url origin "https://${PAT_TOKEN}@github.com/Nvafiades1/threat-hunt-library.git"
+          
           echo "After updating remote:"
           git remote -v
+          
           if [ -n "$(git status --porcelain)" ]; then
             git add techniques/
             git commit -m "Update MITRE technique folders"
