@@ -25,17 +25,16 @@ jobs:
         run: node .github/scripts/createMitreFolders.js
 
       - name: Commit and Push Changes
-  env:
-    PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
-  run: |
-    git config --global user.name "Nvafiades1"
-    git config --global user.email "nvafiades@protonmail.com"
-    # Reset remote URL to use the PAT for authentication (ensure no trailing slash)
-    git remote set-url origin https://${{ secrets.PAT_TOKEN }}@github.com/Nvafiades1/threat-hunt-library.git
-    if [ -n "$(git status --porcelain)" ]; then
-      git add techniques/
-      git commit -m "Update MITRE technique folders"
-      git push origin main
-    else
-      echo "No changes to commit."
-    fi
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          git config --global user.name "Nvafiades1"
+          git config --global user.email "nvafiades@protonmail.com"
+          git remote set-url origin https://${{ secrets.PAT_TOKEN }}@github.com/Nvafiades1/threat-hunt-library.git
+          if [ -n "$(git status --porcelain)" ]; then
+            git add techniques/
+            git commit -m "Update MITRE technique folders"
+            git push origin main
+          else
+            echo "No changes to commit."
+          fi
