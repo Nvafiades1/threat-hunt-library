@@ -116,3 +116,9 @@ body:
       label: "Visibility Gaps"
       description: "Note any gaps in detection or monitoring that were observed"
       placeholder: "Enter any visibility gaps here..."
+  - type: textarea
+    id: supporting_evidence
+    attributes:
+      label: "Supporting Evidence"
+      description: "Attach or provide links to any supporting evidence (e.g., images, screenshots, documents). You can drag-and-drop files into the comment box."
+      placeholder: "Enter links or details here..."
