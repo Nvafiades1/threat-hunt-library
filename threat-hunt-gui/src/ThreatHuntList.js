@@ -9,26 +9,27 @@ const ThreatHuntList = ({ techniqueId }) => {
   useEffect(() => {
     if (!techniqueId) return;
     const url = `https://api.github.com/repos/${"Nvafiades1"}/${"threat-hunt-library"}/contents/techniques/${techniqueId}?ref=main`;
+    console.log("Fetching file list from:", url);
     fetch(url, {
       headers: {
         Accept: "application/vnd.github.v3+json",
         "User-Agent": "threat-hunt-gui"
       }
     })
-      .then(res => {
+      .then((res) => {
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         return res.json();
       })
-      .then(data => {
+      .then((data) => {
         const mdFiles = data.filter(
-          item =>
+          (item) =>
             item.type === "file" &&
             item.name.endsWith(".md") &&
             item.name.toLowerCase() !== "readme.md"
         );
         setFiles(mdFiles);
       })
-      .catch(err => setError(err.toString()));
+      .catch((err) => setError(err.toString()));
   }, [techniqueId]);
 
   const fetchContent = (downloadUrl) => {
@@ -38,12 +39,12 @@ const ThreatHuntList = ({ techniqueId }) => {
         "User-Agent": "threat-hunt-gui"
       }
     })
-      .then(res => {
+      .then((res) => {
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         return res.text();
       })
-      .then(content => setSelectedContent(content))
-      .catch(err => setError(err.toString()));
+      .then((content) => setSelectedContent(content))
+      .catch((err) => setError(err.toString()));
   };
 
   return (
@@ -54,7 +55,7 @@ const ThreatHuntList = ({ techniqueId }) => {
         <p>No threat hunt files found for this technique.</p>
       ) : (
         <ul className="threat-list">
-          {files.map(file => (
+          {files.map((file) => (
             <li key={file.name}>
               <button onClick={() => fetchContent(file.download_url)}>
                 {file.name}
