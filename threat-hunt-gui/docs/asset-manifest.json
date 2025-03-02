@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/threat-hunt-library/static/css/main.8890cb23.css",
+    "main.js": "/threat-hunt-library/static/js/main.430f1cb5.js",
+    "index.html": "/threat-hunt-library/index.html",
+    "main.8890cb23.css.map": "/threat-hunt-library/static/css/main.8890cb23.css.map",
+    "main.430f1cb5.js.map": "/threat-hunt-library/static/js/main.430f1cb5.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.8890cb23.css",
+    "static/js/main.430f1cb5.js"
+  ]
+}
