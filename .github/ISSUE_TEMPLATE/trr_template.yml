@@ -1,70 +1,73 @@
-name: TRR Template
-description: "Fill out the TRR details below."
+name: "TRR Template"
+description: "Fill out this form to create a TRR with a Metadata table at the top."
 title: "TRR: ${{ values.id }}"
-labels:
-  - "trr"
 
 body:
+  # 1) Collect the ID as a hidden field
   - type: input
     id: id
     attributes:
       label: "TRR ID"
       description: "Example: TRR0000"
       placeholder: "TRR0000"
+    # Hide this Q&A from the final issue so we can reference it in our custom block
+    render: hidden
 
   - type: input
     id: external_ids
     attributes:
       label: "External IDs (comma-separated)"
-      description: "Example: T0000, AZT000.0"
-      placeholder: "T0000, AZT000.0"
+      placeholder: "e.g. T0000, AZT000.0"
+    render: hidden
 
   - type: input
     id: tactics
     attributes:
       label: "Tactics (comma-separated)"
-      description: "Initial Access, Privilege Escalation..."
-      placeholder: "Initial Access, Privilege Escalation"
+      placeholder: "Initial Access, Privilege Escalation..."
+    render: hidden
 
   - type: input
     id: platforms
     attributes:
       label: "Platforms (comma-separated)"
-      description: "Windows, Linux, macOS..."
       placeholder: "Windows, Linux, macOS"
+    render: hidden
 
   - type: input
     id: contributors
     attributes:
       label: "Contributors (comma-separated)"
-      description: "List team members or external contributors"
       placeholder: "John Smith, Jane Doe"
+    render: hidden
 
   - type: textarea
     id: technique_overview
     attributes:
       label: "Technique Overview"
       placeholder: "Short summary or overview"
+    render: hidden
 
   - type: textarea
     id: technical_background
     attributes:
       label: "Technical Background"
       placeholder: "Technical details..."
+    render: hidden
 
   - type: textarea
     id: references
     attributes:
       label: "References (one per line)"
       placeholder: "- [MITRE ATT&CK]\n- [ATRM]"
+    render: hidden
 
+  # 2) Create a single Markdown block that references all above inputs
+  #    This block is what will appear in the final Issue body.
   - type: markdown
     attributes:
+      # This is your final rendered TRR content
       value: |
-        ### Final Preview
-        Below is the **TRR** that will be posted in the issue body once you submit:
-
-        \`\`\`md
         # TRR${{ values.id }}: Template
 
         ## Metadata
@@ -87,27 +90,23 @@ body:
 
         ## Procedures
 
-        | ID                             | Title            | Tactic            |
-        |--------------------------------|------------------|-------------------|
-        | TRR${{ values.id }}.WIN.A      | Procedure Name 1 | Initial Access    |
+        | ID                                | Title            | Tactic            |
+        |-----------------------------------|------------------|-------------------|
+        | TRR${{ values.id }}.WIN.A        | Procedure Name 1 | Initial Access    |
         | TRR${{ values.id }}.WIN.B, TRR${{ values.id }}.LIN.B | Procedure Name 2 | Execution, Impact |
 
         ### Procedure A: Procedure Name #1
-
-        Lorem ipsum...
+        *(You can hardcode or expand these details as needed.)*
 
         #### Detection Data Model
-
         ![DDM - Procedure Name 1](images/trr0000_a.png)
 
         Lorem ipsum...
 
         ### Procedure B: Procedure Name #2
-
-        Lorem ipsum...
+        *(Another example section...)*
 
         #### Detection Data Model
-
         ![DDM - Procedure Name 2](images/trr0000_a.png)
 
         Lorem ipsum...
@@ -132,4 +131,3 @@ body:
         [Link2]: http://something
         [Link3]: http://something
         [Link4]: http://something
-        \`\`\`
