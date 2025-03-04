@@ -1,84 +1,135 @@
-{{!-- 
-  TRR Template 
-  Dynamically populated fields in the Metadata section.
-  Rows for which data is not provided (i.e., null/undefined/empty) will be skipped.
---}}
+name: TRR Template
+description: "Fill out the TRR details below."
+title: "TRR: ${{ values.id }}"
+labels:
+  - "trr"
 
-# {{#if id}}TRR{{id}}{{else}}TRR0000{{/if}}: Template
+body:
+  - type: input
+    id: id
+    attributes:
+      label: "TRR ID"
+      description: "Example: TRR0000"
+      placeholder: "TRR0000"
 
-## Metadata
+  - type: input
+    id: external_ids
+    attributes:
+      label: "External IDs (comma-separated)"
+      description: "Example: T0000, AZT000.0"
+      placeholder: "T0000, AZT000.0"
 
-| Key          | Value                                       |
-|--------------|----------------------------------------------|
-{{#if id}}
-| ID           | {{id}}                                       |
-{{/if}}
-{{#if external_ids}}
-| External IDs | {{#each external_ids}}[{{this}}]{{#unless @last}}, {{/unless}}{{/each}} |
-{{/if}}
-{{#if tactics}}
-| Tactics      | {{tactics}}                                  |
-{{/if}}
-{{#if platforms}}
-| Platforms    | {{platforms}}                                |
-{{/if}}
-{{#if contributors}}
-| Contributors | {{contributors}}                             |
-{{/if}}
+  - type: input
+    id: tactics
+    attributes:
+      label: "Tactics (comma-separated)"
+      description: "Initial Access, Privilege Escalation..."
+      placeholder: "Initial Access, Privilege Escalation"
 
-## Technique Overview
+  - type: input
+    id: platforms
+    attributes:
+      label: "Platforms (comma-separated)"
+      description: "Windows, Linux, macOS..."
+      placeholder: "Windows, Linux, macOS"
 
-Lorem ipsum...
+  - type: input
+    id: contributors
+    attributes:
+      label: "Contributors (comma-separated)"
+      description: "List team members or external contributors"
+      placeholder: "John Smith, Jane Doe"
 
-## Technical Background
+  - type: textarea
+    id: technique_overview
+    attributes:
+      label: "Technique Overview"
+      placeholder: "Short summary or overview"
 
-Lorem ipsum...
+  - type: textarea
+    id: technical_background
+    attributes:
+      label: "Technical Background"
+      placeholder: "Technical details..."
 
-## Procedures
+  - type: textarea
+    id: references
+    attributes:
+      label: "References (one per line)"
+      placeholder: "- [MITRE ATT&CK]\n- [ATRM]"
 
-| ID                           | Title            | Tactic            |
-|------------------------------|------------------|-------------------|
-| TRR0000.WIN.A                | Procedure Name 1 | Initial Access    |
-| TRR0000.WIN.B, TRR0000.LIN.B | Procedure Name 2 | Execution, Impact |
+  - type: markdown
+    attributes:
+      value: |
+        ### Final Preview
+        Below is the **TRR** that will be posted in the issue body once you submit:
 
-### Procedure A: Procedure Name #1
+        \`\`\`md
+        # TRR${{ values.id }}: Template
 
-Lorem ipsum...
+        ## Metadata
 
-#### Detection Data Model
+        | Key          | Value                                  |
+        |--------------|----------------------------------------|
+        | ID           | ${{ values.id }}                       |
+        | External IDs | ${{ values.external_ids }}             |
+        | Tactics      | ${{ values.tactics }}                  |
+        | Platforms    | ${{ values.platforms }}                |
+        | Contributors | ${{ values.contributors }}             |
 
-![DDM - Procedure Name 1](images/trr0000_a.png)
+        ## Technique Overview
 
-Lorem ipsum...
+        ${{ values.technique_overview }}
 
-### Procedure B: Procedure Name #2
+        ## Technical Background
 
-Lorem ipsum...
+        ${{ values.technical_background }}
 
-#### Detection Data Model
+        ## Procedures
 
-![DDM - Procedure Name 2](images/trr0000_a.png)
+        | ID                             | Title            | Tactic            |
+        |--------------------------------|------------------|-------------------|
+        | TRR${{ values.id }}.WIN.A      | Procedure Name 1 | Initial Access    |
+        | TRR${{ values.id }}.WIN.B, TRR${{ values.id }}.LIN.B | Procedure Name 2 | Execution, Impact |
 
-Lorem ipsum...
+        ### Procedure A: Procedure Name #1
 
-## Available Emulation Tests
+        Lorem ipsum...
 
-| ID            | Link             |
-|---------------|------------------|
-| TRR0000.WIN.A | [Link1]          |
-| TRR0000.WIN.B | [Link2], [Link3] |
-| TRR0000.LIN.B | [Link4]          |
+        #### Detection Data Model
 
-## References
+        ![DDM - Procedure Name 1](images/trr0000_a.png)
 
-- [MITRE ATT&CK]
-- [ATRM]
+        Lorem ipsum...
 
-[MITRE ATT&CK]: https://attack.mitre.org  
-[ATRM]: https://microsoft.github.io/Azure-Threat-Research-Matrix/  
-[T0000]: https://attack.mitre.org/techniques/MITRE_ATT&CK_ID/T0000  
-[AZT000.0]: https://microsoft.github.io/Azure-Threat-Research-Matrix/  
-[Link1]: http://something  
-[Link2]: http://something  
-[Link3]: http://something  
-[Link4]: http://something  
+        ### Procedure B: Procedure Name #2
+
+        Lorem ipsum...
+
+        #### Detection Data Model
+
+        ![DDM - Procedure Name 2](images/trr0000_a.png)
+
+        Lorem ipsum...
+
+        ## Available Emulation Tests
+
+        | ID                          | Link             |
+        |-----------------------------|------------------|
+        | TRR${{ values.id }}.WIN.A  | [Link1]          |
+        | TRR${{ values.id }}.WIN.B  | [Link2], [Link3] |
+        | TRR${{ values.id }}.LIN.B  | [Link4]          |
+
+        ## References
+
+        ${{ values.references }}
+
+        [MITRE ATT&CK]: https://attack.mitre.org
+        [ATRM]: https://microsoft.github.io/Azure-Threat-Research-Matrix/
+        [T0000]: https://attack.mitre.org/techniques/MITRE_ATT&CK_ID/T0000
+        [AZT000.0]: https://microsoft.github.io/Azure-Threat-Research-Matrix/
+        [Link1]: http://something
+        [Link2]: http://something
+        [Link3]: http://something
+        [Link4]: http://something
+        \`\`\`
