@@ -1,7 +1,7 @@
 version: 2
 name: "TRR Template"
 description: "Fill out this form to create a TRR with a Metadata table at the top."
-title: "TRR Template"  # Must be static
+title: "TRR Template"  # Must be static if using issue forms
 
 body:
   - type: input
@@ -10,55 +10,57 @@ body:
       label: "TRR ID"
       description: "Example: TRR0000"
       placeholder: "TRR0000"
+    # By default, show: true (meaning it appears in the final Q&A summary).
+    # You could add "show: false" if you want to hide it in the summary.
 
   - type: input
     id: external_ids
     attributes:
       label: "External IDs (comma-separated)"
       placeholder: "e.g. T0000, AZT000.0"
-    include: false
+    show: false  # Hide from final Q&A summary
 
   - type: input
     id: tactics
     attributes:
       label: "Tactics (comma-separated)"
       placeholder: "Initial Access, Privilege Escalation..."
-    include: false
+    show: false
 
   - type: input
     id: platforms
     attributes:
       label: "Platforms (comma-separated)"
       placeholder: "Windows, Linux, macOS"
-    include: false
+    show: false
 
   - type: input
     id: contributors
     attributes:
       label: "Contributors (comma-separated)"
       placeholder: "John Smith, Jane Doe"
-    include: false
+    show: false
 
   - type: textarea
     id: technique_overview
     attributes:
       label: "Technique Overview"
       placeholder: "Short summary or overview"
-    include: false
+    show: false
 
   - type: textarea
     id: technical_background
     attributes:
       label: "Technical Background"
       placeholder: "Technical details..."
-    include: false
+    show: false
 
   - type: textarea
     id: references
     attributes:
       label: "References (one per line)"
       placeholder: "- [MITRE ATTACK]\n- [ATRM]"
-    include: false
+    show: false
 
   - type: markdown
     attributes:
@@ -67,13 +69,13 @@ body:
 
         ## Metadata
 
-        | Key           | Value                                  |
-        |---------------|----------------------------------------|
-        | **ID**        | ${{ values.id }}                       |
-        | **External IDs** | ${{ values.external_ids }}          |
-        | **Tactics**   | ${{ values.tactics }}                  |
-        | **Platforms** | ${{ values.platforms }}                |
-        | **Contributors** | ${{ values.contributors }}          |
+        | Key             | Value                                  |
+        |-----------------|----------------------------------------|
+        | **ID**          | ${{ values.id }}                       |
+        | **External IDs**| ${{ values.external_ids }}             |
+        | **Tactics**     | ${{ values.tactics }}                  |
+        | **Platforms**   | ${{ values.platforms }}                |
+        | **Contributors**| ${{ values.contributors }}             |
 
         ## Technique Overview
 
@@ -85,9 +87,9 @@ body:
 
         ## Procedures
 
-        | ID                                         | Title             | Tactic             |
-        |--------------------------------------------|-------------------|--------------------|
-        | TRR${{ values.id }}.WIN.A                 | Procedure Name 1  | Initial Access     |
+        | ID                                         | Title            | Tactic            |
+        |--------------------------------------------|------------------|-------------------|
+        | TRR${{ values.id }}.WIN.A                 | Procedure Name 1 | Initial Access    |
         | TRR${{ values.id }}.WIN.B, TRR${{ values.id }}.LIN.B | Procedure Name 2 | Execution, Impact |
 
         ### Procedure A: Procedure Name #1
