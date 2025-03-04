@@ -1,0 +1,190 @@
+name: "Threat Research Report (TRR)"
+description: "Submit a new TRR using a guided form."
+title: "TRR: [Enter Short Title/Description Here]"
+labels:
+  - trr
+body:
+  - type: input
+    id: trr_id
+    attributes:
+      label: "TRR ID"
+      description: "Unique ID for this threat research report (e.g., TRR0001)."
+      placeholder: "TRR0000"
+    validations:
+      required: true
+
+  - type: input
+    id: external_ids
+    attributes:
+      label: "External IDs"
+      description: "Reference external threat IDs (e.g., [T0000], [AZT000.0])."
+      placeholder: "[T0000], [AZT000.0]"
+
+  - type: input
+    id: tactics
+    attributes:
+      label: "Tactics"
+      description: "List of MITRE ATT&CK tactics (e.g., 'Initial Access, Persistence')."
+      placeholder: "Initial Access, Privilege Escalation, etc."
+
+  - type: input
+    id: platforms
+    attributes:
+      label: "Platforms"
+      description: "Which platforms are impacted? (e.g., Windows, Linux, macOS)."
+      placeholder: "Windows, Linux, macOS"
+
+  - type: input
+    id: contributors
+    attributes:
+      label: "Contributors"
+      description: "List of contributor names."
+      placeholder: "John Smith, Jane Doe"
+
+  - type: textarea
+    id: technique_overview
+    attributes:
+      label: "Technique Overview"
+      description: "High-level explanation of the threat/technique."
+      placeholder: "Describe the technique overview..."
+
+  - type: textarea
+    id: technical_background
+    attributes:
+      label: "Technical Background"
+      description: "More in-depth technical details."
+      placeholder: "Provide detailed technical background..."
+
+  - type: markdown
+    attributes:
+      value: "### Procedures\nAdd procedures below. You can fill in the sample fields or modify as you see fit."
+
+  - type: input
+    id: procedure_a_id
+    attributes:
+      label: "Procedure A ID"
+      placeholder: "TRR0000.WIN.A"
+
+  - type: input
+    id: procedure_a_title
+    attributes:
+      label: "Procedure A Title"
+      placeholder: "Procedure Name #1"
+
+  - type: input
+    id: procedure_a_tactic
+    attributes:
+      label: "Procedure A Tactic"
+      placeholder: "Initial Access, Execution, etc."
+
+  - type: textarea
+    id: procedure_a_description
+    attributes:
+      label: "Procedure A Description"
+      placeholder: "Describe procedure A in detail..."
+
+  - type: input
+    id: procedure_b_id
+    attributes:
+      label: "Procedure B ID"
+      placeholder: "TRR0000.WIN.B, TRR0000.LIN.B"
+
+  - type: input
+    id: procedure_b_title
+    attributes:
+      label: "Procedure B Title"
+      placeholder: "Procedure Name #2"
+
+  - type: input
+    id: procedure_b_tactic
+    attributes:
+      label: "Procedure B Tactic"
+      placeholder: "Execution, Impact, etc."
+
+  - type: textarea
+    id: procedure_b_description
+    attributes:
+      label: "Procedure B Description"
+      placeholder: "Describe procedure B in detail..."
+
+  - type: markdown
+    attributes:
+      value: "### Available Emulation Tests\nProvide test IDs and links."
+
+  - type: input
+    id: emulation_tests_a
+    attributes:
+      label: "Procedure A Emulation Tests"
+      placeholder: "TRR0000.WIN.A => [Link1]"
+
+  - type: input
+    id: emulation_tests_b
+    attributes:
+      label: "Procedure B Emulation Tests"
+      placeholder: "TRR0000.WIN.B => [Link2], [Link3]\nTRR0000.LIN.B => [Link4]"
+
+  - type: textarea
+    id: references
+    attributes:
+      label: "References"
+      description: "Add reference links (MITRE ATT&CK, official docs, etc.)."
+      placeholder: "- [MITRE ATT&CK](https://attack.mitre.org)\n- [ATRM](https://microsoft.github.io/Azure-Threat-Research-Matrix/)\n"
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Final Issue Preview
+
+        Below is the Markdown that will be created in your issue.  
+        **NOTE:** You can still edit the text manually after submission.
+
+  - type: markdown
+    attributes:
+      value: |
+        ```markdown
+        # TRR: ${{ values.trr_id }}
+
+        ## Metadata
+        | Key          | Value                                  |
+        |--------------|-----------------------------------------|
+        | **ID**           | ${{ values.trr_id }}                |
+        | **External IDs** | ${{ values.external_ids }}          |
+        | **Tactics**      | ${{ values.tactics }}               |
+        | **Platforms**    | ${{ values.platforms }}             |
+        | **Contributors** | ${{ values.contributors }}          |
+
+        ## Technique Overview
+        ${{ values.technique_overview }}
+
+        ## Technical Background
+        ${{ values.technical_background }}
+
+        ## Procedures
+
+        | ID                     | Title                | Tactic                |
+        |------------------------|----------------------|-----------------------|
+        | ${{ values.procedure_a_id }} | ${{ values.procedure_a_title }} | ${{ values.procedure_a_tactic }} |
+        | ${{ values.procedure_b_id }} | ${{ values.procedure_b_title }} | ${{ values.procedure_b_tactic }} |
+
+        ### Procedure A: ${{ values.procedure_a_title }}
+        ${{ values.procedure_a_description }}
+
+        #### Detection Data Model
+        (Insert or attach an image if needed)
+
+        ### Procedure B: ${{ values.procedure_b_title }}
+        ${{ values.procedure_b_description }}
+
+        #### Detection Data Model
+        (Insert or attach an image if needed)
+
+        ## Available Emulation Tests
+
+        | ID                     | Link(s)                 |
+        |------------------------|-------------------------|
+        | ${{ values.procedure_a_id }} | ${{ values.emulation_tests_a }} |
+        | ${{ values.procedure_b_id }} | ${{ values.emulation_tests_b }} |
+
+        ## References
+        ${{ values.references }}
+        ```
