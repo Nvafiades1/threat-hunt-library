@@ -1,20 +1,16 @@
+version: 2
 name: "TRR Template"
 description: "Fill out this form to create a TRR with a Metadata table at the top."
-title: "TRR: ${{ values.id }}"
+title: "TRR Template"  # Must be static
 
 body:
-  # 1) Field that WILL appear in the issue body 
-  #    (to satisfy GitHub's requirement of at least one included field).
   - type: input
     id: id
     attributes:
       label: "TRR ID"
       description: "Example: TRR0000"
       placeholder: "TRR0000"
-    # By default, 'include' is true if you omit it, so it will appear in the final Q&A at bottom.
-    # Alternatively, you can explicitly set `include: true`.
 
-  # 2) Fields that will NOT appear in the standard Q&A block
   - type: input
     id: external_ids
     attributes:
@@ -61,11 +57,9 @@ body:
     id: references
     attributes:
       label: "References (one per line)"
-      placeholder: "- [MITRE ATT&CK]\n- [ATRM]"
+      placeholder: "- [MITRE ATTACK]\n- [ATRM]"
     include: false
 
-  # 3) Single Markdown block referencing all values
-  #    This is what appears as your custom-formatted TRR in the final issue body.
   - type: markdown
     attributes:
       value: |
@@ -73,13 +67,13 @@ body:
 
         ## Metadata
 
-        | Key          | Value                                  |
-        |--------------|----------------------------------------|
-        | ID           | ${{ values.id }}                       |
-        | External IDs | ${{ values.external_ids }}             |
-        | Tactics      | ${{ values.tactics }}                  |
-        | Platforms    | ${{ values.platforms }}                |
-        | Contributors | ${{ values.contributors }}             |
+        | Key           | Value                                  |
+        |---------------|----------------------------------------|
+        | **ID**        | ${{ values.id }}                       |
+        | **External IDs** | ${{ values.external_ids }}          |
+        | **Tactics**   | ${{ values.tactics }}                  |
+        | **Platforms** | ${{ values.platforms }}                |
+        | **Contributors** | ${{ values.contributors }}          |
 
         ## Technique Overview
 
@@ -91,9 +85,9 @@ body:
 
         ## Procedures
 
-        | ID                                 | Title            | Tactic            |
-        |------------------------------------|------------------|-------------------|
-        | TRR${{ values.id }}.WIN.A         | Procedure Name 1 | Initial Access    |
+        | ID                                         | Title             | Tactic             |
+        |--------------------------------------------|-------------------|--------------------|
+        | TRR${{ values.id }}.WIN.A                 | Procedure Name 1  | Initial Access     |
         | TRR${{ values.id }}.WIN.B, TRR${{ values.id }}.LIN.B | Procedure Name 2 | Execution, Impact |
 
         ### Procedure A: Procedure Name #1
@@ -110,19 +104,19 @@ body:
 
         ## Available Emulation Tests
 
-        | ID                           | Link             |
-        |------------------------------|------------------|
-        | TRR${{ values.id }}.WIN.A   | [Link1]          |
-        | TRR${{ values.id }}.WIN.B   | [Link2], [Link3] |
-        | TRR${{ values.id }}.LIN.B   | [Link4]          |
+        | ID                               | Link             |
+        |----------------------------------|------------------|
+        | TRR${{ values.id }}.WIN.A       | [Link1]          |
+        | TRR${{ values.id }}.WIN.B       | [Link2], [Link3] |
+        | TRR${{ values.id }}.LIN.B       | [Link4]          |
 
         ## References
 
         ${{ values.references }}
 
-        [MITRE ATT&CK]: https://attack.mitre.org
+        [MITRE ATTACK]: https://attack.mitre.org
         [ATRM]: https://microsoft.github.io/Azure-Threat-Research-Matrix/
-        [T0000]: https://attack.mitre.org/techniques/MITRE_ATT&CK_ID/T0000
+        [T0000]: https://attack.mitre.org/techniques/MITRE_ATTCK_ID/T0000
         [AZT000.0]: https://microsoft.github.io/Azure-Threat-Research-Matrix/
         [Link1]: http://something
         [Link2]: http://something
