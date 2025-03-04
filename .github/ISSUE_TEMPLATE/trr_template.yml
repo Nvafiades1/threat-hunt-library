@@ -1,126 +1,34 @@
-version: 2
+---
 name: "TRR Template"
-description: "Fill out this form to create a TRR with a Metadata table at the top."
-title: "TRR Template"  # Must be static if using issue forms
+about: "Fill out this form to create a TRR (Legacy Format)."
+title: "TRR Template"
+labels: []
+assignees: []
+---
 
-body:
-  - type: input
-    id: id
-    attributes:
-      label: "TRR ID"
-      description: "Example: TRR0000"
-      placeholder: "TRR0000"
-    # By default, show: true (meaning it appears in the final Q&A summary).
-    # You could add "show: false" if you want to hide it in the summary.
+### TRR ID
+Type or paste the TRR ID (e.g., TRR0000).
 
-  - type: input
-    id: external_ids
-    attributes:
-      label: "External IDs (comma-separated)"
-      placeholder: "e.g. T0000, AZT000.0"
-    show: false  # Hide from final Q&A summary
+### External IDs (comma-separated)
+e.g. T0000, AZT000.0
 
-  - type: input
-    id: tactics
-    attributes:
-      label: "Tactics (comma-separated)"
-      placeholder: "Initial Access, Privilege Escalation..."
-    show: false
+### Tactics (comma-separated)
+e.g. Initial Access, Privilege Escalation...
 
-  - type: input
-    id: platforms
-    attributes:
-      label: "Platforms (comma-separated)"
-      placeholder: "Windows, Linux, macOS"
-    show: false
+### Platforms (comma-separated)
+e.g. Windows, Linux, macOS
 
-  - type: input
-    id: contributors
-    attributes:
-      label: "Contributors (comma-separated)"
-      placeholder: "John Smith, Jane Doe"
-    show: false
+### Contributors (comma-separated)
+e.g. John Smith, Jane Doe
 
-  - type: textarea
-    id: technique_overview
-    attributes:
-      label: "Technique Overview"
-      placeholder: "Short summary or overview"
-    show: false
+### Technique Overview
+Short summary or overview
 
-  - type: textarea
-    id: technical_background
-    attributes:
-      label: "Technical Background"
-      placeholder: "Technical details..."
-    show: false
+### Technical Background
+Technical details...
 
-  - type: textarea
-    id: references
-    attributes:
-      label: "References (one per line)"
-      placeholder: "- [MITRE ATTACK]\n- [ATRM]"
-    show: false
+### References (one per line)
+- [MITRE ATTACK]
+- [ATRM]
 
-  - type: markdown
-    attributes:
-      value: |
-        # TRR${{ values.id }}: Template
-
-        ## Metadata
-
-        | Key             | Value                                  |
-        |-----------------|----------------------------------------|
-        | **ID**          | ${{ values.id }}                       |
-        | **External IDs**| ${{ values.external_ids }}             |
-        | **Tactics**     | ${{ values.tactics }}                  |
-        | **Platforms**   | ${{ values.platforms }}                |
-        | **Contributors**| ${{ values.contributors }}             |
-
-        ## Technique Overview
-
-        ${{ values.technique_overview }}
-
-        ## Technical Background
-
-        ${{ values.technical_background }}
-
-        ## Procedures
-
-        | ID                                         | Title            | Tactic            |
-        |--------------------------------------------|------------------|-------------------|
-        | TRR${{ values.id }}.WIN.A                 | Procedure Name 1 | Initial Access    |
-        | TRR${{ values.id }}.WIN.B, TRR${{ values.id }}.LIN.B | Procedure Name 2 | Execution, Impact |
-
-        ### Procedure A: Procedure Name #1
-        *(Optional content...)*
-
-        #### Detection Data Model
-        ![DDM - Procedure Name 1](images/trr0000_a.png)
-
-        ### Procedure B: Procedure Name #2
-        *(Optional content...)*
-
-        #### Detection Data Model
-        ![DDM - Procedure Name 2](images/trr0000_a.png)
-
-        ## Available Emulation Tests
-
-        | ID                               | Link             |
-        |----------------------------------|------------------|
-        | TRR${{ values.id }}.WIN.A       | [Link1]          |
-        | TRR${{ values.id }}.WIN.B       | [Link2], [Link3] |
-        | TRR${{ values.id }}.LIN.B       | [Link4]          |
-
-        ## References
-
-        ${{ values.references }}
-
-        [MITRE ATTACK]: https://attack.mitre.org
-        [ATRM]: https://microsoft.github.io/Azure-Threat-Research-Matrix/
-        [T0000]: https://attack.mitre.org/techniques/MITRE_ATTCK_ID/T0000
-        [AZT000.0]: https://microsoft.github.io/Azure-Threat-Research-Matrix/
-        [Link1]: http://something
-        [Link2]: http://something
-        [Link3]: http://something
-        [Link4]: http://something
+(etc.)
