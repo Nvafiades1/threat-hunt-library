@@ -3,70 +3,71 @@ description: "Fill out this form to create a TRR with a Metadata table at the to
 title: "TRR: ${{ values.id }}"
 
 body:
-  # 1) Collect the ID as a hidden field
+  # 1) Field that WILL appear in the issue body 
+  #    (to satisfy GitHub's requirement of at least one included field).
   - type: input
     id: id
     attributes:
       label: "TRR ID"
       description: "Example: TRR0000"
       placeholder: "TRR0000"
-    # Hide this Q&A from the final issue so we can reference it in our custom block
-    render: hidden
+    # By default, 'include' is true if you omit it, so it will appear in the final Q&A at bottom.
+    # Alternatively, you can explicitly set `include: true`.
 
+  # 2) Fields that will NOT appear in the standard Q&A block
   - type: input
     id: external_ids
     attributes:
       label: "External IDs (comma-separated)"
       placeholder: "e.g. T0000, AZT000.0"
-    render: hidden
+    include: false
 
   - type: input
     id: tactics
     attributes:
       label: "Tactics (comma-separated)"
       placeholder: "Initial Access, Privilege Escalation..."
-    render: hidden
+    include: false
 
   - type: input
     id: platforms
     attributes:
       label: "Platforms (comma-separated)"
       placeholder: "Windows, Linux, macOS"
-    render: hidden
+    include: false
 
   - type: input
     id: contributors
     attributes:
       label: "Contributors (comma-separated)"
       placeholder: "John Smith, Jane Doe"
-    render: hidden
+    include: false
 
   - type: textarea
     id: technique_overview
     attributes:
       label: "Technique Overview"
       placeholder: "Short summary or overview"
-    render: hidden
+    include: false
 
   - type: textarea
     id: technical_background
     attributes:
       label: "Technical Background"
       placeholder: "Technical details..."
-    render: hidden
+    include: false
 
   - type: textarea
     id: references
     attributes:
       label: "References (one per line)"
       placeholder: "- [MITRE ATT&CK]\n- [ATRM]"
-    render: hidden
+    include: false
 
-  # 2) Create a single Markdown block that references all above inputs
-  #    This block is what will appear in the final Issue body.
+  # 3) Single Markdown block referencing all values
+  #    This is what appears as your custom-formatted TRR in the final issue body.
   - type: markdown
     attributes:
-      # This is your final rendered TRR content
       value: |
         # TRR${{ values.id }}: Template
 
@@ -90,34 +91,30 @@ body:
 
         ## Procedures
 
-        | ID                                | Title            | Tactic            |
-        |-----------------------------------|------------------|-------------------|
-        | TRR${{ values.id }}.WIN.A        | Procedure Name 1 | Initial Access    |
+        | ID                                 | Title            | Tactic            |
+        |------------------------------------|------------------|-------------------|
+        | TRR${{ values.id }}.WIN.A         | Procedure Name 1 | Initial Access    |
         | TRR${{ values.id }}.WIN.B, TRR${{ values.id }}.LIN.B | Procedure Name 2 | Execution, Impact |
 
         ### Procedure A: Procedure Name #1
-        *(You can hardcode or expand these details as needed.)*
+        *(Optional content...)*
 
         #### Detection Data Model
         ![DDM - Procedure Name 1](images/trr0000_a.png)
 
-        Lorem ipsum...
-
         ### Procedure B: Procedure Name #2
-        *(Another example section...)*
+        *(Optional content...)*
 
         #### Detection Data Model
         ![DDM - Procedure Name 2](images/trr0000_a.png)
 
-        Lorem ipsum...
-
         ## Available Emulation Tests
 
-        | ID                          | Link             |
-        |-----------------------------|------------------|
-        | TRR${{ values.id }}.WIN.A  | [Link1]          |
-        | TRR${{ values.id }}.WIN.B  | [Link2], [Link3] |
-        | TRR${{ values.id }}.LIN.B  | [Link4]          |
+        | ID                           | Link             |
+        |------------------------------|------------------|
+        | TRR${{ values.id }}.WIN.A   | [Link1]          |
+        | TRR${{ values.id }}.WIN.B   | [Link2], [Link3] |
+        | TRR${{ values.id }}.LIN.B   | [Link4]          |
 
         ## References
 
