@@ -1,0 +1,253 @@
+version: 2    # Tells GitHub this is the new Issue Forms format
+name: "TRR Issue"
+description: "A template for creating TRR issues with fillable fields."
+title: "TRR${{ values.id }}: ${{ values.template_title }}"
+labels: [ "TRR" ]
+assignees: []
+
+body:
+  # -- BASIC METADATA FIELDS --
+  - type: input
+    id: template_title
+    attributes:
+      label: "Short Title or Name"
+      placeholder: "Brief descriptive name"
+      description: "A short, human-readable title for this TRR."
+    validations:
+      required: true
+
+  - type: input
+    id: id
+    attributes:
+      label: "TRR ID"
+      placeholder: "TRR0000"
+      description: "Unique ID (e.g., TRR0000)."
+    validations:
+      required: true
+
+  - type: input
+    id: external_ids
+    attributes:
+      label: "External IDs"
+      placeholder: "[T1207], [AZT000.0]"
+      description: "List of external ID references."
+    validations:
+      required: false
+
+  - type: input
+    id: tactics
+    attributes:
+      label: "Tactics"
+      placeholder: "Initial Access, Privilege Escalation, etc."
+      description: "Comma-separated list of tactics."
+    validations:
+      required: false
+
+  - type: input
+    id: platforms
+    attributes:
+      label: "Platforms"
+      placeholder: "Windows, Linux, macOS, etc."
+      description: "Comma-separated list of affected platforms."
+    validations:
+      required: false
+
+  - type: input
+    id: contributors
+    attributes:
+      label: "Contributors"
+      placeholder: "John Smith, Jane Doe"
+      description: "Comma-separated list of contributors."
+    validations:
+      required: false
+
+  # -- TECHNIQUE OVERVIEW, BACKGROUND, ETC. --
+  - type: textarea
+    id: technique_overview
+    attributes:
+      label: "Technique Overview"
+      description: "Provide a brief description of the technique(s)."
+      placeholder: "Lorem ipsum..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: technical_background
+    attributes:
+      label: "Technical Background"
+      description: "Any relevant technical details."
+      placeholder: "Lorem ipsum..."
+    validations:
+      required: false
+
+  # -- PROCEDURE 1 FIELDS --
+  - type: input
+    id: procedure_1_id
+    attributes:
+      label: "Procedure 1 ID"
+      placeholder: "TRR0000.WIN.A"
+      description: "Unique procedure ID for the first procedure."
+    validations:
+      required: false
+
+  - type: input
+    id: procedure_1_title
+    attributes:
+      label: "Procedure 1 Title"
+      placeholder: "Procedure Name #1"
+      description: "Title/Name of the first procedure."
+    validations:
+      required: false
+
+  - type: input
+    id: procedure_1_tactic
+    attributes:
+      label: "Procedure 1 Tactic(s)"
+      placeholder: "Initial Access"
+      description: "Tactic(s) for procedure #1."
+    validations:
+      required: false
+
+  - type: textarea
+    id: procedure_1_details
+    attributes:
+      label: "Procedure 1 Details"
+      description: "Detailed explanation, detection data model, etc. for procedure #1."
+      placeholder: "Lorem ipsum..."
+    validations:
+      required: false
+
+  # -- PROCEDURE 2 FIELDS --
+  - type: input
+    id: procedure_2_id
+    attributes:
+      label: "Procedure 2 ID"
+      placeholder: "TRR0000.WIN.B"
+      description: "Unique procedure ID for the second procedure."
+    validations:
+      required: false
+
+  - type: input
+    id: procedure_2_title
+    attributes:
+      label: "Procedure 2 Title"
+      placeholder: "Procedure Name #2"
+      description: "Title/Name of the second procedure."
+    validations:
+      required: false
+
+  - type: input
+    id: procedure_2_tactic
+    attributes:
+      label: "Procedure 2 Tactic(s)"
+      placeholder: "Execution, Impact"
+      description: "Tactic(s) for procedure #2."
+    validations:
+      required: false
+
+  - type: textarea
+    id: procedure_2_details
+    attributes:
+      label: "Procedure 2 Details"
+      description: "Detailed explanation, detection data model, etc. for procedure #2."
+      placeholder: "Lorem ipsum..."
+    validations:
+      required: false
+
+  # -- EMULATION TEST FIELDS --
+  - type: input
+    id: emulation_test_1_id
+    attributes:
+      label: "Emulation Test 1 ID"
+      placeholder: "TRR0000.WIN.A"
+      description: "Procedure ID or reference for test #1."
+    validations:
+      required: false
+
+  - type: input
+    id: emulation_test_1_link
+    attributes:
+      label: "Emulation Test 1 Link"
+      placeholder: "http://something"
+      description: "Link for emulation test #1."
+    validations:
+      required: false
+
+  - type: input
+    id: emulation_test_2_id
+    attributes:
+      label: "Emulation Test 2 ID"
+      placeholder: "TRR0000.WIN.B"
+      description: "Procedure ID or reference for test #2."
+    validations:
+      required: false
+
+  - type: input
+    id: emulation_test_2_link
+    attributes:
+      label: "Emulation Test 2 Link"
+      placeholder: "http://something"
+      description: "Link for emulation test #2."
+    validations:
+      required: false
+
+  # -- REFERENCES --
+  - type: textarea
+    id: references
+    attributes:
+      label: "References"
+      description: "Add any references (Markdown list format)."
+      placeholder: "- [MITRE ATT&CK]\n- [ATRM]"
+    validations:
+      required: false
+
+---
+<!--
+  The content below appears in the issue body when the user submits the form.
+  The placeholders (e.g., {{ form.id }}) will be replaced with the user's input.
+-->
+
+| Key               | Value                   |
+|-------------------|-------------------------|
+| **ID**            | {{ form.id }}          |
+| **External IDs**  | {{ form.external_ids }} |
+| **Tactics**       | {{ form.tactics }}      |
+| **Platforms**     | {{ form.platforms }}    |
+| **Contributors**  | {{ form.contributors }} |
+
+# TRR{{ form.id }}: {{ form.template_title }}
+
+## Technique Overview
+{{ form.technique_overview }}
+
+## Technical Background
+{{ form.technical_background }}
+
+---
+
+## Procedures
+
+| **ID**               | **Title**                  | **Tactic(s)**                  |
+|----------------------|----------------------------|--------------------------------|
+| {{ form.procedure_1_id }} | {{ form.procedure_1_title }} | {{ form.procedure_1_tactic }}  |
+| {{ form.procedure_2_id }} | {{ form.procedure_2_title }} | {{ form.procedure_2_tactic }}  |
+
+### Procedure 1 Details
+{{ form.procedure_1_details }}
+
+### Procedure 2 Details
+{{ form.procedure_2_details }}
+
+---
+
+## Available Emulation Tests
+
+| **ID**                   | **Link**                   |
+|--------------------------|----------------------------|
+| {{ form.emulation_test_1_id }} | {{ form.emulation_test_1_link }} |
+| {{ form.emulation_test_2_id }} | {{ form.emulation_test_2_link }} |
+
+---
+
+## References
+{{ form.references }}
