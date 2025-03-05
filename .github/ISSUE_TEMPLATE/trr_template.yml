@@ -1,7 +1,7 @@
+version: 2    # <-- IMPORTANT: Tells GitHub this is the new Issue Forms format
 name: "TRR Issue"
 description: "A template for creating TRR issues with fillable fields."
-# IMPORTANT: Use ${{ values.FIELD_ID }} here in front matter for dynamic fields
-title: "TRR${{ values.id }}: ${{ values.template_title }}"
+title: "TRR${{ values.id }}: ${{ values.template_title }}"   # Uses ${{ values.FIELD_ID }} in front matter
 labels: [ "TRR" ]
 assignees: []
 
@@ -29,7 +29,7 @@ body:
     id: external_ids
     attributes:
       label: "External IDs"
-      placeholder: "[T0000], [AZT000.0]"
+      placeholder: "[T1207], [AZT000.0]"
       description: "List of external ID references."
     validations:
       required: false
@@ -202,7 +202,7 @@ body:
       required: false
 
 ---
-<!-- BODY CONTENT: uses {{ form.FIELD_ID }} -->
+<!-- BODY CONTENT: here we use {{ form.FIELD_ID }} placeholders -->
 
 | Key          | Value                   |
 |--------------|-------------------------|
