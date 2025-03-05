@@ -11,6 +11,7 @@ body:
       label: "Short Title or Name"
       placeholder: "Brief descriptive name"
       description: "A short, human-readable title for this TRR."
+    validations:
       required: true
 
   - type: input
@@ -19,6 +20,7 @@ body:
       label: "TRR ID"
       placeholder: "TRR0000"
       description: "Unique ID (e.g., TRR0000)."
+    validations:
       required: true
 
   - type: input
@@ -27,6 +29,7 @@ body:
       label: "External IDs"
       placeholder: "[T0000], [AZT000.0]"
       description: "List of external ID references (comma-separated or bracketed)."
+    validations:
       required: false
 
   - type: input
@@ -35,6 +38,7 @@ body:
       label: "Tactics"
       placeholder: "Initial Access, Privilege Escalation, etc."
       description: "Comma-separated list of tactics used."
+    validations:
       required: false
 
   - type: input
@@ -43,6 +47,7 @@ body:
       label: "Platforms"
       placeholder: "Windows, Linux, macOS, etc."
       description: "Comma-separated list of affected platforms."
+    validations:
       required: false
 
   - type: input
@@ -51,6 +56,7 @@ body:
       label: "Contributors"
       placeholder: "John Smith, Jane Doe"
       description: "Comma-separated list of contributors."
+    validations:
       required: false
 
   - type: textarea
@@ -59,6 +65,7 @@ body:
       label: "Technique Overview"
       description: "Provide a brief description of the technique(s)."
       placeholder: "Lorem ipsum..."
+    validations:
       required: false
 
   - type: textarea
@@ -67,6 +74,7 @@ body:
       label: "Technical Background"
       description: "Any technical background relevant to these techniques."
       placeholder: "Lorem ipsum..."
+    validations:
       required: false
 
   - type: textarea
@@ -75,6 +83,7 @@ body:
       label: "Procedures Table"
       description: "Provide the procedure IDs, titles, and tactics. (Markdown table recommended.)"
       placeholder: "| ID | Title | Tactic |\n|----|-------|--------|\n| TRR0000.WIN.A | Procedure Name 1 | Initial Access |"
+    validations:
       required: false
 
   - type: textarea
@@ -83,6 +92,7 @@ body:
       label: "Procedure Details"
       description: "Details for each procedure, including detection data models."
       placeholder: "### Procedure A: Procedure Name #1\n\nLorem ipsum...\n\n#### Detection Data Model\n\n![DDM - Procedure Name 1](images/trr0000_a.png)"
+    validations:
       required: false
 
   - type: textarea
@@ -91,6 +101,7 @@ body:
       label: "Available Emulation Tests"
       description: "Provide the emulation tests (Markdown table format)."
       placeholder: "| ID            | Link             |\n|---------------|------------------|\n| TRR0000.WIN.A | [Link1]          |"
+    validations:
       required: false
 
   - type: textarea
@@ -99,27 +110,20 @@ body:
       label: "References"
       description: "Add any references in Markdown list format."
       placeholder: "- [MITRE ATT&CK]\n- [ATRM]"
+    validations:
       required: false
-
----
-
-## Generated Issue Content
-
-Below the `---` (in the same file), include the actual markdown “skeleton” of your issue. Notice how the placeholders `{{ form.FIELD_ID }}` will be replaced by the inputs from the form:
-
-```yaml
 ---
 # TRR{{ form.id }}: {{ form.template_title }}
 
 ## Metadata
 
-| Key          | Value                     |
-|--------------|---------------------------|
-| ID           | {{ form.id }}            |
-| External IDs | {{ form.external_ids }}   |
-| Tactics      | {{ form.tactics }}        |
-| Platforms    | {{ form.platforms }}      |
-| Contributors | {{ form.contributors }}   |
+| Key          | Value                   |
+|--------------|-------------------------|
+| ID           | {{ form.id }}          |
+| External IDs | {{ form.external_ids }} |
+| Tactics      | {{ form.tactics }}      |
+| Platforms    | {{ form.platforms }}    |
+| Contributors | {{ form.contributors }} |
 
 ## Technique Overview
 
