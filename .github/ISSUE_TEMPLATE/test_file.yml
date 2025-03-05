@@ -1,0 +1,19 @@
+version: 2
+name: "Test Form"
+description: "A minimal Issue Form"
+title: "Test Issue"
+labels:
+  - bug
+
+body:
+  - type: markdown
+    attributes:
+      value: "Hello, world! This is a test."
+
+  - type: input
+    id: example
+    attributes:
+      label: "Example field"
+      description: "Please type something."
+    validations:
+      required: true
