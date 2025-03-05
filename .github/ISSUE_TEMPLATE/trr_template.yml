@@ -1,4 +1,4 @@
-version: 2    # Tells GitHub this is the new Issue Forms format
+
 name: "TRR Issue"
 description: "A template for creating TRR issues with fillable fields."
 title: "TRR${{ values.id }}: ${{ values.template_title }}"
