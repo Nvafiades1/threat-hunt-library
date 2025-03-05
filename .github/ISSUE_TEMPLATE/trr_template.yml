@@ -1,6 +1,7 @@
 name: "TRR Issue"
 description: "A template for creating TRR issues with fillable fields."
-title: "TRR{{ form.id }}: {{ form.template_title }}"
+# IMPORTANT: Use ${{ values.FIELD_ID }} here in front matter for dynamic fields
+title: "TRR${{ values.id }}: ${{ values.template_title }}"
 labels: [ "TRR" ]
 assignees: []
 
@@ -195,23 +196,23 @@ body:
     id: references
     attributes:
       label: "References"
-      description: "Add any references in Markdown list format."
+      description: "Add any references (Markdown list format)."
       placeholder: "- [MITRE ATT&CK]\n- [ATRM]"
     validations:
       required: false
 
 ---
-# TRR{{ form.id }}: {{ form.template_title }}
-
-## Metadata
+<!-- BODY CONTENT: uses {{ form.FIELD_ID }} -->
 
 | Key          | Value                   |
 |--------------|-------------------------|
-| ID           | {{ form.id }}          |
-| External IDs | {{ form.external_ids }} |
-| Tactics      | {{ form.tactics }}      |
-| Platforms    | {{ form.platforms }}    |
-| Contributors | {{ form.contributors }} |
+| **ID**           | {{ form.id }}          |
+| **External IDs** | {{ form.external_ids }} |
+| **Tactics**      | {{ form.tactics }}      |
+| **Platforms**    | {{ form.platforms }}    |
+| **Contributors** | {{ form.contributors }} |
+
+# TRR{{ form.id }}: {{ form.template_title }}
 
 ## Technique Overview
 
@@ -225,10 +226,10 @@ body:
 
 ## Procedures
 
-| ID                          | Title                 | Tactic(s)                |
-|-----------------------------|-----------------------|--------------------------|
-| {{ form.procedure_1_id }}   | {{ form.procedure_1_title }}  | {{ form.procedure_1_tactic }}  |
-| {{ form.procedure_2_id }}   | {{ form.procedure_2_title }}  | {{ form.procedure_2_tactic }}  |
+| **ID**               | **Title**                  | **Tactic(s)**                  |
+|----------------------|----------------------------|--------------------------------|
+| {{ form.procedure_1_id }} | {{ form.procedure_1_title }} | {{ form.procedure_1_tactic }}  |
+| {{ form.procedure_2_id }} | {{ form.procedure_2_title }} | {{ form.procedure_2_tactic }}  |
 
 ### Procedure 1 Details
 
@@ -242,8 +243,8 @@ body:
 
 ## Available Emulation Tests
 
-| ID                        | Link                        |
-|---------------------------|-----------------------------|
+| **ID**                   | **Link**                   |
+|--------------------------|----------------------------|
 | {{ form.emulation_test_1_id }} | {{ form.emulation_test_1_link }} |
 | {{ form.emulation_test_2_id }} | {{ form.emulation_test_2_link }} |
 
