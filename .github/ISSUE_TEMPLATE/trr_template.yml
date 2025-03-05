@@ -1,4 +1,3 @@
-
 name: "TRR Issue"
 description: "A template for creating TRR issues with fillable fields."
 title: "TRR${{ values.id }}: ${{ values.template_title }}"
