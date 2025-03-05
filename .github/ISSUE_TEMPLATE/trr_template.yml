@@ -1,7 +1,7 @@
-version: 2    # <-- IMPORTANT: Tells GitHub this is the new Issue Forms format
+version: 2    # Tells GitHub this is the new Issue Forms format
 name: "TRR Issue"
 description: "A template for creating TRR issues with fillable fields."
-title: "TRR${{ values.id }}: ${{ values.template_title }}"   # Uses ${{ values.FIELD_ID }} in front matter
+title: "TRR${{ values.id }}: ${{ values.template_title }}"
 labels: [ "TRR" ]
 assignees: []
 
@@ -202,24 +202,25 @@ body:
       required: false
 
 ---
-<!-- BODY CONTENT: here we use {{ form.FIELD_ID }} placeholders -->
+<!--
+  The content below appears in the issue body when the user submits the form.
+  The placeholders (e.g., {{ form.id }}) will be replaced with the user's input.
+-->
 
-| Key          | Value                   |
-|--------------|-------------------------|
-| **ID**           | {{ form.id }}          |
-| **External IDs** | {{ form.external_ids }} |
-| **Tactics**      | {{ form.tactics }}      |
-| **Platforms**    | {{ form.platforms }}    |
-| **Contributors** | {{ form.contributors }} |
+| Key               | Value                   |
+|-------------------|-------------------------|
+| **ID**            | {{ form.id }}          |
+| **External IDs**  | {{ form.external_ids }} |
+| **Tactics**       | {{ form.tactics }}      |
+| **Platforms**     | {{ form.platforms }}    |
+| **Contributors**  | {{ form.contributors }} |
 
 # TRR{{ form.id }}: {{ form.template_title }}
 
 ## Technique Overview
-
 {{ form.technique_overview }}
 
 ## Technical Background
-
 {{ form.technical_background }}
 
 ---
@@ -232,11 +233,9 @@ body:
 | {{ form.procedure_2_id }} | {{ form.procedure_2_title }} | {{ form.procedure_2_tactic }}  |
 
 ### Procedure 1 Details
-
 {{ form.procedure_1_details }}
 
 ### Procedure 2 Details
-
 {{ form.procedure_2_details }}
 
 ---
@@ -251,5 +250,4 @@ body:
 ---
 
 ## References
-
 {{ form.references }}
