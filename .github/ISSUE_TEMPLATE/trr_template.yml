@@ -1,34 +1,144 @@
----
-name: "TRR Template"
-about: "Fill out this form to create a TRR (Legacy Format)."
-title: "TRR Template"
-labels: []
+name: "TRR Issue"
+description: "A template for creating TRR issues with fillable fields."
+title: "TRR{{ form.id }}: {{ form.template_title }}"
+labels: [ "TRR" ]
 assignees: []
+
+body:
+  - type: input
+    id: template_title
+    attributes:
+      label: "Short Title or Name"
+      placeholder: "Brief descriptive name"
+      description: "A short, human-readable title for this TRR."
+      required: true
+
+  - type: input
+    id: id
+    attributes:
+      label: "TRR ID"
+      placeholder: "TRR0000"
+      description: "Unique ID (e.g., TRR0000)."
+      required: true
+
+  - type: input
+    id: external_ids
+    attributes:
+      label: "External IDs"
+      placeholder: "[T0000], [AZT000.0]"
+      description: "List of external ID references (comma-separated or bracketed)."
+      required: false
+
+  - type: input
+    id: tactics
+    attributes:
+      label: "Tactics"
+      placeholder: "Initial Access, Privilege Escalation, etc."
+      description: "Comma-separated list of tactics used."
+      required: false
+
+  - type: input
+    id: platforms
+    attributes:
+      label: "Platforms"
+      placeholder: "Windows, Linux, macOS, etc."
+      description: "Comma-separated list of affected platforms."
+      required: false
+
+  - type: input
+    id: contributors
+    attributes:
+      label: "Contributors"
+      placeholder: "John Smith, Jane Doe"
+      description: "Comma-separated list of contributors."
+      required: false
+
+  - type: textarea
+    id: technique_overview
+    attributes:
+      label: "Technique Overview"
+      description: "Provide a brief description of the technique(s)."
+      placeholder: "Lorem ipsum..."
+      required: false
+
+  - type: textarea
+    id: technical_background
+    attributes:
+      label: "Technical Background"
+      description: "Any technical background relevant to these techniques."
+      placeholder: "Lorem ipsum..."
+      required: false
+
+  - type: textarea
+    id: procedures
+    attributes:
+      label: "Procedures Table"
+      description: "Provide the procedure IDs, titles, and tactics. (Markdown table recommended.)"
+      placeholder: "| ID | Title | Tactic |\n|----|-------|--------|\n| TRR0000.WIN.A | Procedure Name 1 | Initial Access |"
+      required: false
+
+  - type: textarea
+    id: procedure_details
+    attributes:
+      label: "Procedure Details"
+      description: "Details for each procedure, including detection data models."
+      placeholder: "### Procedure A: Procedure Name #1\n\nLorem ipsum...\n\n#### Detection Data Model\n\n![DDM - Procedure Name 1](images/trr0000_a.png)"
+      required: false
+
+  - type: textarea
+    id: emulation_tests
+    attributes:
+      label: "Available Emulation Tests"
+      description: "Provide the emulation tests (Markdown table format)."
+      placeholder: "| ID            | Link             |\n|---------------|------------------|\n| TRR0000.WIN.A | [Link1]          |"
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: "References"
+      description: "Add any references in Markdown list format."
+      placeholder: "- [MITRE ATT&CK]\n- [ATRM]"
+      required: false
+
 ---
 
-### TRR ID
-Type or paste the TRR ID (e.g., TRR0000).
+## Generated Issue Content
 
-### External IDs (comma-separated)
-e.g. T0000, AZT000.0
+Below the `---` (in the same file), include the actual markdown “skeleton” of your issue. Notice how the placeholders `{{ form.FIELD_ID }}` will be replaced by the inputs from the form:
 
-### Tactics (comma-separated)
-e.g. Initial Access, Privilege Escalation...
+```yaml
+---
+# TRR{{ form.id }}: {{ form.template_title }}
 
-### Platforms (comma-separated)
-e.g. Windows, Linux, macOS
+## Metadata
 
-### Contributors (comma-separated)
-e.g. John Smith, Jane Doe
+| Key          | Value                     |
+|--------------|---------------------------|
+| ID           | {{ form.id }}            |
+| External IDs | {{ form.external_ids }}   |
+| Tactics      | {{ form.tactics }}        |
+| Platforms    | {{ form.platforms }}      |
+| Contributors | {{ form.contributors }}   |
 
-### Technique Overview
-Short summary or overview
+## Technique Overview
 
-### Technical Background
-Technical details...
+{{ form.technique_overview }}
 
-### References (one per line)
-- [MITRE ATTACK]
-- [ATRM]
+## Technical Background
 
-(etc.)
+{{ form.technical_background }}
+
+## Procedures
+
+{{ form.procedures }}
+
+{{ form.procedure_details }}
+
+## Available Emulation Tests
+
+{{ form.emulation_tests }}
+
+## References
+
+{{ form.references }}
