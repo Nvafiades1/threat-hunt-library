@@ -203,14 +203,17 @@ body:
 ---
 <!--
   The content below appears in the issue body when the user submits the form.
-  The placeholders (e.g., {{ form.id }}) will be replaced with the user's input.
+  The placeholders (e.g., {{ form.template_title }}) will be replaced with the user's input.
 -->
 
-**ID:** {{ form.id }}  
-**External IDs:** {{ form.external_ids }}  
-**Tactics:** {{ form.tactics }}  
-**Platforms:** {{ form.platforms }}  
-**Contributors:** {{ form.contributors }}
+| **Field**               | **Value**                   |
+|-------------------------|-----------------------------|
+| **Short Title or Name** | {{ form.template_title }}   |
+| **TRR ID**              | {{ form.id }}               |
+| **External IDs**        | {{ form.external_ids }}     |
+| **Tactics**             | {{ form.tactics }}          |
+| **Platforms**           | {{ form.platforms }}        |
+| **Contributors**        | {{ form.contributors }}     |
 
 # TRR{{ form.id }}: {{ form.template_title }}
 
