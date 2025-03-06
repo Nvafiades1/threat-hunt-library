@@ -60,7 +60,7 @@ body:
     validations:
       required: false
 
-  # -- TECHNIQUE OVERVIEW, BACKGROUND, ETC. --
+  # -- TECHNIQUE OVERVIEW & BACKGROUND --
   - type: textarea
     id: technique_overview
     attributes:
@@ -199,55 +199,3 @@ body:
       placeholder: "- [MITRE ATT&CK]\n- [ATRM]"
     validations:
       required: false
-
----
-<!--
-  The content below appears in the issue body when the user submits the form.
-  The placeholders (e.g., {{ form.template_title }}) will be replaced with the user's input.
--->
-
-| **Field**               | **Value**                   |
-|-------------------------|-----------------------------|
-| **Short Title or Name** | {{ form.template_title }}   |
-| **TRR ID**              | {{ form.id }}               |
-| **External IDs**        | {{ form.external_ids }}     |
-| **Tactics**             | {{ form.tactics }}          |
-| **Platforms**           | {{ form.platforms }}        |
-| **Contributors**        | {{ form.contributors }}     |
-
-# TRR{{ form.id }}: {{ form.template_title }}
-
-## Technique Overview
-{{ form.technique_overview }}
-
-## Technical Background
-{{ form.technical_background }}
-
----
-
-## Procedures
-
-| **ID**                 | **Title**                   | **Tactic(s)**               |
-|------------------------|-----------------------------|-----------------------------|
-| {{ form.procedure_1_id }} | {{ form.procedure_1_title }} | {{ form.procedure_1_tactic }} |
-| {{ form.procedure_2_id }} | {{ form.procedure_2_title }} | {{ form.procedure_2_tactic }} |
-
-### Procedure 1 Details
-{{ form.procedure_1_details }}
-
-### Procedure 2 Details
-{{ form.procedure_2_details }}
-
----
-
-## Available Emulation Tests
-
-| **ID**                     | **Link**                       |
-|----------------------------|-------------------------------|
-| {{ form.emulation_test_1_id }} | {{ form.emulation_test_1_link }} |
-| {{ form.emulation_test_2_id }} | {{ form.emulation_test_2_link }} |
-
----
-
-## References
-{{ form.references }}
