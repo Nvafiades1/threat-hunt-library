@@ -14,7 +14,7 @@ jobs:
       - name: Create issue file
         run: |
           # Define folder name and create it if it doesn't exist
-          FOLDER="issues"
+          FOLDER="test"
           mkdir -p "$FOLDER"
 
           # Use the issue number for a unique filename
@@ -35,16 +35,16 @@ jobs:
           git config --global user.email "nvafiades@protonmail.com"
           echo "Before updating remote:"
           git remote -v
-          # Update remote URL to use the PAT only (no trailing slash)
+          # Update remote URL to use the PAT (no trailing slash)
           git remote set-url origin "https://${PAT_TOKEN}@github.com/Nvafiades1/threat-hunt-library.git"
           echo "After updating remote:"
           git remote -v
-          # Stage only changes in the techniques folder
-          git add techniques/
-          # Check if there are changes in the techniques folder
-          if [ -n "$(git status --porcelain techniques/)" ]; then
-            git commit -m "Update MITRE technique folders"
+          # Stage only changes in the test folder
+          git add test/
+          # Check if there are changes in the test folder
+          if [ -n "$(git status --porcelain test/)" ]; then
+            git commit -m "Add issue ${{ github.event.issue.number }}: ${{ github.event.issue.title }}"
             git push origin main
           else
-            echo "No changes to commit in techniques folder."
+            echo "No changes to commit in test folder."
           fi
