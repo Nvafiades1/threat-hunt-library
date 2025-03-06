@@ -27,10 +27,24 @@ jobs:
           echo "" >> "$FILE"
           echo "_Created by @${{ github.event.issue.user.login }}_" >> "$FILE"
 
-      - name: Commit and push new issue file
-        uses: EndBug/add-and-commit@v9
-        with:
-          author_name: github-actions
-          author_email: github-actions@github.com
-          message: "Add issue ${{ github.event.issue.number }}: ${{ github.event.issue.title }}"
-          add: "issues/issue-${{ github.event.issue.number }}.md"
+      - name: Commit and Push Changes
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          git config --global user.name "Nvafiades1"
+          git config --global user.email "nvafiades@protonmail.com"
+          echo "Before updating remote:"
+          git remote -v
+          # Update remote URL to use the PAT only (no trailing slash)
+          git remote set-url origin "https://${PAT_TOKEN}@github.com/Nvafiades1/threat-hunt-library.git"
+          echo "After updating remote:"
+          git remote -v
+          # Stage only changes in the techniques folder
+          git add techniques/
+          # Check if there are changes in the techniques folder
+          if [ -n "$(git status --porcelain techniques/)" ]; then
+            git commit -m "Update MITRE technique folders"
+            git push origin main
+          else
+            echo "No changes to commit in techniques folder."
+          fi
