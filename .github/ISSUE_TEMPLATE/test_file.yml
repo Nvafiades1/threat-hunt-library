@@ -1,6 +1,6 @@
 name: "TRR Issue"
 description: "A template for creating TRR issues with fillable fields."
-title: "TRR${{ values.id }}: ${{ values.template_title }}"
+title: "TRR Issue"
 labels: [ "TRR" ]
 assignees: []
 
@@ -60,7 +60,7 @@ body:
     validations:
       required: false
 
-  # -- ADDITIONAL FIELDS --
+  # -- TECHNIQUE OVERVIEW & BACKGROUND --
   - type: textarea
     id: technique_overview
     attributes:
@@ -79,6 +79,7 @@ body:
     validations:
       required: false
 
+  # -- PROCEDURE 1 FIELDS --
   - type: input
     id: procedure_1_id
     attributes:
@@ -115,6 +116,7 @@ body:
     validations:
       required: false
 
+  # -- PROCEDURE 2 FIELDS --
   - type: input
     id: procedure_2_id
     attributes:
@@ -151,6 +153,7 @@ body:
     validations:
       required: false
 
+  # -- EMULATION TEST FIELDS --
   - type: input
     id: emulation_test_1_id
     attributes:
@@ -187,6 +190,7 @@ body:
     validations:
       required: false
 
+  # -- REFERENCES --
   - type: textarea
     id: references
     attributes:
@@ -197,9 +201,11 @@ body:
       required: false
 
 ---
-<!-- Custom formatted summary table. Note: The auto-generated summary above will still appear. -->
+<!-- Custom formatted summary (note: the default auto-generated summary will still appear above) -->
 
-### Custom Issue Summary
+## Issue Summary
+
+Below is a summary of your issue details:
 
 | **Field**               | **Value**                        |
 |-------------------------|----------------------------------|
