@@ -31,20 +31,18 @@ jobs:
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
+          # Configure Git with your info
           git config --global user.name "Nvafiades1"
           git config --global user.email "nvafiades@protonmail.com"
-          echo "Before updating remote:"
-          git remote -v
-          # Update remote URL to use the PAT (no trailing slash)
+          
+          # Update remote URL to use the PAT
           git remote set-url origin "https://${PAT_TOKEN}@github.com/Nvafiades1/threat-hunt-library.git"
-          echo "After updating remote:"
-          git remote -v
-          # Stage only changes in the test folder
+          
+          # Stage changes in the 'test' folder
           git add test/
-          # Check if there are changes in the test folder
-          if [ -n "$(git status --porcelain test/)" ]; then
-            git commit -m "Add issue ${{ github.event.issue.number }}: ${{ github.event.issue.title }}"
-            git push origin main
-          else
-            echo "No changes to commit in test folder."
-          fi
+          
+          # Attempt to commit changes. If there are no changes, this will fail, so we use "||" to handle that gracefully.
+          git commit -m "Add issue ${{ github.event.issue.number }}: ${{ github.event.issue.title }}" || echo "No changes to commit in test folder."
+          
+          # Push changes to the main branch
+          git push origin main
