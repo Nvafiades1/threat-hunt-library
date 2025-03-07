@@ -37,6 +37,14 @@ body:
       label: "Modified"
       description: "Date/time the hunt was last updated in ISO 8601 format (e.g., 2025-03-01T12:00:00Z)"
       placeholder: "2025-03-01T12:00:00Z"
+
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: "Hypothesis"
+      description: "Enter your hypothesis or the assumption you're trying to validate with this threat hunt."
+      placeholder: "Describe your hypothesis here..."
+
   - type: textarea
     id: labels_list
     attributes:
@@ -59,9 +67,12 @@ body:
     id: query
     attributes:
       label: "Hunt Query"
-      description: "Add your threat hunt query or search script here."
+      description: "Add your threat hunt query or search script here. (It will render as a code block.)"
+      render: markdown
       placeholder: |
+        ```kusto
         // Add your threat hunt query here
+        ```
   - type: input
     id: query_fidelity
     attributes:
