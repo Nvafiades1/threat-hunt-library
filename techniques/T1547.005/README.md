@@ -32,12 +32,99 @@ Windows utilizes a flexible, extensible architecture for handling diverse authen
 
 The mechanism by which LSASS loads these packages relies heavily on the Windows Registry. During its initialization phase (primarily at system boot, or rarely if the service restarts), LSASS queries specific values located under the `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa` registry key. The crucial values – `Security Packages`, `Authentication Packages`, `Notification Packages`, and `Providers` – are of the `REG_MULTI_SZ` data type. This type stores a sequence of null-terminated strings, itself terminated by an additional null character, effectively representing a list. LSASS reads these lists, extracting the base names (e.g., `kerberos`, `msv1_0`, `my_evil_ssp`) of the DLLs to be loaded. Because full paths are not typically stored here, LSASS then relies on the standard Windows DLL search order to resolve each base name to a full file path. This search order prioritizes known system directories, with `%SystemRoot%\System32` being a primary location searched early on (and `%SystemRoot%\SysWOW64` for 32-bit processes on 64-bit systems, although `lsass.exe` itself is typically 64-bit on modern OSes). Once LSASS locates the corresponding DLL file, it uses Windows loader functions (conceptually similar to `LoadLibraryW`, implemented via lower-level NTDLL functions like `LdrLoadDll`) to map the DLL into its own process address space. Following successful loading, LSASS calls specific initialization functions exported by the DLL, such as `SpLsaModeInitialize` for SSPs, `LsaApInitializePackage` for APs, or `InitializeChangeNotify` for notification packages. This initialization call triggers the execution of the code within the DLL, including any malicious payload implanted by the adversary.
 
+
+```mermaid
+graph TD
+    A["<span style='color:#333;'>System Boot or LSASS Start</span>"] --> B("<span style='color:#333;'>LSASS.exe</span>");
+    B --> C{"<span style='color:#333;'>LSA Registry Key</span>"};
+    subgraph Registry_Check
+        C -- Reads --> D["<span style='color:#333;'>Security Packages Key</span>"];
+        C -- Reads --> E["<span style='color:#333;'>Auth Packages Key</span>"];
+        C -- Reads --> F["<span style='color:#333;'>Notification Packages Key</span>"];
+        C -- Reads --> G["<span style='color:#333;'>Providers Key</span>"];
+    end
+    D -- Gets_DLL_Names --> B;
+    E -- Gets_DLL_Names --> B;
+    F -- Gets_DLL_Names --> B;
+    G -- Gets_DLL_Names --> B;
+    B -- Searches_Path --> H["<span style='color:#333;'>System32 Folder</span>"];
+    H -- Finds --> I("<span style='color:#333;'>Legitimate DLLs</span>");
+    I -- Loads_DLLs --> B;
+    B -- Calls_Init_Funcs --> J["<span style='color:#333;'>DLL Code Executes</span>"];
+
+    style C fill:#a0c4ff,stroke:#333,stroke-width:2px
+    style H fill:#ffcc99,stroke:#333,stroke-width:1px
+    style I fill:#ffcc99,stroke:#333,stroke-width:1px
+    style B fill:#b0d9b1,stroke:#333,stroke-width:2px
+```
+ > **Figure 1: Legitimate LSA Package Loading Process at Boot**
+
+
+
+```mermaid
+graph TD
+    subgraph Attacker_Actions
+        AA["<span style='color:#333;'>Attacker</span>"] -- Places --> MAL_DLL("<span style='color:#333;'>Malicious DLL in System32</span>");
+        AA -- Modifies --> REG{"<span style='color:#333;'>LSA Registry Key</span>"};
+        REG -- Adds_Entry --> REG_VAL("<span style='color:#333;'>[..., 'MaliciousName']</span>");
+    end
+
+    subgraph Subsequent_LSASS_Behavior
+        START["<span style='color:#333;'>System Boot or LSASS Restart</span>"] --> LSASS("<span style='color:#333;'>LSASS.exe</span>");
+        LSASS -- Reads_Modified_Key --> REG;
+        REG -- Gets_Malicious_Name --> LSASS;
+        LSASS -- Searches_Path --> SYS32["<span style='color:#333;'>System32 Folder</span>"];
+        SYS32 -- Finds_Mal_DLL --> MAL_DLL;
+        MAL_DLL -- Loads_Mal_DLL --> LSASS;
+        LSASS -- Calls_Init_Func --> PAYLOAD["Malicious Payload Executes (SYSTEM)"];
+    end
+
+    style AA fill:#ff9f1c,stroke:#333,stroke-width:2px
+    style REG fill:#a0c4ff,stroke:#333,stroke-width:2px
+    style MAL_DLL fill:#ff9f1c,stroke:#333,stroke-width:1px
+    style LSASS fill:#b0d9b1,stroke:#333,stroke-width:2px
+    style PAYLOAD fill:#d90429,stroke:#000,stroke-width:2px,color:#fff
+    style SYS32 fill:#ffcc99,stroke:#333,stroke-width:1px
+    style REG_VAL fill:#a0c4ff,stroke:#333,stroke-width:1px
+```                    
+> **Figure 2: Malicious DLL Loading for Persistence (Registry Method)**
+
 Modifying the sensitive LSA registry keys under `HKLM\SYSTEM\CurrentControlSet\Control\Lsa` requires elevated privileges, typically Administrator or SYSTEM, due to the default restrictive Access Control Lists (ACLs) protecting them. Similarly, writing the malicious DLL to the standard target location, `%SystemRoot%\System32`, usually demands the same level of privilege. Adversaries must overcome these permission hurdles, often after initially compromising an administrative account or escalating privileges through other means.
 
 Once an adversary successfully registers and loads their malicious DLL into `lsass.exe`, the consequences are severe. The malicious code executes with the full rights of the `SYSTEM` account. It has intimate access to LSASS's internal memory space and functions. This allows for various malicious activities: implementing hooks (e.g., via inline function patching or Import Address Table modification) on authentication functions like `LsaLogonUser` or `Msv1_0SubAuthenticationRoutine` to intercept credentials in transit; directly scraping LSASS memory for stored credential material (targeting known structures like `KIWI_LOGON_SESSION` or `MSV1_0_PRIMARY_CREDENTIAL` containing hashes, tickets, or plaintext passwords if WDigest is enabled); potentially manipulating access tokens or security contexts; or simply using the trusted, highly privileged LSASS process as a stealthy platform for executing other commands, interacting with Command and Control (C2) servers, or facilitating lateral movement.
 
 Distinct from the registry-based persistence methods, Windows also provides the `AddSecurityPackage` API (exported by `Secur32.dll`). This function allows a sufficiently privileged process (Administrator/SYSTEM) to dynamically instruct a *running* LSASS instance to load a specified SSP DLL immediately, using its full path. This provides instantaneous code execution within LSASS but does *not* involve registry modification and therefore does not persist across system reboots or LSASS restarts, making it primarily a technique for immediate credential access or temporary privileged execution rather than long-term persistence.
 
+```mermaid
+graph TD
+    subgraph Attacker_Actions
+        AA["<span style='color:#333;'>Attacker</span>"] -- Places_DLL --> MAL_DLL("<span style='color:#333;'>Malicious DLL (Any Location)</span>");
+        AA -- Spawns --> ATT_PROC["<span style='color:#333;'>Attacker Process</span>"];
+        ATT_PROC -- Calls_API --> API("<span style='color:#333;'>AddSecurityPackage API</span>");
+        API -- Provides_DLL_Path --> API;
+    end
+
+    subgraph Immediate_LSASS_Behavior
+        LSASS_RUNNING("<span style='color:#333;'>Running LSASS.exe</span>")
+        API -- Instructs_LSASS --> LSASS_RUNNING;
+        MAL_DLL -- Loads_DLL_By_Path --> LSASS_RUNNING;
+        LSASS_RUNNING -- Calls_Init_Func --> PAYLOAD["Malicious Payload Executes (SYSTEM)"];
+    end
+
+    subgraph Result
+        NOTE(("<span style='color:#333;'>Immediate Execution<br/>No Registry Change<br/>No Persistence</span>"))
+        PAYLOAD --> NOTE;
+    end
+
+    style AA fill:#ff9f1c,stroke:#333,stroke-width:2px
+    style ATT_PROC fill:#ff9f1c,stroke:#333,stroke-width:1px
+    style MAL_DLL fill:#ff9f1c,stroke:#333,stroke-width:1px
+    style LSASS_RUNNING fill:#b0d9b1,stroke:#333,stroke-width:2px
+    style PAYLOAD fill:#d90429,stroke:#000,stroke-width:2px,color:#fff
+    style NOTE fill:#d3d3d3,stroke:#333,stroke-width:1px
+    style API fill:#add8e6,stroke:#333,stroke-width:1px
+```
+> **Figure 3: Malicious DLL Loading for Immediate Execution (API Method)**
 
 
 ## Procedures
