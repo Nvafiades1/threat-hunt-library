@@ -31,3 +31,24 @@ database('Endpoint').CrowdStrikeFDR
           IsWeirdExt
 | order by TimeGenerated desc
 | take 200
+
+
+
+// --- Synthetic LSASS module-load row ----------------------------------
+let Synthetic = datatable(
+        TimeGenerated: datetime,
+        TargetImageFileName: string,
+        ImageFileName: string,
+        ModuleLoadTelemetryClassification: string,
+        DeviceId: string,
+        event_simpleName: string
+    )
+[
+    datetime(2025-05-22T15:00:00Z),
+    @"c:\windows\system32\lsass.exe",
+    @"c:\temp\evil.rbf",
+    "0x11",                      // FIRST_LOAD + UNUSUAL_EXTENSION
+    "SYNTH-HOST-01",
+    "ClassifiedModuleLoad"
+];
+
