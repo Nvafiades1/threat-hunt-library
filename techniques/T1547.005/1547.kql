@@ -1,25 +1,25 @@
 // ===== PARAMETERS =====
-let lookBack          = 1d;     // LSASS load window
-let correlationWindow = 5m;     // how far back to look for renames
+let lookBack          = 1d;      // how far back to hunt
+let correlationWindow = 5m;      // rename must precede load by <= 5 min
 let LsaLoadEvt        = "ClassifiedModuleLoad";
 let FileRenameEvt     = "FileRenameInfo";
+let RbfRegex          = @".*\.rbf$";   // <= case-insensitive by default
 
-// ===== LSASS MODULE LOADS (LEFT SIDE) =====
+// ===== LSASS MODULE LOADS – LEFT SIDE =====
 let ModuleLoads =
-    YourActualTable                          // <-- replace with the real table, nothing else
+    YourActualTable
     | where TimeGenerated >= ago(lookBack)
           and event_simpleName == LsaLoadEvt
+    | where tolower(TargetImageFileName) endswith @"\system32\lsass.exe"
     | extend
-        ProcessPath      = tolower(TargetImageFileName),   // real column names
         LoadedModulePath = tolower(ImageFileName),
-        AgentId          = tostring(Aid),                  // or SensorId / device_id
+        AgentId          = tostring(Aid),       // or SensorId / device_id in your schema
         LoadTime         = TimeGenerated
-    | where ProcessPath endswith @"\system32\lsass.exe"
+    | where LoadedModulePath matches regex RbfRegex   // only *.rbf loads
     | project AgentId, LoadedModulePath, LoadTime
 ;
-// **semicolon ends the let – required**
 
-// ===== FILE RENAMES (RIGHT SIDE) =====
+// ===== FILE RENAMES – RIGHT SIDE =====
 let FileRenames =
     YourActualTable
     | where TimeGenerated >= ago(lookBack + correlationWindow)
@@ -29,24 +29,25 @@ let FileRenames =
         OriginalName = SourceFileName,            // “before” name
         AgentId      = tostring(Aid),
         RenameTime   = TimeGenerated
-    | summarize arg_min(RenameTime, OriginalName) /* keep earliest rename per target */
+    | where TargetName matches regex RbfRegex     // we only care about renames *into* .rbf
+    | summarize arg_min(RenameTime, OriginalName) // keep earliest rename per file/agent
         by AgentId, TargetName
     | project AgentId,
-              LoadedModulePath = TargetName,      // align join key
+              LoadedModulePath = TargetName,      // align join key for join()
               OriginalName,
               RenameTime
 ;
 
-// ===== CORRELATION =====
+// ===== CORRELATE & OUTPUT =====
 ModuleLoads
 | join kind=leftouter FileRenames on AgentId, LoadedModulePath
-| where isnull(RenameTime)                                   // no rename found
+| where isnull(RenameTime)                                   // no rename (file already .rbf)
       or (RenameTime <= LoadTime
-          and LoadTime - RenameTime <= correlationWindow)    // rename within window
+          and LoadTime - RenameTime <= correlationWindow)    // rename shortly before load
 | project
     LsassLoadTime              = LoadTime,
-    LoadedModulePath,
-    RenameTime,
+    LoadedModulePath,                        // *.rbf path actually loaded by LSASS
+    RenameTime,                              // when it was rolled back
     OriginalModuleNameIfRenamed = OriginalName,
     Agent_ID                   = AgentId
-| take 50
+| take 100
