@@ -1,84 +1,84 @@
-// ===================================================================
-//  LSASS MODULE-LOAD DETECTION  –  RBF HEURISTICS  (NO SIGN CHECK)
-// ===================================================================
+// ====================================================================
+//  LSASS MODULE-LOAD HUNT  –  RBF HEURISTICS (NO SIGNATURE CHECKS)
+// ====================================================================
 
-// ------------------- STATIC CONSTANTS -------------------
-let LsassImagePathSuffix  = @"\system32\lsass.exe";
-let System32PathPrefix    = @"c:\windows\system32\";
-let SysWow64PathPrefix    = @"c:\windows\syswow64\";
-let ConfigMsiPathFragment = @"\config.msi\";
-let HighRiskDLLPaths = dynamic([
-        @"c:\users\", @"c:\programdata\", @"c:\windows\temp\",
-        @"c:\temp\",  @"c:\$recycle.bin\", @"c:\perflogs\"
-]);
+// ---------- CONSTANTS ----------
+let LsassPathSuffix   = @"\system32\lsass.exe";
+let System32Prefix    = @"c:\windows\system32\";
+let SysWow64Prefix    = @"c:\windows\syswow64\";
+let ConfigMsiFragment = @"\config.msi\";
+let lookBack          = 30d;
+let FreshWindow       = 2d;                                 // “new” file
+let GuidRx            = @"\{[0-9a-f\-]{36}\}\.rbf$";        // MSI-style GUID
 
-// ------------------- TUNABLES -------------------
-let lookBack    = 30d;
-let FreshWindow = 2d;                       // “new file” cutoff
-let GuidRx      = @"\{[0-9a-f\-]{36}\}\.rbf$";   // MSI-style GUID
-
-// ------------------- QUERY -------------------
+// ---------- QUERY ----------
 database('Endpoint').CrowdStrikeFDR
 | where event_simpleName == "ClassifiedModuleLoad"
-      and TimeGenerated >= ago(lookBack)
-      and event_platform == "Win"
+      and TimeGenerated  >= ago(lookBack)
 
-// ---------- LSASS parent filtering ----------
-| extend LoadingProcess_Fullpath = tolower(TargetImageFileName)
-| where LoadingProcess_Fullpath endswith LsassImagePathSuffix
+// ----- parent = lsass.exe -----
+| extend ParentPath  = tolower(TargetImageFileName)
+| where ParentPath endswith LsassPathSuffix
+
+// ----- basic fields -----
 | extend
-    Timestamp              = TimeGenerated,
-    Hostname               = tostring(ComputerName),
-    AgentID                = tostring(aid),
-    LoadedModule_Fullpath  = tolower(ImageFileName),
-    _pathComponents        = parse_path(LoadedModule_Fullpath),
-    LoadedModule_NameOnly  = tostring(_pathComponents.Filename),
-    _directoryOfLoadedModule = trim_end(@"\", tolower(tostring(_pathComponents.DirectoryPath)))
+      Timestamp             = TimeGenerated,
+      Hostname              = tostring(ComputerName),
+      AgentID               = tostring(aid),
+      LoadedModulePath      = tolower(ImageFileName),
+      DirPath               = tostring(parse_path(ImageFileName).DirectoryPath),
+      FileNameOnly          = tostring(parse_path(ImageFileName).Filename)
 
-// ---------- BASIC CONTEXT FLAGS ----------
+// ----- context flags -----
 | extend
-    IsLoadedFromSystem32 = _directoryOfLoadedModule startswith System32PathPrefix,
-    IsLoadedFromSysWow64 = _directoryOfLoadedModule endswith SysWow64PathPrefix,
-    IsLoadedFromHighRiskPath = LoadedModule_Fullpath startswith_any(HighRiskDLLPaths),
-    IsKnownLegitNonSystemPath = (_directoryOfLoadedModule contains @"\program files\citrix\" or
-                                 _directoryOfLoadedModule contains @"\program files (x86)\citrix\" or
-                                 _directoryOfLoadedModule contains @"\windows\winsxs\")
+      IsSystem32   = DirPath startswith System32Prefix,
+      IsSysWow64   = DirPath startswith SysWow64Prefix,
+      IsHighRisk   = LoadedModulePath startswith @"c:\users\"          or
+                     LoadedModulePath startswith @"c:\programdata\"     or
+                     LoadedModulePath startswith @"c:\windows\temp\"    or
+                     LoadedModulePath startswith @"c:\temp\"            or
+                     LoadedModulePath startswith @"c:\$recycle.bin\"    or
+                     LoadedModulePath startswith @"c:\perflogs\",
+      IsLegitNonSystem = DirPath contains @"\program files\citrix\"      or
+                         DirPath contains @"\program files (x86)\citrix\" or
+                         DirPath contains @"\windows\winsxs\"
 
-// ---------- RBF-focused heuristics (no signature checks) ----------
+// ----- RBF heuristics -----
 | extend
-    IsRbf            = LoadedModule_Fullpath endswith ".rbf",
-    IsConfigMsiPath  = LoadedModule_Fullpath contains ConfigMsiPathFragment,
+      IsRbf            = LoadedModulePath endswith ".rbf",
+      IsConfigMsi      = LoadedModulePath contains ConfigMsiFragment,
+      // FileCreateTime may be null on some rows – handle safely
+      FileAgeDays      = iff(isnull(FileCreateTime),
+                             real(99999),                                   // treat as “old”
+                             datetime_diff('second', Timestamp, FileCreateTime) / 86400.0 ),
+      IsFresh          = FileAgeDays <= todouble(FreshWindow)/1d,
+      IsOddName        = ismatch(LoadedModulePath, GuidRx) == 0,
 
-    // file-age check  (requires FileCreateTime in your schema; swap if different)
-    FileAgeDays      = todouble(datetime_diff('second', Timestamp, FileCreateTime)) / 86400.0,
-    IsFresh          = FileAgeDays <= todouble(FreshWindow)/1d,
+      FlagRbfForSOC    = IsRbf and IsConfigMsi and (IsFresh or IsOddName)
 
-    // GUID-pattern check
-    IsOddName        = ismatch(LoadedModule_Fullpath, GuidRx) == 0,
-
-    // combined RBF flag
-    FlagRbfForSOC    = IsRbf and IsConfigMsiPath and (IsFresh or IsOddName)
-
-// ---------- FINAL REASON ----------
+// ----- verdict -----
 | extend SuspiciousReason = case(
-        FlagRbfForSOC,                          "LSASS loaded NEW or oddly-named .RBF from Config.Msi",
-        IsLoadedFromHighRiskPath,               "LSASS loaded module from High-risk path",
-        IsLoadedFromSysWow64,                   "LSASS (64-bit) loaded module from SysWOW64",
-        not(IsLoadedFromSystem32) and not(IsLoadedFromSysWow64) and not(IsKnownLegitNonSystemPath),
-                                                "LoadedFromNonSystem32OrWow64",
-        ""
-    )
-| where isnotempty(SuspiciousReason)            // comment this line to baseline everything
+          FlagRbfForSOC,                     "NEW / odd-name .RBF in Config.Msi",
+          IsHighRisk,                        "Module loaded from high-risk path",
+          IsSysWow64,                        "64-bit LSASS loaded from SysWOW64",
+          (not IsSystem32 and not IsSysWow64 and not IsLegitNonSystem),
+                                             "Module outside System32 & not whitelisted",
+          ""
+      )
+
+// **COMMENT THIS LINE OUT** to see every LSASS load
+| where isnotempty(SuspiciousReason)
+
+// ----- output -----
 | project
-    Timestamp,
-    Hostname,
-    AgentID,
-    LoadedModule_Fullpath,
-    LoadedModule_NameOnly,
-    SuspiciousReason,
-    // debug flags — drop once you’re satisfied
-    IsRbf, IsConfigMsiPath, IsFresh, IsOddName,
-    IsLoadedFromSystem32, IsLoadedFromSysWow64,
-    IsLoadedFromHighRiskPath, IsKnownLegitNonSystemPath
+      Timestamp,
+      Hostname,
+      AgentID,
+      LoadedModulePath,
+      FileNameOnly,
+      SuspiciousReason,
+      // debug – remove later if chatty
+      IsRbf, IsConfigMsi, IsFresh, IsOddName,
+      IsHighRisk, IsSysWow64
 | order by Timestamp desc
 | take 200
