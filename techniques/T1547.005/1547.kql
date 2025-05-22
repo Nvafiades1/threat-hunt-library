@@ -3,16 +3,17 @@ database('Endpoint').CrowdStrikeFDR
 | extend parent=tolower(TargetImageFileName)
 | where parent endswith @"\system32\lsass.exe"
 | extend path=tolower(ImageFileName)
-| extend dir=extract(@"^(.*)\\[^\\]+$",1,path)
-| extend fs=tostring(ModuleLoadTelemetryClassification)
-| extend fs=iff(isnull(fs),"0",iff(fs startswith "0x",substring(fs,2),fs))
-| extend flags=iif(isnull(toint(fs)),0,toint(fs))
-| extend first=flags%2==1 , weird=(flags/16)%2==1
+| extend dir = extract(@"^(.*)\\[^\\]+$",1,path)
+| extend raw = tostring(ModuleLoadTelemetryClassification)
+| extend raw = iff(isnull(raw),"0",iff(raw startswith "0x",substring(raw,2),raw))
+| extend flg = toint(raw)
+| extend firstLoad = (flg % 2) == 1,
+         weirdExt  = ((flg / 16) % 2) == 1
 | extend syswow64 = dir startswith @"c:\windows\syswow64\"
-| extend goodDir = (dir startswith @"c:\windows\system32\" or dir startswith @"c:\windows\winsxs\" or dir contains @"\program files\")
-| extend flag = syswow64 or ( not(goodDir) and (first or weird) )
-| where flag
+| extend goodDir  = dir startswith @"c:\windows\system32\" or dir startswith @"c:\windows\winsxs\" or dir contains @"\program files\"
+| extend flagSuspicious = syswow64 or ((not(goodDir)) and (firstLoad or weirdExt))
+| where flagSuspicious
 | extend reason = iff(syswow64,"SysWOW64 module load","Non-standard module load")
-| project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,reason,first,weird
+| project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,reason,firstLoad,weirdExt
 | order by TimeGenerated desc
 | take 200
