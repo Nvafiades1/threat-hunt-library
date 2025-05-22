@@ -1,82 +1,38 @@
-let FdrTable = "[YourActualDatabase.YourActualTable]";
-let lookBack = 1d;
-let LsaModuleLoadEventName = "ClassifiedModuleLoad";
-let FileRenameEventName = "FileRenameInfo";
-let LsassImagePathSuffix = @"\\system32\\lsass.exe";
-let System32PathPrefix = @"c:\\windows\\system32\\";
-let SysWow64PathPrefix = @"c:\\windows\\syswow64\\";
-let ConfigMsiPathFragment = @"\\config.msi\\";
-let HighRiskDLLPaths_Manual = dynamic([
-    @"c:\\users\\",
-    @"c:\\programdata\\",
-    @"c:\\windows\\temp\\",
-    @"c:\\temp\\",
-    @"c:\\$recycle.bin\\",
-    @"c:\\perflogs\\"
-]);
-let RenameCorrelationWindow = 5m;
-let SuspiciousLsassLoads = FdrTable
-    | where TimeGenerated >= ago(lookBack)
-    | where event_simpleName == LsaModuleLoadEventName
-    | extend LoadingProcess_FullPath = tolower(tostring(todynamic([TargetImageFileName_ActualField])))
-    | where LoadingProcess_FullPath endswith LsassImagePathSuffix
-    | extend
-        Timestamp = TimeGenerated,
-        HostName = todynamic(ComputerName),
-        AgentId = todynamic(aid),
-        LoadedModule_FullPath = tolower(tostring(todynamic(ImageFileName))),
-        LoadedModule_NameOnly = coalesce(tolower(tostring(todynamic(FileName))), extract(@"[^\\\\]+$", 0, LoadedModule_FullPath))
-    | extend
-        IsLoadedFromSystem32 = LoadedModule_FullPath startswith System32PathPrefix,
-        IsLoadedFromSysWow64 = LoadedModule_FullPath startswith SysWow64PathPrefix,
-        IsLoadedFromHighRiskPath = (
-            LoadedModule_FullPath startswith @"c:\\users\\" or
-            LoadedModule_FullPath startswith @"c:\\programdata\\" or
-            LoadedModule_FullPath startswith @"c:\\windows\\temp\\" or
-            LoadedModule_FullPath startswith @"c:\\temp\\" or
-            LoadedModule_FullPath startswith @"c:\\$recycle.bin\\" or
-            LoadedModule_FullPath startswith @"c:\\perflogs\\"
-        ),
-        IsLoadedFromConfigMsi = LoadedModule_FullPath contains ConfigMsiPathFragment and LoadedModule_FullPath endswith ".rbf",
-        SuspicionReason = case(
-            IsLoadedFromHighRiskPath, "LSASS loaded module from High-Risk Path",
-            IsLoadedFromSysWow64, "LSASS (64-bit) loaded module from SysWOW64 (Highly Suspicious)",
-            IsLoadedFromConfigMsi, "LSASS loaded .rbf module from Config.msi Path",
-            not IsLoadedFromSystem32 and not IsLoadedFromSysWow64 and not IsLoadedFromHighRiskPath and not IsLoadedFromConfigMsi, "LSASS loaded module from Non-Standard Path (not System32)",
-            ""
-        )
-    | where isnotempty(SuspicionReason)
-    | project
-        Timestamp, DetectionType="Suspicious LSASS Module Load (T1547.005 - Path Based)",
-        HostName, AgentId,
-        LoadingProcess_FullPath, LoadedModule_NameOnly, LoadedModule_FullPath,
-        SuspicionReason, IsLoadedFromSystem32, IsLoadedFromSysWow64, IsLoadedFromHighRiskPath, IsLoadedFromConfigMsi;
-let RelevantFileRenames = FdrTable
-    | where TimeGenerated >= ago(lookBack + RenameCorrelationWindow)
-    | where event_simpleName == FileRenameEventName
-    | extend
-        RenameTimestamp = todynamic(ContextTimeStamp),
-        AgentId_Rename = todynamic(aid),
-        RenamingProcessUPID = todynamic(ContextProcessId),
-        OriginalName = todynamic(SourceFileName),
-        RenamedToName_FullPath = tolower(tostring(todynamic(TargetFileName)))
-    | where RenamedToName_FullPath contains ConfigMsiPathFragment and RenamedToName_FullPath endswith ".rbf"
-    | project RenameTimestamp, AgentId_Rename, RenamingProcessUPID, OriginalName, RenamedToName_FullPath
-    | distinct RenamedToName_FullPath, AgentId_Rename, OriginalName, RenamingProcessUPID, RenameTimestamp;
-SuspiciousLsassLoads
-| lookup kind=leftouter (
-    RelevantFileRenames
-) on $left.AgentId == $right.AgentId_Rename, $left.LoadedModule_FullPath == $right.RenamedToName_FullPath
-    where isnull($right.RenameTimestamp) or
-          ($right.RenameTimestamp <= $left.Timestamp and $left.Timestamp - $right.RenameTimestamp <= RenameCorrelationWindow)
-| extend
-    CorrelatedRename_OriginalName = OriginalName,
-    CorrelatedRename_ProcessUPID = RenamingProcessUPID,
-    CorrelatedRename_Timestamp = RenameTimestamp,
-    SuspicionReason = iff(IsLoadedFromConfigMsi and isnotempty(CorrelatedRename_OriginalName),
-        strcat(SuspicionReason, ". Renamed from: '", CorrelatedRename_OriginalName, "' by UPID: ", CorrelatedRename_ProcessUPID),
-        SuspicionReason
-    )
-| project-away
-    AgentId_Rename, OriginalName, RenamingProcessUPID, RenameTimestamp, RenamedToName_FullPath
-| order by Timestamp desc
+// --- Configuration for "Super Small" Join Test ---
+let FdrTable_Test = "[YourActualDataTable]"; // Your main table name
+let LsaModuleLoadEvent_Test = "ClassifiedModuleLoad"; // Your event name for module loads
+let FileRenameEvent_Test = "FileRenameInfo";       // Your event name for file renames
+let lookBack_Test = 1d;                            // Look back period (e.g., 1 day)
+let correlationWindow_Test = 5m;                   // Correlate renames within 5 minutes before the load
+
+FdrTable_Test
+| where TimeGenerated >= ago(lookBack_Test) and event_simpleName == LsaModuleLoadEvent_Test
+// Define fields for LSASS Loads (left side of lookup)
+| extend ProcessPath_L = tolower(tostring(coalesce([TargetImageFileName_ActualField], ""))), // Placeholder
+         LoadedModulePath_L = tolower(tostring(coalesce([ImageFileName_ActualField], ""))),     // Placeholder
+         AgentId_L = todynamic([SensorId_or_Aid_ActualField]),                             // Placeholder
+         Timestamp_L = TimeGenerated
+| where ProcessPath_L endswith @"\\system32\\lsass.exe"
+| project Timestamp_L, AgentId_L, LoadedModulePath_L // Select only needed fields for left side
+| lookup kind=leftouter ( // Subquery for File Renames (right side of lookup)
+    FdrTable_Test
+    | where TimeGenerated >= ago(lookBack_Test + correlationWindow_Test) and event_simpleName == FileRenameEvent_Test
+    | extend TargetName_R = tolower(tostring(coalesce([FileRename_TargetFileName_ActualField], ""))), // Placeholder
+             OriginalName_R = todynamic([FileRename_SourceFileName_ActualField]),                    // Placeholder
+             AgentId_R = todynamic([FileRename_SensorId_ActualField]),                               // Placeholder
+             Timestamp_R = todatetime(todynamic([FileRename_ContextTimeStamp_ActualField]))          // Placeholder
+    | project Timestamp_R, AgentId_R, OriginalName_R, TargetName_R
+    | distinct TargetName_R, AgentId_R, OriginalName_R, Timestamp_R // Important for lookup performance and correctness
+) on 
+    $left.AgentId_L == $right.AgentId_R and // Join on Agent ID
+    $left.LoadedModulePath_L == $right.TargetName_R // Join if loaded module path was the rename target path
+// Filter based on time window
+| where isnull(Timestamp_R) or (Timestamp_R <= Timestamp_L and Timestamp_L - Timestamp_R <= correlationWindow_Test)
+// Project final results
+| project
+    LsassLoadTime = Timestamp_L,
+    LoadedModulePath = LoadedModulePath_L,
+    RenameTime = Timestamp_R,
+    OriginalModuleNameIfRenamed = OriginalName_R,
+    Agent_ID = AgentId_L
+| take 50 // Show a small sample of results
