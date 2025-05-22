@@ -1,28 +1,16 @@
 database('Endpoint').CrowdStrikeFDR
-| where event_simpleName == "ClassifiedModuleLoad" and TimeGenerated >= ago(30d)
-| extend ParentPath = tolower(TargetImageFileName)
-| where ParentPath endswith @"\system32\lsass.exe"
-| extend ModulePath = tolower(ImageFileName)
-// ---- clean-cast the telemetry field ----
-| extend Raw = tostring(ModuleLoadTelemetryClassification)
-| extend Raw = iff(isnull(Raw) or Raw == "", "0", iff(Raw startswith "0x", substring(Raw, 2), Raw))
-| extend Flags = toint(Raw)
-// ---- bit heuristics ----
-| extend IsFirstLoad = (Flags % 2) == 1,
-         IsWeirdExt  = ((Flags / 16) % 2) == 1
-// ---- directory allow-list ----
-| extend IsLegitDir = ModulePath startswith @"c:\windows\system32\" or
-                      ModulePath startswith @"c:\windows\syswow64\" or
-                      ModulePath contains  @"\windows\winsxs\"
-// ---- keep only suspicious loads ----
-| where not(IsLegitDir) and (IsFirstLoad or IsWeirdExt)
-// ---- output ----
-| project TimeGenerated,
-          DeviceId,
-          TargetImageFileName,
-          ImageFileName,
-          Reason = "Non-standard directory + first-load/odd-extension",
-          IsFirstLoad,
-          IsWeirdExt
+| where event_simpleName=="ClassifiedModuleLoad" and TimeGenerated>=ago(30d)
+| extend parent=tolower(TargetImageFileName)
+| where parent endswith @"\system32\lsass.exe"
+| extend ModulePath=tolower(ImageFileName)
+| extend raw=tostring(ModuleLoadTelemetryClassification)
+| extend raw=iff(isnull(raw) or raw=="","0",iff(raw startswith "0x",substring(raw,2),raw))
+| extend flags=toint(raw)
+| extend First=(flags%2)==1 , Weird=((flags/16)%2)==1
+| extend Legit = ModulePath contains @"\windows\system32\" or ModulePath contains @"\windows\syswow64\" or ModulePath contains @"\windows\winsxs\"
+| where not(Legit) and (First or Weird)
+| project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,
+         Reason="Non-standard directory + first-load/odd-extension",
+         First,Weird
 | order by TimeGenerated desc
 | take 200
