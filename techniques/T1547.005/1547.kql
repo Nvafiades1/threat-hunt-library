@@ -1,18 +1,19 @@
+let LOOKBACK=30d, LSASS_SFX=@"\system32\lsass.exe";
 database('Endpoint').CrowdStrikeFDR
-| where event_simpleName=="ClassifiedModuleLoad" and TimeGenerated>=ago(30d)
-| extend parent=tolower(TargetImageFileName)
-| where parent endswith @"\system32\lsass.exe"
-| extend path=tolower(ImageFileName)
-| extend dir=extract(@"^(.*)\\[^\\]+$",1,path)
-| extend fs=tostring(ModuleLoadTelemetryClassification)
-| extend fs=iff(isnull(fs),"0",iff(fs startswith "0x",substring(fs,2),fs))
-| extend f=iif(isnull(toint(fs)),0,toint(fs))
-| extend first=f%2==1, weird=(f/16)%2==1
-| extend goodDir=dir startswith @"c:\windows\system32\" or dir startswith @"c:\windows\winsxs\" or dir contains @"\program files\"
-| extend syswow64=dir startswith @"c:\windows\syswow64\"
-| extend flag=(not goodDir and (first or weird)) or syswow64
-| extend reason=iff(flag,iff(syswow64,"SysWOW64 module load","Non-standard module load"),"")
-| where reason!=""
-| project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,reason,first,weird
+| where event_simpleName=="ClassifiedModuleLoad" and TimeGenerated>=ago(LOOKBACK)
+| extend ParentPath=tolower(TargetImageFileName)
+| where ParentPath endswith LSASS_SFX
+| extend LoadedPath=tolower(ImageFileName)
+| extend DirPath=extract(@"^(.*)\\[^\\]+$",1,LoadedPath)
+| extend _mlc=tostring(ModuleLoadTelemetryClassification)
+| extend _mlc=iff(_mlc startswith "0x",substring(_mlc,2),_mlc)
+| extend Flags=iif(isnull(toint(_mlc)),0,toint(_mlc))
+| extend FirstLoad=Flags%2==1, WeirdExt=(Flags/16)%2==1
+| extend InSysWow64=DirPath startswith @"c:\windows\syswow64\"
+| extend GoodDir=DirPath startswith @"c:\windows\system32\" or DirPath startswith @"c:\windows\winsxs\" or DirPath contains @"\program files\"
+| extend FlagSuspicious=(InSysWow64) or (not GoodDir and (FirstLoad or WeirdExt))
+| where FlagSuspicious
+| extend Reason=iff(InSysWow64,"SysWOW64 module load","Non-standard module load")
+| project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,Reason,FirstLoad,WeirdExt
 | order by TimeGenerated desc
 | take 200
