@@ -1,16 +1,31 @@
 database('Endpoint').CrowdStrikeFDR
-| where event_simpleName=="ClassifiedModuleLoad" and TimeGenerated>=ago(30d)
-| extend parent=tolower(TargetImageFileName)
-| where parent endswith @"\system32\lsass.exe"
-| extend ModulePath=tolower(ImageFileName)
-| extend raw=tostring(ModuleLoadTelemetryClassification)
-| extend raw=iff(isnull(raw) or raw=="","0",iff(raw startswith "0x",substring(raw,2),raw))
-| extend flags=toint(raw)
-| extend First=(flags%2)==1 , Weird=((flags/16)%2)==1
-| extend Legit = ModulePath contains @"\windows\system32\" or ModulePath contains @"\windows\syswow64\" or ModulePath contains @"\windows\winsxs\"
-| where not(Legit) and (First or Weird)
-| project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,
-         Reason="Non-standard directory + first-load/odd-extension",
-         First,Weird
+| where event_simpleName == "ClassifiedModuleLoad"
+      and TimeGenerated  >= ago(30d)
+| extend ParentPath = tolower(tostring(TargetImageFileName))
+| where ParentPath endswith @"\system32\lsass.exe"
+| extend ModulePath = tolower(tostring(ImageFileName))
+// --- clean-cast telemetry field ---
+| extend TelemetryRaw = tostring(ModuleLoadTelemetryClassification)
+| extend TelemetryRaw = iff(isnull(TelemetryRaw) or TelemetryRaw == "","0",
+                            iff(TelemetryRaw startswith "0x", substring(TelemetryRaw,2), TelemetryRaw))
+| extend FlagVal = toint(TelemetryRaw)
+// --- bit heuristics (0x1 = FIRST_LOAD, 0x10 = UNUSUAL_EXTENSION) ---
+| extend IsFirstLoad = (FlagVal % 2) == 1,
+         IsWeirdExt  = ((FlagVal / 16) % 2) == 1
+// --- directory allow-list ---
+| extend IsLegitDir =
+         ModulePath contains @"\windows\system32\" or
+         ModulePath contains @"\windows\syswow64\" or
+         ModulePath contains @"\windows\winsxs\"
+// --- final filter ---
+| where not(IsLegitDir) and (IsFirstLoad or IsWeirdExt)
+// --- output ---
+| project TimeGenerated,
+          DeviceId,
+          TargetImageFileName,
+          ImageFileName,
+          Reason = "Non-standard directory + first-load/odd-extension",
+          IsFirstLoad,
+          IsWeirdExt
 | order by TimeGenerated desc
 | take 200
