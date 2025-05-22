@@ -1,44 +1,49 @@
-// --- Configuration for "Super Small" Join Test - Revised to address todynamic() error ---
-let FdrTable_Test = "[YourActualDataTable]"; // Your main table name
-let LsaModuleLoadEvent_Test = "ClassifiedModuleLoad"; // Your event name for module loads
-let FileRenameEvent_Test = "FileRenameInfo";       // Your event name for file renames
-let lookBack_Test = 1d;                            // Look back period (e.g., 1 day)
-let correlationWindow_Test = 5m;                   // Correlate renames within 5 minutes before the load
+// ---------- Parameters ----------
+let lookBack           = 1d;      // search window for the load
+let correlationWindow  = 5m;      // how far back to look for a rename
+let LsaModuleLoadEvent = "ClassifiedModuleLoad";
+let FileRenameEvent    = "FileRenameInfo";
 
-FdrTable_Test
-| where TimeGenerated >= ago(lookBack_Test) and event_simpleName == LsaModuleLoadEvent_Test
-// Define fields for LSASS Loads (left side of lookup)
-| extend 
-    ProcessPath_L = tolower(tostring(coalesce([TargetImageFileName_ActualField], ""))), 
-    LoadedModulePath_L = tolower(tostring(coalesce([ImageFileName_ActualField], ""))),     
-    // Assuming AgentId is string-like. Removed todynamic().
-    AgentId_L = tostring(coalesce([SensorId_or_Aid_ActualField], "")),                       
-    Timestamp_L = TimeGenerated
-| where ProcessPath_L endswith @"\\system32\\lsass.exe"
-| project Timestamp_L, AgentId_L, LoadedModulePath_L // Select only needed fields for left side
-| lookup kind=leftouter ( // Subquery for File Renames (right side of lookup)
-    FdrTable_Test
-    | where TimeGenerated >= ago(lookBack_Test + correlationWindow_Test) and event_simpleName == FileRenameEvent_Test
-    | extend 
-        TargetName_R = tolower(tostring(coalesce([FileRename_TargetFileName_ActualField], ""))), 
-        // Assuming OriginalName is string-like. Removed todynamic().
-        OriginalName_R = tostring(coalesce([FileRename_SourceFileName_ActualField], "")),      
-        // Assuming AgentId is string-like. Removed todynamic().             
-        AgentId_R = tostring(coalesce([FileRename_SensorId_ActualField], "")),                  
-        // Assuming ContextTimeStamp is datetime-like or string convertible to datetime. Removed todynamic().             
-        Timestamp_R = todatetime(coalesce([FileRename_ContextTimeStamp_ActualField], todatetime(null))) 
-    | project Timestamp_R, AgentId_R, OriginalName_R, TargetName_R
-    | distinct TargetName_R, AgentId_R, OriginalName_R, Timestamp_R 
-) on 
-    $left.AgentId_L == $right.AgentId_R and 
-    $left.LoadedModulePath_L == $right.TargetName_R
-// Filter based on time window
-| where isnull(Timestamp_R) or (Timestamp_R <= Timestamp_L and Timestamp_L - Timestamp_R <= correlationWindow_Test)
-// Project final results
+// ---------- Source table ----------
+let Fdr = database("<YourDatabase>").<YourActualTable>;   // <— point to the real table once, then reuse
+
+// ---------- LSASS module-load side (left) ----------
+let ModuleLoads =
+    Fdr
+    | where TimeGenerated >= ago(lookBack)
+          and event_simpleName == LsaModuleLoadEvent
+    | extend
+        ProcessPath      = tolower(TargetImageFileName),    // <- REAL column names, no [] needed
+        LoadedModulePath = tolower(ImageFileName),
+        AgentId          = tostring(Aid),                   // or SensorId / device_id – pick the correct one
+        LoadTime         = TimeGenerated
+    | where ProcessPath endswith @"\system32\lsass.exe"
+    | project AgentId, LoadedModulePath, LoadTime;
+
+// ---------- File-rename side (right) ----------
+let FileRenames =
+    Fdr
+    | where TimeGenerated >= ago(lookBack + correlationWindow)
+          and event_simpleName == FileRenameEvent
+    | extend
+        TargetName   = tolower(TargetFileName),   // “after” name
+        OriginalName = SourceFileName,            // “before” name
+        AgentId      = tostring(Aid),
+        RenameTime   = TimeGenerated
+    | project AgentId, TargetName, OriginalName, RenameTime
+    | distinct AgentId, TargetName, OriginalName, RenameTime     // dedupe
+    | rename LoadedModulePath = TargetName;                      // align the join key
+
+// ---------- Correlate ----------
+ModuleLoads
+| join kind=leftouter FileRenames on AgentId, LoadedModulePath
+| where isnull(RenameTime)                      // no rename found
+      or (RenameTime <= LoadTime                // rename happened before load
+          and LoadTime - RenameTime <= correlationWindow)
 | project
-    LsassLoadTime = Timestamp_L,
-    LoadedModulePath = LoadedModulePath_L,
-    RenameTime = Timestamp_R,
-    OriginalModuleNameIfRenamed = OriginalName_R,
-    Agent_ID = AgentId_L
+    LsassLoadTime              = LoadTime,
+    LoadedModulePath,
+    RenameTime,
+    OriginalModuleNameIfRenamed = OriginalName,
+    Agent_ID                   = AgentId
 | take 50
