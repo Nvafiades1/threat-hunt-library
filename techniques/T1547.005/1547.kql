@@ -1,23 +1,22 @@
 database('Endpoint').CrowdStrikeFDR
-| where event_simpleName == "ClassifiedModuleLoad"
-      and TimeGenerated  >= ago(30d)
+| where event_simpleName == "ClassifiedModuleLoad" and TimeGenerated >= ago(30d)
 | extend ParentPath = tolower(TargetImageFileName)
 | where ParentPath endswith @"\system32\lsass.exe"
 | extend ModulePath = tolower(ImageFileName)
-// ---- telemetry bits ---------------------------------------------------
+// ---- clean-cast the telemetry field ----
 | extend Raw = tostring(ModuleLoadTelemetryClassification)
-| extend Raw = iff(Raw startswith "0x", substring(Raw, 2), Raw)
-| extend Flags = toint(Raw, 0)                                          // null → 0
-| extend IsFirstLoad = (Flags % 2)  == 1,
-         IsWeirdExt  = (Flags / 16) % 2 == 1
-// ---- directory allow-list --------------------------------------------
-| extend IsLegitDir =
-         ModulePath startswith @"c:\windows\system32\"  or
-         ModulePath startswith @"c:\windows\syswow64\"  or
-         ModulePath contains  @"\windows\winsxs\"
-// ---- keep only suspicious loads --------------------------------------
+| extend Raw = iff(isnull(Raw) or Raw == "", "0", iff(Raw startswith "0x", substring(Raw, 2), Raw))
+| extend Flags = toint(Raw)
+// ---- bit heuristics ----
+| extend IsFirstLoad = (Flags % 2) == 1,
+         IsWeirdExt  = ((Flags / 16) % 2) == 1
+// ---- directory allow-list ----
+| extend IsLegitDir = ModulePath startswith @"c:\windows\system32\" or
+                      ModulePath startswith @"c:\windows\syswow64\" or
+                      ModulePath contains  @"\windows\winsxs\"
+// ---- keep only suspicious loads ----
 | where not(IsLegitDir) and (IsFirstLoad or IsWeirdExt)
-// ---- output -----------------------------------------------------------
+// ---- output ----
 | project TimeGenerated,
           DeviceId,
           TargetImageFileName,
