@@ -6,12 +6,13 @@ database('Endpoint').CrowdStrikeFDR
 | extend dir=extract(@"^(.*)\\[^\\]+$",1,path)
 | extend raw=tostring(ModuleLoadTelemetryClassification)
 | extend raw=iff(isnull(raw),"0",iff(raw startswith "0x",substring(raw,2),raw))
-| extend flags=toint(raw)
-| extend first=(flags % 2)==1 , weird=((flags / 16) % 2)==1
+| extend flg=iif(isnull(toint(raw)),0,toint(raw))
+| extend first=(flg%2)==1 , weird=((flg/16)%2)==1
 | extend expected=dir startswith @"c:\windows\system32\" or dir startswith @"c:\windows\syswow64\" or dir startswith @"c:\windows\winsxs\"
-| extend flagSuspicious = (not(expected)) and (first or weird)
-| where flagSuspicious
-| extend reason = "Non-standard directory + first-load/odd-extension"
-| project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,reason,first,weird
+| extend suspicious = (not(expected)) and (first or weird)
+| where suspicious
+| project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,
+         Reason="Non-standard directory + first-load/odd-extension",
+         first,weird
 | order by TimeGenerated desc
 | take 200
