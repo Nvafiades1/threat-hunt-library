@@ -1,23 +1,19 @@
 database('Endpoint').CrowdStrikeFDR
-| where event_simpleName == "ClassifiedModuleLoad" and TimeGenerated >= ago(30d)
-| extend ParentPath = tolower(TargetImageFileName)
-| where ParentPath endswith @"\system32\lsass.exe"
-| extend LoadedPath = tolower(ImageFileName)
-| extend DirPath = extract(@"^(.*)\\[^\\]+$",1,LoadedPath)
-| extend Flags = toint(coalesce(ModuleLoadTelemetryClassification,0))
-| extend IsRbf = LoadedPath endswith ".rbf",
-        InConfigMsi = LoadedPath contains @"\config.msi\",
-        OddBaseName = isempty(extract(@"\{[0-9a-f\-]{36}\}\.rbf$",0,LoadedPath)),
-        IsFirstLoad = Flags % 2 == 1,
-        WeirdExt = (Flags / 16) % 2 == 1,
-        InSysWow64 = DirPath startswith @"c:\windows\syswow64\",
-        InHighRisk = DirPath startswith @"c:\users\" or DirPath startswith @"c:\programdata\" or DirPath startswith @"c:\windows\temp\" or DirPath startswith @"c:\temp\" or DirPath startswith @"c:\$recycle.bin\" or DirPath startswith @"c:\perflogs\",
-        FlagRbf = IsRbf and InConfigMsi and (IsFirstLoad or WeirdExt or OddBaseName)
-| extend SuspiciousReason = ""
-| extend SuspiciousReason = iff(FlagRbf,"LSASS loaded NEW / WEIRD .RBF from Config.Msi",SuspiciousReason)
-| extend SuspiciousReason = iff(InHighRisk,"LSASS loaded module from high-risk directory",SuspiciousReason)
-| extend SuspiciousReason = iff(InSysWow64,"64-bit LSASS loaded module from SysWOW64",SuspiciousReason)
-| where SuspiciousReason != ""
-| project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,SuspiciousReason,IsFirstLoad,WeirdExt,OddBaseName
+| where event_simpleName=="ClassifiedModuleLoad" and TimeGenerated>=ago(30d)
+| extend Parent=tolower(TargetImageFileName)
+| where Parent endswith @"\system32\lsass.exe"
+| extend P=tolower(ImageFileName)
+| extend D=extract(@"^(.*)\\[^\\]+$",1,P)
+| extend _mlc=tostring(ModuleLoadTelemetryClassification)
+| extend _mlc=iff(_mlc startswith "0x", substring(_mlc,2), _mlc)
+| extend F=iif(isnull(toint(_mlc)),0,toint(_mlc))
+| extend Rbf=P endswith ".rbf",Cfg=P contains @"\config.msi\",Odd=isempty(extract(@"\{[0-9a-f\-]{36}\}\.rbf$",0,P)),First=F%2==1,WExt=(F/16)%2==1,SW64=D startswith @"c:\windows\syswow64\",HR=D startswith @"c:\users\" or D startswith @"c:\programdata\" or D startswith @"c:\windows\temp\" or D startswith @"c:\temp\" or D startswith @"c:\$recycle.bin\" or D startswith @"c:\perflogs\"
+| extend Flag=Rbf and Cfg and (First or WExt or Odd)
+| project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,
+          Reason=iff(Flag,"LSASS loaded NEW/WEIRD .RBF from Config.Msi",
+                 iff(HR,"LSASS loaded module from high-risk directory",
+                     iff(SW64,"64-bit LSASS loaded module from SysWOW64",""))),
+          First,WExt,Odd
+| where Reason!=""
 | order by TimeGenerated desc
 | take 200
