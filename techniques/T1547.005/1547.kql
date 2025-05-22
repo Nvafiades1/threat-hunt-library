@@ -1,71 +1,87 @@
 // =====================================================================
 //  LSASS – suspicious *.RBF modules loaded from  C:\Config.Msi\
-//  (works with the exact fields shown in your screenshots)
+//  (only uses columns shown in your screenshots / sample JSON)
 // =====================================================================
 
-// ------------ PARAMETERS ------------
-let lookBack  = 30d;
+// ------------ CONSTANTS ------------
+let LOOKBACK  = 30d;
 let LSASS_SFX = @"\system32\lsass.exe";
 let CFG_MSI   = @"\config.msi\";
 let GUID_RX   = @"\{[0-9a-f\-]{36}\}\.rbf$";
 
-// ModuleLoadTelemetryClassification bits
-let FIRST_LOAD_MASK        = 0x1;   // first time this module ever loaded on host
-let UNUSUAL_EXT_MASK       = 0x10;  // CrowdStrike flagged extension as odd
+// ModuleLoadTelemetryClassification bit-flags
+let FIRST_LOAD_MASK  = 0x1;   // first time module ever loaded on host
+let WEIRD_EXT_MASK   = 0x10;  // extension flagged as “unusual” by sensor
 
 // ------------ QUERY ------------
-database('Endpoint').CrowdStrikeFDR          // adjust DB/table name if different
+database('Endpoint').CrowdStrikeFDR
 | where event_simpleName == "ClassifiedModuleLoad"
-      and TimeGenerated   >= ago(lookBack)
+      and TimeGenerated >= ago(LOOKBACK)
 
-// ---- parent process must be lsass.exe ----
+// ------------------------------------------------------------
+// 1)  Parent must be   …\lsass.exe
+// ------------------------------------------------------------
 | extend ParentPath = tolower(TargetImageFileName)
 | where ParentPath endswith LSASS_SFX
 
-// ---- quick parsing of the loaded module’s path ----
-| extend LoadedPath   = tolower(ImageFileName),
-         DirPath      = tostring(extract(@"^(.*\\)[^\\]+$", 1, LoadedPath)),  // directory only
-         BaseName     = tostring(extract(@"[^\\]+$", 0, LoadedPath)),         // file name only
-         Telemetry    = toint(ModuleLoadTelemetryClassification, 0)
-
-// ---- context flags ----
+// ------------------------------------------------------------
+// 2)  Basic strings we’ll   reuse later
+// ------------------------------------------------------------
+| extend LoadedPath = tolower(ImageFileName)                       // full path of module
 | extend
-    IsRbf        = LoadedPath endswith ".rbf",
-    InConfigMsi  = LoadedPath contains CFG_MSI,
-    OddBasename  = ismatch(LoadedPath, GUID_RX) == 0,           // not a GUID.rbf
-    IsFirstLoad  = bitwise_and(Telemetry, FIRST_LOAD_MASK)  != 0,
-    WeirdExtFlag = bitwise_and(Telemetry, UNUSUAL_EXT_MASK) != 0,
+        // directory  ( everything up to the last back-slash )
+        DirPath  = substring(LoadedPath, 0, last_index_of(LoadedPath, "\\")),
+        FileName = substring(LoadedPath, last_index_of(LoadedPath, "\\") + 1),
+        TelemetryFlags = toint(ModuleLoadTelemetryClassification, 0)
 
-    FlagRbf = IsRbf and InConfigMsi and (IsFirstLoad or WeirdExtFlag or OddBasename),
+// ------------------------------------------------------------
+// 3)  Heuristics
+// ------------------------------------------------------------
+| extend
+        // RBF context
+        IsRbf        = LoadedPath endswith ".rbf",
+        InConfigMsi  = LoadedPath contains CFG_MSI,
+        OddBaseName  = ismatch(LoadedPath, GUID_RX) == 0,
 
-    // extra hygiene checks – preserved from your earlier logic
-    InSysWow64   = DirPath startswith @"c:\windows\syswow64\",
-    InHighRisk   = DirPath startswith @"c:\users\"       or
-                   DirPath startswith @"c:\programdata\" or
-                   DirPath startswith @"c:\windows\temp\" or
-                   DirPath startswith @"c:\temp\"         or
-                   DirPath startswith @"c:\$recycle.bin\" or
-                   DirPath startswith @"c:\perflogs\",
+        // Telemetry-based hints
+        IsFirstLoad  = bitwise_and(TelemetryFlags, FIRST_LOAD_MASK) != 0,
+        WeirdExt     = bitwise_and(TelemetryFlags, WEIRD_EXT_MASK)  != 0,
 
-// ---- verdict string ----
-    SuspiciousReason = case(
-        FlagRbf,          "LSASS loaded NEW / WEIRD .RBF from Config.Msi",
-        InHighRisk,       "LSASS loaded module from high-risk directory",
-        InSysWow64,       "64-bit LSASS loaded module from SysWOW64",
+        // Other high-risk buckets you asked for
+        InSysWow64   = DirPath startswith @"c:\windows\syswow64\",
+        InHighRisk   = DirPath startswith @"c:\users\"        or
+                       DirPath startswith @"c:\programdata\"   or
+                       DirPath startswith @"c:\windows\temp\"  or
+                       DirPath startswith @"c:\temp\"          or
+                       DirPath startswith @"c:\$recycle.bin\"  or
+                       DirPath startswith @"c:\perflogs\",
+
+        // Final RBF flag (no signature / file-age dependence)
+        FlagRbf = IsRbf and InConfigMsi and (IsFirstLoad or WeirdExt or OddBaseName)
+
+// ------------------------------------------------------------
+// 4)  Verdict string
+// ------------------------------------------------------------
+| extend SuspiciousReason = case(
+        FlagRbf,      "LSASS loaded NEW / WEIRD .RBF from Config.Msi",
+        InHighRisk,   "LSASS loaded module from high-risk directory",
+        InSysWow64,   "64-bit LSASS loaded module from SysWOW64",
         ""
     )
 
-// ---- show only interesting rows (comment out to baseline everything) ----
+// comment out next line if you want *all* LSASS loads
 | where isnotempty(SuspiciousReason)
 
-// ---- output ----
+// ------------------------------------------------------------
+// 5)  Output
+// ------------------------------------------------------------
 | project
-      TimeGenerated,
-      Hostname      = ComputerName,
-      DeviceId,
-      LoadedPath,
-      SuspiciousReason,
-      // debug flags – drop once you’re confident
-      IsFirstLoad, WeirdExtFlag, OddBasename
+        TimeGenerated,
+        DeviceId,
+        TargetImageFileName,
+        ImageFileName,
+        SuspiciousReason,
+        // debug flags – delete once you’re happy
+        IsFirstLoad, WeirdExt, OddBaseName
 | order by TimeGenerated desc
 | take 200
