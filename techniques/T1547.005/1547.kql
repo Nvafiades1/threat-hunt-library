@@ -1,19 +1,21 @@
 database('Endpoint').CrowdStrikeFDR
 | where event_simpleName=="ClassifiedModuleLoad" and TimeGenerated>=ago(30d)
-| extend Parent=tolower(TargetImageFileName)
-| where Parent endswith @"\system32\lsass.exe"
-| extend P=tolower(ImageFileName)
-| extend D=extract(@"^(.*)\\[^\\]+$",1,P)
-| extend _mlc=tostring(ModuleLoadTelemetryClassification)
-| extend _mlc=iff(_mlc startswith "0x", substring(_mlc,2), _mlc)
-| extend F=iif(isnull(toint(_mlc)),0,toint(_mlc))
-| extend Rbf=P endswith ".rbf",Cfg=P contains @"\config.msi\",Odd=isempty(extract(@"\{[0-9a-f\-]{36}\}\.rbf$",0,P)),First=F%2==1,WExt=(F/16)%2==1,SW64=D startswith @"c:\windows\syswow64\",HR=D startswith @"c:\users\" or D startswith @"c:\programdata\" or D startswith @"c:\windows\temp\" or D startswith @"c:\temp\" or D startswith @"c:\$recycle.bin\" or D startswith @"c:\perflogs\"
-| extend Flag=Rbf and Cfg and (First or WExt or Odd)
+| extend par=tolower(TargetImageFileName)
+| where par endswith @"\system32\lsass.exe"
+| extend p=tolower(ImageFileName)
+| extend d=extract(@"^(.*)\\[^\\]+$",1,p)
+| extend raw=tostring(ModuleLoadTelemetryClassification)
+| extend raw=iff(raw startswith "0x",substring(raw,2),raw)
+| extend f=iif(isnull(toint(raw)),0,toint(raw))
+| extend first=f%2==1,weird=(f/16)%2==1,
+         good=d startswith @"c:\windows\system32\" or d contains @"\windows\winsxs\" or d contains @"\program files\" or d contains @"\program files (x86)\",
+         sw64=d startswith @"c:\windows\syswow64\",
+         oddname=isempty(extract(@"\{[0-9a-f\-]{36}\}\.rbf$",0,p)),
+         flag= (not good and (first or weird or oddname)) or sw64
+| where flag
 | project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,
-          Reason=iff(Flag,"LSASS loaded NEW/WEIRD .RBF from Config.Msi",
-                 iff(HR,"LSASS loaded module from high-risk directory",
-                     iff(SW64,"64-bit LSASS loaded module from SysWOW64",""))),
-          First,WExt,Odd
-| where Reason!=""
+          Reason=iff(sw64,"SysWOW64 load",
+                iff(not good,"Non-standard directory","")),
+          first,weird,oddname
 | order by TimeGenerated desc
 | take 200
