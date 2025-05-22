@@ -1,53 +1,122 @@
-// ===== PARAMETERS =====
-let lookBack          = 1d;      // how far back to hunt
-let correlationWindow = 5m;      // rename must precede load by <= 5 min
-let LsaLoadEvt        = "ClassifiedModuleLoad";
-let FileRenameEvt     = "FileRenameInfo";
-let RbfRegex          = @".*\.rbf$";   // <= case-insensitive by default
+// ===================================================================
+//  LSASS MODULE-LOAD DETECTION  –  WITH RBF-SPECIFIC HEURISTICS
+// ===================================================================
 
-// ===== LSASS MODULE LOADS – LEFT SIDE =====
-let ModuleLoads =
-    YourActualTable
-    | where TimeGenerated >= ago(lookBack)
-          and event_simpleName == LsaLoadEvt
-    | where tolower(TargetImageFileName) endswith @"\system32\lsass.exe"
-    | extend
-        LoadedModulePath = tolower(ImageFileName),
-        AgentId          = tostring(Aid),       // or SensorId / device_id in your schema
-        LoadTime         = TimeGenerated
-    | where LoadedModulePath matches regex RbfRegex   // only *.rbf loads
-    | project AgentId, LoadedModulePath, LoadTime
-;
+// ------------------- STATIC CONSTANTS -------------------
+let LsassImagePathSuffix = @"\system32\lsass.exe";
+let System32PathPrefix   = @"c:\windows\system32\";
+let SysWow64PathPrefix   = @"c:\windows\syswow64\";
+let ConfigMsiPathFragment = @"\config.msi\";
+let HighRiskDLLPaths = dynamic([
+        @"c:\users\",
+        @"c:\programdata\",
+        @"c:\windows\temp\",
+        @"c:\temp\",
+        @"c:\$recycle.bin\",
+        @"c:\perflogs\"
+]);
+// ------------------- TUNABLES -------------------
+let RenameCorrelationWindow = 5m;
+let lookBack                = 30d;
+let FreshWindow              = 2d;   // “new file” threshold
+let GuidRx                   = @"\{[0-9a-f\-]{36}\}\.rbf$";   // MSI GUID-style name
 
-// ===== FILE RENAMES – RIGHT SIDE =====
-let FileRenames =
-    YourActualTable
-    | where TimeGenerated >= ago(lookBack + correlationWindow)
-          and event_simpleName == FileRenameEvt
-    | extend
-        TargetName   = tolower(TargetFileName),   // “after” name
-        OriginalName = SourceFileName,            // “before” name
-        AgentId      = tostring(Aid),
-        RenameTime   = TimeGenerated
-    | where TargetName matches regex RbfRegex     // we only care about renames *into* .rbf
-    | summarize arg_min(RenameTime, OriginalName) // keep earliest rename per file/agent
-        by AgentId, TargetName
-    | project AgentId,
-              LoadedModulePath = TargetName,      // align join key for join()
-              OriginalName,
-              RenameTime
-;
+// ------------------- QUERY -------------------
+database('Endpoint').CrowdStrikeFDR
+| where event_simpleName == "ClassifiedModuleLoad"
+      and TimeGenerated >= ago(lookBack)
+      and event_platform == "Win"
+// ---------- LSASS parent & basic parsing ----------
+| extend LoadingProcess_Fullpath = tolower(todynamic(TargetImageFileName))
+| where LoadingProcess_Fullpath endswith LsassImagePathSuffix
+| extend
+    Timestamp            = TimeGenerated,
+    Hostname             = todynamic(ComputerName),
+    AgentID              = todynamic(aid),
+    LoadedModule_Fullpath = tolower(todynamic(ImageFileName)),
+    // derive a sane “basename”
+    LoadedModule_NameOnly = tostring(
+        case(
+            gettype(FileName) == "dynamic" and array_length(todynamic(FileName)) >= 2, todynamic(FileName)[1],
+            gettype(FileName) == "dynamic" and array_length(todynamic(FileName)) == 1, todynamic(FileName)[0],
+            gettype(FileName) == "string", todynamic(FileName),
+            extract(@"[^\\]+$",0,LoadedModule_Fullpath),   // fallback regex
+        "")
+    ),
+    _pathComponents = parse_path(LoadedModule_Fullpath)
+| extend
+    _directoryOfLoadedModule = trim_end(@"\", tolower(tostring(_pathComponents.DirectoryPath)))
 
-// ===== CORRELATE & OUTPUT =====
-ModuleLoads
-| join kind=leftouter FileRenames on AgentId, LoadedModulePath
-| where isnull(RenameTime)                                   // no rename (file already .rbf)
-      or (RenameTime <= LoadTime
-          and LoadTime - RenameTime <= correlationWindow)    // rename shortly before load
+// ---------- BASIC CONTEXT FLAGS ----------
+| extend
+    IsLoadedFromSystem32 = _directoryOfLoadedModule startswith System32PathPrefix,
+    IsLoadedFromSysWow64 = _directoryOfLoadedModule endswith @"\windows\syswow64",
+    IsLoadedFromHighRiskPath = (
+        LoadedModule_Fullpath startswith @"c:\users\"      or
+        LoadedModule_Fullpath startswith @"c:\programdata\" or
+        LoadedModule_Fullpath startswith @"c:\windows\temp\" or
+        LoadedModule_Fullpath startswith @"c:\temp\"         or
+        LoadedModule_Fullpath startswith @"c:\$recycle.bin\" or
+        LoadedModule_Fullpath startswith @"c:\perflogs\"
+    ),
+    IsKnownLegitNonSystemPath = (
+         _directoryOfLoadedModule contains @"\program files\citrix\" or
+         _directoryOfLoadedModule contains @"\program files (x86)\citrix\" or
+         _directoryOfLoadedModule contains @"\windows\winsxs\"
+    )
+
+// ===================================================================
+//  ---------  ADDITIONAL RBF-FOCUSED HEURISTICS  ---------
+// ===================================================================
+| extend
+    // ---- identify RBF in Config.Msi path ----
+    IsRbf = LoadedModule_Fullpath endswith ".rbf",
+    IsConfigMsiPath = LoadedModule_Fullpath contains ConfigMsiPathFragment,
+    // ---- signature-based checks (adjust column names to your schema) ----
+    SignFlags           = toint(SignInfoFlags),       // assumes field exists
+    IsSigned            = (SignFlags & 0x2) != 0,
+    IsSigChainOK        = (SignFlags & 0x8) != 0,
+    SigningCNlower      = tolower(SigningCertCn),     // may be null
+    IsMicrosoftSigned   = SigningCNlower has "microsoft",
+    IsBadSig            = not (IsSigned and IsSigChainOK and IsMicrosoftSigned),
+    // ---- file-age check (requires FileCreateTime column; swap if needed) ----
+    FileAge             = datetime_diff("second", Timestamp, FileCreateTime) // seconds
+                          / 86400.0 // -> days
+                          ,
+    IsFresh             = FileAge <= todouble(FreshWindow)/1d,
+    // ---- GUID-pattern check ----
+    IsOddName           = ismatch(LoadedModule_Fullpath, GuidRx) == 0,
+
+    // ---- OVERALL SOC FLAG ----
+    FlagRbfForSOC = IsRbf and IsConfigMsiPath and (IsBadSig or IsFresh or IsOddName)
+
+// ===================================================================
+//  FINAL SUSPICION REASON  (combines old & new logic)
+// ===================================================================
+| extend
+    SuspiciousReason = case(
+        FlagRbfForSOC,                          "LSASS loaded NEW or UNSIGNED .RBF from Config.Msi",
+        IsLoadedFromHighRiskPath,               "LSASS loaded module from High-risk path",
+        IsLoadedFromSysWow64,                   "LSASS (64-bit) loaded module from SysWOW64",
+        not(IsLoadedFromSystem32) and not(IsLoadedFromSysWow64) and not(IsKnownLegitNonSystemPath),
+                                                "LoadedFromNonSystem32OrWow64",
+        ""
+    )
+// uncomment next line if you only want genuinely suspicious rows
+// | where isnotempty(SuspiciousReason)
+
 | project
-    LsassLoadTime              = LoadTime,
-    LoadedModulePath,                        // *.rbf path actually loaded by LSASS
-    RenameTime,                              // when it was rolled back
-    OriginalModuleNameIfRenamed = OriginalName,
-    Agent_ID                   = AgentId
-| take 100
+    Timestamp,
+    Hostname,
+    AgentID,
+    LoadingProcess_Fullpath,
+    LoadedModule_Fullpath,
+    LoadedModule_NameOnly,
+    IsLoadedFromSystem32,
+    IsLoadedFromSysWow64,
+    IsLoadedFromHighRiskPath,
+    IsKnownLegitNonSystemPath,
+    IsRbf, IsConfigMsiPath, IsBadSig, IsFresh, IsOddName,
+    SuspiciousReason
+| order by Timestamp desc
+| take 200
