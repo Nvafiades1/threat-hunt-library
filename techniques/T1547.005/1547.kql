@@ -1,4 +1,4 @@
-// --- Configuration for "Super Small" Join Test ---
+// --- Configuration for "Super Small" Join Test - Revised to address todynamic() error ---
 let FdrTable_Test = "[YourActualDataTable]"; // Your main table name
 let LsaModuleLoadEvent_Test = "ClassifiedModuleLoad"; // Your event name for module loads
 let FileRenameEvent_Test = "FileRenameInfo";       // Your event name for file renames
@@ -8,24 +8,30 @@ let correlationWindow_Test = 5m;                   // Correlate renames within 5
 FdrTable_Test
 | where TimeGenerated >= ago(lookBack_Test) and event_simpleName == LsaModuleLoadEvent_Test
 // Define fields for LSASS Loads (left side of lookup)
-| extend ProcessPath_L = tolower(tostring(coalesce([TargetImageFileName_ActualField], ""))), // Placeholder
-         LoadedModulePath_L = tolower(tostring(coalesce([ImageFileName_ActualField], ""))),     // Placeholder
-         AgentId_L = todynamic([SensorId_or_Aid_ActualField]),                             // Placeholder
-         Timestamp_L = TimeGenerated
+| extend 
+    ProcessPath_L = tolower(tostring(coalesce([TargetImageFileName_ActualField], ""))), 
+    LoadedModulePath_L = tolower(tostring(coalesce([ImageFileName_ActualField], ""))),     
+    // Assuming AgentId is string-like. Removed todynamic().
+    AgentId_L = tostring(coalesce([SensorId_or_Aid_ActualField], "")),                       
+    Timestamp_L = TimeGenerated
 | where ProcessPath_L endswith @"\\system32\\lsass.exe"
 | project Timestamp_L, AgentId_L, LoadedModulePath_L // Select only needed fields for left side
 | lookup kind=leftouter ( // Subquery for File Renames (right side of lookup)
     FdrTable_Test
     | where TimeGenerated >= ago(lookBack_Test + correlationWindow_Test) and event_simpleName == FileRenameEvent_Test
-    | extend TargetName_R = tolower(tostring(coalesce([FileRename_TargetFileName_ActualField], ""))), // Placeholder
-             OriginalName_R = todynamic([FileRename_SourceFileName_ActualField]),                    // Placeholder
-             AgentId_R = todynamic([FileRename_SensorId_ActualField]),                               // Placeholder
-             Timestamp_R = todatetime(todynamic([FileRename_ContextTimeStamp_ActualField]))          // Placeholder
+    | extend 
+        TargetName_R = tolower(tostring(coalesce([FileRename_TargetFileName_ActualField], ""))), 
+        // Assuming OriginalName is string-like. Removed todynamic().
+        OriginalName_R = tostring(coalesce([FileRename_SourceFileName_ActualField], "")),      
+        // Assuming AgentId is string-like. Removed todynamic().             
+        AgentId_R = tostring(coalesce([FileRename_SensorId_ActualField], "")),                  
+        // Assuming ContextTimeStamp is datetime-like or string convertible to datetime. Removed todynamic().             
+        Timestamp_R = todatetime(coalesce([FileRename_ContextTimeStamp_ActualField], todatetime(null))) 
     | project Timestamp_R, AgentId_R, OriginalName_R, TargetName_R
-    | distinct TargetName_R, AgentId_R, OriginalName_R, Timestamp_R // Important for lookup performance and correctness
+    | distinct TargetName_R, AgentId_R, OriginalName_R, Timestamp_R 
 ) on 
-    $left.AgentId_L == $right.AgentId_R and // Join on Agent ID
-    $left.LoadedModulePath_L == $right.TargetName_R // Join if loaded module path was the rename target path
+    $left.AgentId_L == $right.AgentId_R and 
+    $left.LoadedModulePath_L == $right.TargetName_R
 // Filter based on time window
 | where isnull(Timestamp_R) or (Timestamp_R <= Timestamp_L and Timestamp_L - Timestamp_R <= correlationWindow_Test)
 // Project final results
@@ -35,4 +41,4 @@ FdrTable_Test
     RenameTime = Timestamp_R,
     OriginalModuleNameIfRenamed = OriginalName_R,
     Agent_ID = AgentId_L
-| take 50 // Show a small sample of results
+| take 50
