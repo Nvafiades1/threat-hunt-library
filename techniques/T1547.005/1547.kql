@@ -6,17 +6,19 @@ database('Endpoint').CrowdStrikeFDR
 | extend ModulePath = tolower(tostring(ImageFileName))
 // --- clean-cast telemetry field ---
 | extend TelemetryRaw = tostring(ModuleLoadTelemetryClassification)
-| extend TelemetryRaw = iff(isnull(TelemetryRaw) or TelemetryRaw == "","0",
-                            iff(TelemetryRaw startswith "0x", substring(TelemetryRaw,2), TelemetryRaw))
+| extend TelemetryRaw = iff(isnull(TelemetryRaw) or TelemetryRaw=="","0",
+                            iff(TelemetryRaw startswith "0x",substring(TelemetryRaw,2),TelemetryRaw))
 | extend FlagVal = toint(TelemetryRaw)
-// --- bit heuristics (0x1 = FIRST_LOAD, 0x10 = UNUSUAL_EXTENSION) ---
-| extend IsFirstLoad = (FlagVal % 2) == 1,
-         IsWeirdExt  = ((FlagVal / 16) % 2) == 1
-// --- directory allow-list ---
+// --- bit heuristics ---
+| extend IsFirstLoad = (FlagVal % 2)==1,
+         IsWeirdExt  = ((FlagVal/16) % 2)==1
+// --- directory allow-list (System dirs + Citrix under Program Files) ---
 | extend IsLegitDir =
-         ModulePath contains @"\windows\system32\" or
-         ModulePath contains @"\windows\syswow64\" or
-         ModulePath contains @"\windows\winsxs\"
+         ModulePath contains @"\windows\system32\"     or
+         ModulePath contains @"\windows\syswow64\"     or
+         ModulePath contains @"\windows\winsxs\"       or
+         ModulePath contains @"\program files\citrix\" or
+         ModulePath contains @"\program files (x86)\citrix\"
 // --- final filter ---
 | where not(IsLegitDir) and (IsFirstLoad or IsWeirdExt)
 // --- output ---
@@ -24,7 +26,7 @@ database('Endpoint').CrowdStrikeFDR
           DeviceId,
           TargetImageFileName,
           ImageFileName,
-          Reason = "Non-standard directory + first-load/odd-extension",
+          Reason="Non-standard dir + first-load/odd-extension",
           IsFirstLoad,
           IsWeirdExt
 | order by TimeGenerated desc
