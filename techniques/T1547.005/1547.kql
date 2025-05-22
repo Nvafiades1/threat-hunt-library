@@ -1,21 +1,18 @@
 database('Endpoint').CrowdStrikeFDR
 | where event_simpleName=="ClassifiedModuleLoad" and TimeGenerated>=ago(30d)
-| extend par=tolower(TargetImageFileName)
-| where par endswith @"\system32\lsass.exe"
-| extend p=tolower(ImageFileName)
-| extend d=extract(@"^(.*)\\[^\\]+$",1,p)
-| extend raw=tostring(ModuleLoadTelemetryClassification)
-| extend raw=iff(raw startswith "0x",substring(raw,2),raw)
-| extend f=iif(isnull(toint(raw)),0,toint(raw))
-| extend first=f%2==1,weird=(f/16)%2==1,
-         good=d startswith @"c:\windows\system32\" or d contains @"\windows\winsxs\" or d contains @"\program files\" or d contains @"\program files (x86)\",
-         sw64=d startswith @"c:\windows\syswow64\",
-         oddname=isempty(extract(@"\{[0-9a-f\-]{36}\}\.rbf$",0,p)),
-         flag= (not good and (first or weird or oddname)) or sw64
-| where flag
-| project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,
-          Reason=iff(sw64,"SysWOW64 load",
-                iff(not good,"Non-standard directory","")),
-          first,weird,oddname
+| extend parent=tolower(TargetImageFileName)
+| where parent endswith @"\system32\lsass.exe"
+| extend path=tolower(ImageFileName)
+| extend dir=extract(@"^(.*)\\[^\\]+$",1,path)
+| extend fs=tostring(ModuleLoadTelemetryClassification)
+| extend fs=iff(isnull(fs),"0",iff(fs startswith "0x",substring(fs,2),fs))
+| extend f=iif(isnull(toint(fs)),0,toint(fs))
+| extend first=f%2==1, weird=(f/16)%2==1
+| extend goodDir=dir startswith @"c:\windows\system32\" or dir startswith @"c:\windows\winsxs\" or dir contains @"\program files\"
+| extend syswow64=dir startswith @"c:\windows\syswow64\"
+| extend flag=(not goodDir and (first or weird)) or syswow64
+| extend reason=iff(flag,iff(syswow64,"SysWOW64 module load","Non-standard module load"),"")
+| where reason!=""
+| project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,reason,first,weird
 | order by TimeGenerated desc
 | take 200
