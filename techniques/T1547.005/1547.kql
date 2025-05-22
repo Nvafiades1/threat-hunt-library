@@ -1,45 +1,48 @@
-// ---------- Parameters ----------
-let lookBack           = 1d;      // search window for the load
-let correlationWindow  = 5m;      // how far back to look for a rename
-let LsaModuleLoadEvent = "ClassifiedModuleLoad";
-let FileRenameEvent    = "FileRenameInfo";
+// ===== PARAMETERS =====
+let lookBack          = 1d;     // LSASS load window
+let correlationWindow = 5m;     // how far back to look for renames
+let LsaLoadEvt        = "ClassifiedModuleLoad";
+let FileRenameEvt     = "FileRenameInfo";
 
-// ---------- Source table ----------
-let Fdr = database("<YourDatabase>").<YourActualTable>;   // <— point to the real table once, then reuse
-
-// ---------- LSASS module-load side (left) ----------
+// ===== LSASS MODULE LOADS (LEFT SIDE) =====
 let ModuleLoads =
-    Fdr
+    YourActualTable                          // <-- replace with the real table, nothing else
     | where TimeGenerated >= ago(lookBack)
-          and event_simpleName == LsaModuleLoadEvent
+          and event_simpleName == LsaLoadEvt
     | extend
-        ProcessPath      = tolower(TargetImageFileName),    // <- REAL column names, no [] needed
+        ProcessPath      = tolower(TargetImageFileName),   // real column names
         LoadedModulePath = tolower(ImageFileName),
-        AgentId          = tostring(Aid),                   // or SensorId / device_id – pick the correct one
+        AgentId          = tostring(Aid),                  // or SensorId / device_id
         LoadTime         = TimeGenerated
     | where ProcessPath endswith @"\system32\lsass.exe"
-    | project AgentId, LoadedModulePath, LoadTime;
+    | project AgentId, LoadedModulePath, LoadTime
+;
+// **semicolon ends the let – required**
 
-// ---------- File-rename side (right) ----------
+// ===== FILE RENAMES (RIGHT SIDE) =====
 let FileRenames =
-    Fdr
+    YourActualTable
     | where TimeGenerated >= ago(lookBack + correlationWindow)
-          and event_simpleName == FileRenameEvent
+          and event_simpleName == FileRenameEvt
     | extend
         TargetName   = tolower(TargetFileName),   // “after” name
         OriginalName = SourceFileName,            // “before” name
         AgentId      = tostring(Aid),
         RenameTime   = TimeGenerated
-    | project AgentId, TargetName, OriginalName, RenameTime
-    | distinct AgentId, TargetName, OriginalName, RenameTime     // dedupe
-    | rename LoadedModulePath = TargetName;                      // align the join key
+    | summarize arg_min(RenameTime, OriginalName) /* keep earliest rename per target */
+        by AgentId, TargetName
+    | project AgentId,
+              LoadedModulePath = TargetName,      // align join key
+              OriginalName,
+              RenameTime
+;
 
-// ---------- Correlate ----------
+// ===== CORRELATION =====
 ModuleLoads
 | join kind=leftouter FileRenames on AgentId, LoadedModulePath
-| where isnull(RenameTime)                      // no rename found
-      or (RenameTime <= LoadTime                // rename happened before load
-          and LoadTime - RenameTime <= correlationWindow)
+| where isnull(RenameTime)                                   // no rename found
+      or (RenameTime <= LoadTime
+          and LoadTime - RenameTime <= correlationWindow)    // rename within window
 | project
     LsassLoadTime              = LoadTime,
     LoadedModulePath,
