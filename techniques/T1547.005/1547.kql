@@ -1,18 +1,21 @@
 database('Endpoint').CrowdStrikeFDR
 | where event_simpleName=="ClassifiedModuleLoad" and TimeGenerated>=ago(30d)
-| extend parent=tolower(TargetImageFileName)
-| where parent endswith @"\system32\lsass.exe"
-| extend path=tolower(ImageFileName)
-| extend dir=extract(@"^(.*)\\[^\\]+$",1,path)
-| extend raw=tostring(ModuleLoadTelemetryClassification)
-| extend raw=iff(isnull(raw),"0",iff(raw startswith "0x",substring(raw,2),raw))
-| extend flg=iif(isnull(toint(raw)),0,toint(raw))
-| extend first=(flg%2)==1 , weird=((flg/16)%2)==1
-| extend expected=dir startswith @"c:\windows\system32\" or dir startswith @"c:\windows\syswow64\" or dir startswith @"c:\windows\winsxs\"
-| extend suspicious = (not(expected)) and (first or weird)
-| where suspicious
-| project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,
-         Reason="Non-standard directory + first-load/odd-extension",
-         first,weird
+| extend ParentPath=tolower(TargetImageFileName)
+| where ParentPath endswith @"\system32\lsass.exe"
+| extend ModulePath=tolower(ImageFileName)
+| extend DirPath=extract(@"^(.*)\\[^\\]+$",1,ModulePath)
+| extend RawFlag=tostring(ModuleLoadTelemetryClassification)
+| extend RawFlag=iff(RawFlag startswith "0x",substring(RawFlag,2),RawFlag)
+| extend FlagInt=iif(isnull(toint(RawFlag)),0,toint(RawFlag))
+| extend IsFirstLoad=(FlagInt % 2)==1 , IsWeirdExt=((FlagInt / 16) % 2)==1
+| extend IsLegitDir=DirPath startswith @"c:\windows\system32\" or DirPath startswith @"c:\windows\syswow64\" or DirPath startswith @"c:\windows\winsxs\"
+| where not(IsLegitDir) and (IsFirstLoad or IsWeirdExt)
+| project TimeGenerated,
+          DeviceId,
+          TargetImageFileName,
+          ImageFileName,
+          Reason="Non-standard directory + first-load/odd-extension",
+          IsFirstLoad,
+          IsWeirdExt
 | order by TimeGenerated desc
 | take 200
