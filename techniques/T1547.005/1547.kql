@@ -1,6 +1,6 @@
 // =====================================================================
 //  LSASS  •  suspicious *.RBF modules loaded from  C:\Config.Msi\
-//  (only core string/regex functions: extract + endswith + startswith)
+//  (no last_index_of, no ismatch, no bitwise_and, no 2-arg toint)
 // =====================================================================
 
 // ---------- CONSTANTS ----------
@@ -8,10 +8,6 @@ let LOOKBACK  = 30d;
 let LSASS_SFX = @"\system32\lsass.exe";
 let CFG_MSI   = @"\config.msi\";
 let GUID_RX   = @"\{[0-9a-f\-]{36}\}\.rbf$";
-
-// ModuleLoadTelemetryClassification bits
-let FIRST_LOAD_MASK = 0x1;    // FIRST_LOAD
-let WEIRD_EXT_MASK  = 0x10;   // UNUSUAL_EXTENSION
 
 // ---------- QUERY ----------
 database('Endpoint').CrowdStrikeFDR
@@ -22,11 +18,11 @@ database('Endpoint').CrowdStrikeFDR
 | extend ParentPath = tolower(TargetImageFileName)
 | where ParentPath endswith LSASS_SFX
 
-// 2)  basic path parsing (no last_index_of) --------------
+// 2)  basic path parsing (pure regex) -------------------
 | extend LoadedPath = tolower(ImageFileName)
-| extend DirPath    = extract(@"^(.*)\\[^\\]+$", 1, LoadedPath)   // chars before last '\'
-| extend FileName   = extract(@"[^\\]+$",        0, LoadedPath)   // chars after  last '\'
-| extend Flags      = toint(ModuleLoadTelemetryClassification, 0)
+| extend DirPath    = extract(@"^(.*)\\[^\\]+$", 1, LoadedPath)   // directory
+| extend FileName   = extract(@"[^\\]+$",        0, LoadedPath)   // basename
+| extend Flags      = toint(coalesce(ModuleLoadTelemetryClassification, 0))
 
 // 3)  heuristics ----------------------------------------
 | extend
@@ -34,15 +30,15 @@ database('Endpoint').CrowdStrikeFDR
     IsRbf        = LoadedPath endswith ".rbf",
     InConfigMsi  = LoadedPath contains CFG_MSI,
 
-    // “Odd” name = basename is NOT a {GUID}.rbf
+    // “Odd” name: basename is NOT {GUID}.rbf
     GuidMatch    = extract(GUID_RX, 0, LoadedPath),
-    OddBaseName  = isempty(GuidMatch),                // true when no GUID match
+    OddBaseName  = isempty(GuidMatch),         
 
-    // telemetry hints
-    IsFirstLoad  = bitwise_and(Flags, FIRST_LOAD_MASK) != 0,
-    WeirdExt     = bitwise_and(Flags, WEIRD_EXT_MASK)  != 0,
+    // telemetry hints  (no bitwise_and)
+    IsFirstLoad  = Flags % 2 == 1,                    // mask 0x1
+    WeirdExt     = (Flags / 16) % 2 == 1,             // mask 0x10
 
-    // other high-risk buckets you asked for
+    // high-risk directories
     InSysWow64   = DirPath startswith @"c:\windows\syswow64\",
     InHighRisk   = DirPath startswith @"c:\users\"        or
                    DirPath startswith @"c:\programdata\"   or
@@ -51,7 +47,7 @@ database('Endpoint').CrowdStrikeFDR
                    DirPath startswith @"c:\$recycle.bin\"  or
                    DirPath startswith @"c:\perflogs\",
 
-    // final RBF flag (no signature / file-age deps)
+    // final RBF flag
     FlagRbf = IsRbf and InConfigMsi and (IsFirstLoad or WeirdExt or OddBaseName)
 
 // 4)  verdict -------------------------------------------
@@ -68,11 +64,11 @@ database('Endpoint').CrowdStrikeFDR
 // 5)  output --------------------------------------------
 | project
       TimeGenerated,
-      DeviceId,                           // shown in your sample JSON
+      DeviceId,                    // present in your sample JSON
       TargetImageFileName,
       ImageFileName,
       SuspiciousReason,
-      // debug flags — remove once tuned
+      // debug flags – delete once tuned
       IsFirstLoad, WeirdExt, OddBaseName
 | order by TimeGenerated desc
 | take 200
