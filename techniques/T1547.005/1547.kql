@@ -1,0 +1,98 @@
+// --- Configuration ---
+// ** Replace "[YourActualDatabase.YourActualTable]" with your actual table name **
+let FdrTable = "[YourActualDatabase.YourActualTable]";
+let lookBack = 1d; // Adjust as needed
+
+// ** Event name for LSASS.EXE module loads **
+let LsaModuleLoadEventName = "ClassifiedModuleLoad"; // Or "ModuleLoadV3DetectInfo" - VERIFY THIS
+// ** Event name for File Rename operations **
+let FileRenameEventName = "FileRenameInfo"; // VERIFY THIS - based on your uploaded image's context
+
+let LsassImagePathSuffix = @"\\system32\\lsass.exe"; // lsass.exe should be in System32
+let System32PathPrefix = @"c:\\windows\\system32\\";     // Expected path for 64-bit LSA plugins
+let SysWow64PathPrefix = @"c:\\windows\\syswow64\\";     // Highly suspicious for lsass.exe to load LSA plugins from here
+let ConfigMsiPathFragment = @"\\config.msi\\";          // Path fragment to identify Config.msi loads
+
+let HighRiskDLLPaths = dynamic([
+    @"c:\\users\\",
+    @"c:\\programdata\\",
+    @"c:\\windows\\temp\\",
+    @"c:\\temp\\",
+    @"c:\\$recycle.bin\\",
+    @"c:\\perflogs\\"
+]);
+
+// Time window for correlating module load with a preceding file rename (e.g., 5 minutes)
+let RenameCorrelationWindow = 5m;
+// --- End Configuration ---
+
+// Part 1: Identify suspicious LSASS module loads
+let SuspiciousLsassLoads = FdrTable
+    | where TimeGenerated >= ago(lookBack)
+    | where event_simpleName == LsaModuleLoadEventName
+    // ** Field containing path to the loading process (e.g., lsass.exe) **
+    | extend LoadingProcess_FullPath = tolower(todynamic([TargetImageFileName_ActualField]))
+    | where LoadingProcess_FullPath endswith LsassImagePathSuffix // Focus on module loads by LSASS.EXE
+    | extend
+        Timestamp = TimeGenerated,
+        // ** VERIFY your field names for HostName and AgentId **
+        HostName = todynamic([ComputerName_ActualField]),
+        AgentId = todynamic([SensorId_or_Aid_ActualField]),
+        // ** Field containing path of the loaded DLL **
+        LoadedModule_FullPath = tolower(todynamic([ImageFileName_ActualField])),
+        // ** Field containing simple name of the loaded DLL (adjust parsing if array) **
+        LoadedModule_NameOnly = case(
+            gettype([FileName_ActualField]) == "dynamic" and array_length([FileName_ActualField]) >= 1, tolower(tostring(todynamic([FileName_ActualField])[iif(array_length([FileName_ActualField]) >=2 and tolower(tostring(todynamic([FileName_ActualField])[0])) endswith LsassImagePathSuffix,1,0)]))),
+            gettype([FileName_ActualField]) == "string", tolower(tostring(todynamic([FileName_ActualField]))),
+            extract(@"[^\\\\]+$", 0, LoadedModule_FullPath) // Fallback
+        )
+    | extend
+        IsLoadedFromSystem32 = LoadedModule_FullPath startswith System32PathPrefix,
+        IsLoadedFromSysWow64 = LoadedModule_FullPath startswith SysWow64PathPrefix,
+        IsLoadedFromHighRiskPath = (exists (prefix in (HighRiskDLLPaths) where LoadedModule_FullPath startswith prefix)),
+        IsLoadedFromConfigMsi = LoadedModule_FullPath contains ConfigMsiPathFragment and LoadedModule_FullPath endswith ".rbf", // Specifically check for .rbf from Config.msi
+
+        SuspicionReason = case(
+            IsLoadedFromHighRiskPath, "LSASS loaded module from High-Risk Path",
+            IsLoadedFromSysWow64, "LSASS (64-bit) loaded module from SysWOW64 (Highly Suspicious)",
+            IsLoadedFromConfigMsi, "LSASS loaded .rbf module from Config.msi Path", // Specific reason for .rbf from Config.msi
+            // If not from System32 and not already caught by other specific reasons
+            not IsLoadedFromSystem32 and not IsLoadedFromSysWow64 and not IsLoadedFromHighRiskPath and not IsLoadedFromConfigMsi, "LSASS loaded module from Non-Standard Path (not System32)",
+            "" // Default
+        )
+    | where isnotempty(SuspicionReason)
+    | project
+        Timestamp, DetectionType="Suspicious LSASS Module Load (T1547.005 - Path Based)",
+        HostName, AgentId,
+        LoadingProcess_FullPath, LoadedModule_NameOnly, LoadedModule_FullPath,
+        SuspicionReason, IsLoadedFromSystem32, IsLoadedFromSysWow64, IsLoadedFromHighRiskPath, IsLoadedFromConfigMsi;
+
+// Part 2: Get relevant FileRename events (focus on .rbf files in Config.msi that were rename targets)
+let RelevantFileRenames = FdrTable
+    | where TimeGenerated >= ago(lookBack + RenameCorrelationWindow) // Widen lookback slightly for renames
+    | where event_simpleName == FileRenameEventName
+    // ** Field names from your FileRenameInfo screenshot **
+    | extend
+        RenameTimestamp = todynamic(ContextTimeStamp), // Assuming this is the timestamp of the rename event
+        RenamingProcessUPID = todynamic(ContextProcessId),
+        OriginalName = todynamic(SourceFileName),
+        RenamedToName_FullPath = tolower(todynamic(TargetFileName)) // This should be the .rbf file path
+    | where RenamedToName_FullPath contains ConfigMsiPathFragment and RenamedToName_FullPath endswith ".rbf"
+    // ** VERIFY AgentId field name for FileRename events if different **
+    | project RenameTimestamp, AgentId_Rename = todynamic([SensorId_or_Aid_ActualField_ForFileRename]), RenamingProcessUPID, OriginalName, RenamedToName_FullPath
+    | distinct RenamedToName_FullPath, AgentId_Rename, OriginalName, RenamingProcessUPID, RenameTimestamp; // Deduplicate renames to the same target
+
+// Part 3: Join suspicious LSASS loads with file rename information
+SuspiciousLsassLoads
+| lookup kind=leftouter (
+    RelevantFileRenames
+) on $left.AgentId == $right.AgentId_Rename, $left.LoadedModule_FullPath == $right.RenamedToName_FullPath
+    // Condition for rename happening before or around the module load
+    where $right.RenameTimestamp <= $left.Timestamp and $left.Timestamp - $right.RenameTimestamp <= RenameCorrelationWindow
+| extend
+    CorrelatedRename_OriginalName = OriginalName,
+    CorrelatedRename_ProcessUPID = RenamingProcessUPID,
+    CorrelatedRename_Timestamp = RenameTimestamp
+| project-away // Remove columns from the right side of the lookup that are now aliased or no longer needed
+    AgentId_Rename, OriginalName, RenamingProcessUPID, RenameTimestamp, RenamedToName_FullPath
+| order by Timestamp desc
