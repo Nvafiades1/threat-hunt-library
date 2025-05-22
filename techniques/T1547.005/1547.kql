@@ -1,59 +1,23 @@
-// =========================================================================
-//  LSASS  – suspicious *.RBF modules loaded from  C:\Config.Msi\
-//  (zero unsupported helpers: no last_index_of, ismatch, bitwise_and, case)
-// =========================================================================
-
-// ---------- CONSTANTS ----------
-let LOOKBACK  = 30d;
-let LSASS_SFX = @"\system32\lsass.exe";
-let CFG_MSI   = @"\config.msi\";
-let GUID_RX   = @"\{[0-9a-f\-]{36}\}\.rbf$";
-// ---------- QUERY ----------
 database('Endpoint').CrowdStrikeFDR
-| where event_simpleName == "ClassifiedModuleLoad"
-      and TimeGenerated   >= ago(LOOKBACK)
-// 1)  parent must be  lsass.exe
+| where event_simpleName == "ClassifiedModuleLoad" and TimeGenerated >= ago(30d)
 | extend ParentPath = tolower(TargetImageFileName)
-| where ParentPath endswith LSASS_SFX
-// 2)  parse loaded-module path  ------------------------------------------
+| where ParentPath endswith @"\system32\lsass.exe"
 | extend LoadedPath = tolower(ImageFileName)
-| extend DirPath    = extract(@"^(.*)\\[^\\]+$", 1, LoadedPath)   // directory
-| extend Flags      = toint(coalesce(ModuleLoadTelemetryClassification, 0))
-// 3)  heuristic flags -----------------------------------------------------
-| extend
-    // RBF context
-    IsRbf        = LoadedPath endswith ".rbf",
-    InConfigMsi  = LoadedPath contains CFG_MSI,
-    GuidMatch    = extract(GUID_RX, 0, LoadedPath),
-    OddBaseName  = isempty(GuidMatch),
-    // telemetry bits (no bitwise_and)
-    IsFirstLoad  = Flags % 2 == 1,             // bit 0x1
-    WeirdExt     = (Flags / 16) % 2 == 1,      // bit 0x10
-    // directory risk buckets
-    InSysWow64   = DirPath startswith @"c:\windows\syswow64\",
-    InHighRisk   = DirPath startswith @"c:\users\"        or
-                   DirPath startswith @"c:\programdata\"   or
-                   DirPath startswith @"c:\windows\temp\"  or
-                   DirPath startswith @"c:\temp\"          or
-                   DirPath startswith @"c:\$recycle.bin\"  or
-                   DirPath startswith @"c:\perflogs\",
-    // master RBF flag
-    FlagRbf      = IsRbf and InConfigMsi and (IsFirstLoad or WeirdExt or OddBaseName)
-// 4)  build verdict with staged string assignment  ------------------------
+| extend DirPath = extract(@"^(.*)\\[^\\]+$",1,LoadedPath)
+| extend Flags = toint(coalesce(ModuleLoadTelemetryClassification,0))
+| extend IsRbf = LoadedPath endswith ".rbf",
+        InConfigMsi = LoadedPath contains @"\config.msi\",
+        OddBaseName = isempty(extract(@"\{[0-9a-f\-]{36}\}\.rbf$",0,LoadedPath)),
+        IsFirstLoad = Flags % 2 == 1,
+        WeirdExt = (Flags / 16) % 2 == 1,
+        InSysWow64 = DirPath startswith @"c:\windows\syswow64\",
+        InHighRisk = DirPath startswith @"c:\users\" or DirPath startswith @"c:\programdata\" or DirPath startswith @"c:\windows\temp\" or DirPath startswith @"c:\temp\" or DirPath startswith @"c:\$recycle.bin\" or DirPath startswith @"c:\perflogs\",
+        FlagRbf = IsRbf and InConfigMsi and (IsFirstLoad or WeirdExt or OddBaseName)
 | extend SuspiciousReason = ""
-| extend SuspiciousReason = iff(FlagRbf,    "LSASS loaded NEW / WEIRD .RBF from Config.Msi", SuspiciousReason)
-| extend SuspiciousReason = iff(InHighRisk, "LSASS loaded module from high-risk directory",  SuspiciousReason)
-| extend SuspiciousReason = iff(InSysWow64, "64-bit LSASS loaded module from SysWOW64",      SuspiciousReason)
-// keep only rows that tripped at least one test
+| extend SuspiciousReason = iff(FlagRbf,"LSASS loaded NEW / WEIRD .RBF from Config.Msi",SuspiciousReason)
+| extend SuspiciousReason = iff(InHighRisk,"LSASS loaded module from high-risk directory",SuspiciousReason)
+| extend SuspiciousReason = iff(InSysWow64,"64-bit LSASS loaded module from SysWOW64",SuspiciousReason)
 | where SuspiciousReason != ""
-// 5)  output --------------------------------------------------------------
-| project
-      TimeGenerated,
-      DeviceId,
-      TargetImageFileName,
-      ImageFileName,
-      SuspiciousReason,
-      // debug columns – drop once happy
-      IsFirstLoad, WeirdExt, OddBaseName
+| project TimeGenerated,DeviceId,TargetImageFileName,ImageFileName,SuspiciousReason,IsFirstLoad,WeirdExt,OddBaseName
 | order by TimeGenerated desc
 | take 200
