@@ -8,36 +8,27 @@ let LOOKBACK  = 30d;
 let LSASS_SFX = @"\system32\lsass.exe";
 let CFG_MSI   = @"\config.msi\";
 let GUID_RX   = @"\{[0-9a-f\-]{36}\}\.rbf$";
-
 // ---------- QUERY ----------
 database('Endpoint').CrowdStrikeFDR
 | where event_simpleName == "ClassifiedModuleLoad"
       and TimeGenerated   >= ago(LOOKBACK)
-
 // 1)  parent == lsass.exe
 | extend ParentPath = tolower(TargetImageFileName)
 | where ParentPath endswith LSASS_SFX
-
-// 2)  basic path parsing (pure regex) -------------------
+// 2)  path parsing (only extract + basic string ops)
 | extend LoadedPath = tolower(ImageFileName)
 | extend DirPath    = extract(@"^(.*)\\[^\\]+$", 1, LoadedPath)   // directory
 | extend FileName   = extract(@"[^\\]+$",        0, LoadedPath)   // basename
 | extend Flags      = toint(coalesce(ModuleLoadTelemetryClassification, 0))
-
-// 3)  heuristics ----------------------------------------
+// 3)  heuristics
 | extend
-    // RBF context
     IsRbf        = LoadedPath endswith ".rbf",
     InConfigMsi  = LoadedPath contains CFG_MSI,
-
-    // “Odd” name: basename is NOT {GUID}.rbf
     GuidMatch    = extract(GUID_RX, 0, LoadedPath),
     OddBaseName  = isempty(GuidMatch),         
-
-    // telemetry hints  (no bitwise_and)
-    IsFirstLoad  = Flags % 2 == 1,                    // mask 0x1
-    WeirdExt     = (Flags / 16) % 2 == 1,             // mask 0x10
-
+    // telemetry bits without bitwise_and()
+    IsFirstLoad  = Flags % 2 == 1,                 // mask 0x1
+    WeirdExt     = (Flags / 16) % 2 == 1,          // mask 0x10
     // high-risk directories
     InSysWow64   = DirPath startswith @"c:\windows\syswow64\",
     InHighRisk   = DirPath startswith @"c:\users\"        or
@@ -47,28 +38,25 @@ database('Endpoint').CrowdStrikeFDR
                    DirPath startswith @"c:\$recycle.bin\"  or
                    DirPath startswith @"c:\perflogs\",
 
-    // final RBF flag
-    FlagRbf = IsRbf and InConfigMsi and (IsFirstLoad or WeirdExt or OddBaseName)
-
-// 4)  verdict -------------------------------------------
-| extend SuspiciousReason = case(
-        FlagRbf,     "LSASS loaded NEW / WEIRD .RBF from Config.Msi",
-        InHighRisk,  "LSASS loaded module from high-risk directory",
-        InSysWow64,  "64-bit LSASS loaded module from SysWOW64",
-        ""
-    )
-
+    FlagRbf      = IsRbf and InConfigMsi and (IsFirstLoad or WeirdExt or OddBaseName)
+// 4)  verdict  —  nested iif() avoids type clashes
+| extend SuspiciousReason = iif(FlagRbf,
+                                "LSASS loaded NEW / WEIRD .RBF from Config.Msi",
+                                iif(InHighRisk,
+                                    "LSASS loaded module from high-risk directory",
+                                    iif(InSysWow64,
+                                        "64-bit LSASS loaded module from SysWOW64",
+                                        "")))
 // comment out next line to baseline all LSASS loads
-| where isnotempty(SuspiciousReason)
-
-// 5)  output --------------------------------------------
+| where SuspiciousReason != ""
+// 5)  output
 | project
       TimeGenerated,
-      DeviceId,                    // present in your sample JSON
+      DeviceId,
       TargetImageFileName,
       ImageFileName,
       SuspiciousReason,
-      // debug flags – delete once tuned
+      // debug flags — remove once tuned
       IsFirstLoad, WeirdExt, OddBaseName
 | order by TimeGenerated desc
 | take 200
