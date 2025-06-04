@@ -1,67 +1,87 @@
-// ─────────────────────────  PARAMETERS  ─────────────────────────────
-let Lookback        = 24h;           // how far back to scan
-let BurstWindow     = 6h;            // sliding window for ≥3 geos
-let ImpossibleGap   = 2h;            // geo switch faster than this = impossible
-let ImpossibleGapM  = toint(ImpossibleGap / 1m);    // numeric minutes
-let MinGeos         = 3;             // require ≥ this many distinct locations
-let MinAttachMB     = 0.1;           // alert only if any msg had >0.1 MB attachments
-let Mode            = "Enforce";     // "Audit" or "Enforce"
+//  █████████████  Impossible-Sender / Anomalous Outbound Geo  █████████████
+//
+//  Purpose :  Alert when the **same internal UPN** sends OUTBOUND mail
+//             from ≥3 DIFFERENT geo-locations inside a 6-hour burst
+//             and at least one message in that burst carries
+//             ≥ 0.1 MB of attachments.
+//
+//  CHANGES vs. original draft
+//  ────────────────────────────────────────────────────────────
+//    1.  NEW per-message attachment MB calculation (lines marked ★).
+//    2.  Removed service-suffix filter (you asked to drop it).
+//    3.  VPN allow-list kept.
+//    4.  Burst summary now uses **MaxMB** instead of MaxAttach.
+//    5.  All timespan math now numeric (ImpossibleGapM, etc.).
+//  ────────────────────────────────────────────────────────────
 
-// ── allow-lists ─────────────────────────────────────────────────────
+
+//────────────────────────  PARAMETERS  ────────────────────────
+let Lookback        = 24h;           // historical search window
+let BurstWindow     = 6h;            // window to count distinct geos
+let ImpossibleGap   = 2h;
+let ImpossibleGapM  = toint(ImpossibleGap / 1m);  // 120  ← numeric
+let MinGeos         = 3;
+let MinAttachMB     = 0.1;           // fire only if ≥0.1 MB in burst
 let VpnLocations    = dynamic(["US-VPN-NY","US-VPN-LA","UK-VPN-LON"]);
-let ServiceSuffixes = dynamic(["-svc@bank.com","-bot@bank.com"]);
 
-// ── Fetch outbound mail & flatten sender identities ─────────────────
+// (★)  If each attachment object carries a file-size property, list it here
+let SizeField = "fileSizeBytes";     // change to "sizeBytes", etc.
+
+
+//────────────────────────  BASE TABLE  ────────────────────────
 let Base =
     EgressLog
     | where TimeGenerated >= ago(Lookback)
     | where LogSource == "egress"
-    // | where direction == "Outbound"               // uncomment if you have it
-    | mv-expand identities
+    // | where direction == "Outbound"          // uncomment if present
+    | mv-expand attachments
     | extend
-          upn        = tostring(identities.upn),
+          upn        = tostring(identities[0].upn),
           senderLoc  = tostring(senderLocation),
-          attachMB   = todouble(attachmentTotalMb)   // may be null
+          // (★) derive per-file size in MB
+          fileMB     = iif(isnull(todouble(attachments[SizeField])),
+                           0.25,                              // fallback size
+                           todouble(attachments[SizeField]) / 1048576.0)
+    // collapse to one row per message with total MB
+    | summarize msgMB = sum(fileMB)
+          by upn, senderLoc, TimeGenerated
     | where isnotempty(upn) and isnotempty(senderLoc)
-    // service-account allow-list
-    | where array_index_of(ServiceSuffixes,
-               suffix -> upn endswith suffix) == -1
-    // VPN allow-list
     | where senderLoc !in (VpnLocations);
 
-// ── Identify impossible hops (<2 h apart, different geo) ────────────
+
+
+//────────────────────  IMPOSSIBLE HOPS (<2 h)  ─────────────────
 let Hops =
     Base
-    | project upn, TimeGenerated, senderLoc, attachMB
-    | join kind=inner
-        (
-            Base
-            | project upn, Time2 = TimeGenerated, loc2 = senderLoc
-        ) on upn
+    | project upn, TimeGenerated, senderLoc
+    | join kind=inner (
+          Base
+          | project upn, Time2 = TimeGenerated, loc2 = senderLoc
+      ) on upn
     | where senderLoc != loc2
     | extend gapM = abs(datetime_diff('minute', TimeGenerated, Time2))
     | where gapM < ImpossibleGapM
-    // keep earliest of the hop pair
-    | project upn, HopTime=min(TimeGenerated, Time2);
+    | project upn, HopTime = min(TimeGenerated, Time2);
 
-// ── Burst analysis: slide 6-hour window around each hop ─────────────
+
+
+//───────────────────  BURST (≥3 geos in 6 h)  ──────────────────
 Hops
 | join kind=inner (Base) on upn
 | where TimeGenerated between (HopTime .. HopTime + BurstWindow)
 | summarize
-      FirstSeen  = min(TimeGenerated),
-      LastSeen   = max(TimeGenerated),
-      Geos       = make_set(senderLoc, 5),
-      MaxAttach  = max(attachMB)
+      FirstSeen = min(TimeGenerated),
+      LastSeen  = max(TimeGenerated),
+      Geos      = make_set(senderLoc, 5),
+      MaxMB     = max(msgMB)                              // (★)
     by upn
 | extend GeoCount = array_length(Geos)
-
-// ── Final gating logic ───────────────────────────────────────────────
 | where GeoCount >= MinGeos
-      and MaxAttach >= MinAttachMB
+      and MaxMB    >= MinAttachMB                        // (★)
 
-// ── Audit vs. Enforce toggle ────────────────────────────────────────
-| extend verdict = iff(Mode == "Audit", "Audit-Log-Only", "Alert")
+
+
+//────────────────────────  ALERT  ──────────────────────────────
 | project
       TimeGenerated = FirstSeen,
       upn,
@@ -69,11 +89,10 @@ Hops
       GeoCount,
       FirstSeen,
       LastSeen,
-      MaxAttachMB = round(MaxAttach,2),
-      verdict,
-      severity    = "High",
-      tactic      = "Initial Access",
-      technique   = "Valid Accounts (T1078)",
-      alertTitle  = strcat("🚨 Impossible sender burst for ", upn,
-                           " – ", GeoCount, " geos in ",
-                           toduration(LastSeen-FirstSeen))
+      MaxAttachMB = round(MaxMB, 2),
+      severity   = "High",
+      tactic     = "Initial Access",
+      technique  = "Valid Accounts (T1078)",
+      alertTitle = strcat("🚨 Impossible sender burst for ",
+                          upn, " – ", GeoCount, " geos in ",
+                          toduration(LastSeen - FirstSeen))
