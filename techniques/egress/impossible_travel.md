@@ -1,63 +1,55 @@
-//  █████  Impossible-Sender / Anomalous Outbound Geo  █████
-//  • Whitelists exact VPN IPs  ➟  VpnIPs   (dynamic list)
-//  • Whitelists VPN/SWG CIDRs  ➟  VpnCIDRs (dynamic list)
-//  • Flags a user when:                                          │
-//        – same UPN uses ≥3 different geos inside 6 h            │
-//        – the hop between any two geos was <2 h (impossible)    │
-//        – at least one mail in the burst carries ≥0.1 MB        │
-//  • No heavyweight self-join → memory-safe
-//  • Drop/adjust any field-name that differs in your schema
-//  -------------------------------------------------------------
+// █████  Impossible-Sender / Anomalous Outbound **Country**  █████
+//
+//  Change-set vs. last version
+//  ────────────────────────────────────────────────────────────
+//   1.  **No VPN IP / CIDR lists** – entire allow-list section removed.
+//   2.  Derive country code with geo_info_from_ip_address(senderIp).
+//   3.  Use **country** (ISO-2) as the “location” string.
+//   4.  “Impossible hop” = same UPN, different **country**, <2 h apart.
+//   5.  ≥3 distinct countries in a 6 h burst + ≥0.1 MB attachments.
+//  ────────────────────────────────────────────────────────────
 
-//────────  PARAMETERS  ──────────────────────────────────────────
-let Lookback        = 24h;          // how far back to search
+
+//──────── PARAMETERS ───────────────────────────────────────────
+let Lookback        = 24h;
 let BurstWindow     = 6h;
-let ImpossibleGapM  = 120;          // 2 h → 120 min
-let MinGeos         = 3;            // require ≥3 locations in burst
-let MinAttachMB     = 0.1;          // at least 0.1 MB attachments
-let SizeField       = "fileSizeBytes";   // name inside attachments[*]
+let ImpossibleGapM  = 120;           // 2 h  → 120 minutes
+let MinCountries    = 3;             // need at least 3 different countries
+let MinAttachMB     = 0.1;
+let SizeField       = "fileSizeBytes";  // attachment size property
+// Optional: countries we EXPECT (HQ + branches).  Remove if you want all.
+let HomeCountries   = dynamic(["US","GB","CA"]);
 
-//────────  CORPORATE VPN / SWG ALLOW-LIST  ──────────────────────
-let VpnIPs   = dynamic([            // exact POP IPs
-    "104.1.2.3", "104.1.2.4"
-]);
-let VpnCIDRs = dynamic([            // full blocks
-    "203.0.113.0/24", "198.51.100.128/25"
-]);
 
-//────────  BASE: one row per outbound mail  ─────────────────────
+//──────── BASE – one row per outbound e-mail ──────────────────
 let Base =
     EgressLog
     | where TimeGenerated >= ago(Lookback)
     | where LogSource == "egress"
-    // | where direction == "Outbound"           // ← uncomment if present
+    // | where direction == "Outbound"
     | mv-expand attachments
     | extend
-          upn        = tostring(identities[0].upn),
-          senderLoc  = tostring(senderLocation),
-          senderIP   = tostring(senderIp),        // ← adjust if field differs
-          fileMB     = iif(isnull(todouble(attachments[SizeField])),
-                           0.25,
-                           todouble(attachments[SizeField]) / 1048576.0)
+          upn       = tostring(identities[0].upn),
+          senderIP  = tostring(senderIp),
+          geo       = geo_info_from_ip_address(senderIP),
+          country   = tostring(geo.Country),                 // NEW
+          fileMB    = iif(isnull(todouble(attachments[SizeField])),
+                          0.25,
+                          todouble(attachments[SizeField]) / 1048576.0)
     | summarize msgMB = sum(fileMB)
-          by upn, senderLoc, senderIP, TimeGenerated
-    | where isnotempty(upn) and isnotempty(senderLoc)
+          by upn, country, TimeGenerated
+    | where isnotempty(upn) and isnotempty(country)
+          and country !in (HomeCountries);   // ignore routine corporate geo
 
-    //──── VPN IP / CIDR allow-list  ─────────────────────────────
-    | where senderIP !in (VpnIPs)
-          and not array_any(
-                  VpnCIDRs,
-                  (cidr:string) => ipv4_is_in_range(senderIP, cidr)
-              );
 
-//────────  PASS 1: “impossible hops” (<2 h, diff geo)  ──────────
+//──────── PASS 1 – detect “impossible hops” (<2 h, diff country) ─────
 let Hops =
     Base
     | sort by upn, TimeGenerated
     | serialize
     | extend
           prevTime = prev(TimeGenerated),
-          prevLoc  = prev(senderLoc),
+          prevCtry = prev(country),
           prevUpn  = prev(upn)
     | extend
           gapM = iff(upn == prevUpn,
@@ -65,37 +57,39 @@ let Hops =
                                         TimeGenerated, prevTime)),
                      999999)
     | where upn == prevUpn
-          and senderLoc != prevLoc
+          and country != prevCtry
           and gapM < ImpossibleGapM
     | project upn, HopTime = TimeGenerated;
 
-//────────  PASS 2: 6-hour burst around each hop  ────────────────
+
+//──────── PASS 2 – 6 h burst around each hop ──────────────────────────
 Hops
 | join kind=inner (Base) on upn
 | where TimeGenerated between (HopTime .. HopTime + BurstWindow)
 | summarize
       FirstSeen = min(TimeGenerated),
       LastSeen  = max(TimeGenerated),
-      Geos      = make_set(senderLoc, 5),
+      Countries = make_set(country, 5),
       MaxMB     = max(msgMB)
     by upn
-| extend GeoCount = array_length(Geos)
-| where GeoCount >= MinGeos
-      and MaxMB    >= MinAttachMB
+| extend CountryCount = array_length(Countries)
+| where CountryCount >= MinCountries
+      and MaxMB       >= MinAttachMB
 
-//────────  ALERT PAYLOAD  ───────────────────────────────────────
+
+//──────── ALERT PAYLOAD ───────────────────────────────────────────────
 | project
       TimeGenerated = FirstSeen,
       upn,
-      Geos,
-      GeoCount,
+      Countries,
+      CountryCount,
       FirstSeen,
       LastSeen,
-      MaxAttachMB = round(MaxMB, 2),
+      MaxAttachMB = round(MaxMB,2),
       severity   = "High",
       tactic     = "Initial Access",
       technique  = "Valid Accounts (T1078)",
-      alertTitle = strcat(
-                     "🚨 Impossible-sender burst for ",
-                     upn, " – ", GeoCount, " geos over ",
-                     tostring(LastSeen - FirstSeen))
+      alertTitle = strcat("🚨 Impossible-sender burst for ",
+                          upn, " – ", CountryCount,
+                          " countries over ",
+                          tostring(LastSeen - FirstSeen))
