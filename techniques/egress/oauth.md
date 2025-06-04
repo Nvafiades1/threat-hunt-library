@@ -104,3 +104,12 @@ Core
       technique  = "Phishing via OAuth Consent (T1556.007)",
       alertTitle = strcat("🚨 OAuth-consent phish from ", senderEmail)
 
+      I’m with you on the core idea that Egress should handle the heavy lifting and that our first tuning lever is structured FP feedback to their model.
+
+That said, I’d tweak the approach:
+	•	Leverage header security signals downstream.  SPF/DKIM/DMARC shouldn’t gate Egress, but in ADX they’re perfect enrichment for risk-scoring, auto-quarantine rules, or FP suppression.  Ignoring them costs us easy context.
+	•	Triage the “suspicious/no-phish-type” class now.  Instead of waiting for T3, let’s quantify the FP rate, then bucket by secondary indicators (SPF fail, first-time sender, link reputation, etc.).  We can temporarily suppress the lowest-risk bucket so analysts aren’t buried.
+	•	Feedback loop: we’ll keep a daily/weekly export of confirmed FPs and send it to Egress engineering so the model tightens up over time.
+
+Net-net: use Egress for what it’s good at, but enrich and automate in ADX so the SOC workload stays sane.
+
