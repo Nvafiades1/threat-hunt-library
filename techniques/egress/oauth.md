@@ -21,50 +21,57 @@
 
 ---
 
-## 2 · ADX (Kusto) query
+// █████  OAuth-Consent Credential Harvest  –  array_any-free  █████
 
-```kusto
-// █████  OAuth-Consent Credential Harvest  █████
-
-//──── PARAMETERS (tweak as needed) ─────────────────────
-let Lookback      = 48h;            // scan window
-let OAuthHosts    = dynamic([       // keep list short & precise
+// 1.  PARAMETERS
+let Lookback   = 48h;
+let OAuthHosts = dynamic([
     "accounts.google.com/o/oauth2",
     "login.microsoftonline.com/common/oauth2",
     "login.microsoftonline.com/consumers/oauth2"
 ]);
-let GoodBrandDomains = dynamic(["@microsoft.com", "@google.com"]);  // optional allow-list
+let GoodBrandDomains = dynamic(["@microsoft.com","@google.com"]);
 
-//──── Pull inbound mail & normalise -----------------------------------------------------------------------------------
-EgressLog
-| where TimeGenerated >= ago(Lookback)
-| where LogSource == "egress"
-| where direction   == "Inbound"                       // Defend = inbound only
-| extend
-      senderEmail  = tostring(from[0].emailAddress),
-      senderDomain = strcat("@", substring(senderEmail, index_of(senderEmail,"@")+1)),
-      coldSender   = relationshipHistory == "FirstTimeSender",
-      riskAI       = threatscore       == "Dangerous",
-      authFail     = (spf != "Pass" or dkim != "Pass" or dmarc == "Fail"),
-      phishingML   = array_any(phishTypes,
-                       (p) => p in~ ("technical","socialengineering")),
+// 2.  INBOUND MAIL – basic flags
+let Core =
+    EgressLog
+    | where TimeGenerated >= ago(Lookback)
+    | where LogSource == "egress"
+    | where direction   == "Inbound"
+    | extend
+          senderEmail  = tostring(from[0].emailAddress),
+          senderDomain = strcat("@", substring(senderEmail, index_of(senderEmail, "@")+1)),
+          coldSender   = (relationshipHistory == "FirstTimeSender"),
+          riskAI       = (threatscore       == "Dangerous"),
+          authFail     = (spf != "Pass" or dkim != "Pass" or dmarc == "Fail");
 
-      // link hit – any link starts with OAuth host
-      oauthHit     = array_any(
-                       links,
-                       (l) =>
-                         array_any(OAuthHosts,
-                                   (h) => startswith(tolower(l.link), h)) )
+// 3.  FIND MESSAGES WITH AN OAUTH-CONSENT LINK  (mv-expand links)
+let WithOAuth =
+    Core
+    | mv-expand linkObj = links
+    | extend linkLower = tolower(tostring(linkObj.link))
+    | where
+          linkLower startswith OAuthHosts[0]
+          or linkLower startswith OAuthHosts[1]
+          or linkLower startswith OAuthHosts[2]
+    | summarize anyOauth = anytrue(1) by _EventId   // keep unique msg
 
-//──── Apply gates ------------------------------------------------------------------------------------------------------
-| where oauthHit
-      and ( coldSender or riskAI )
-      and phishingML
-      // ---- uncomment next line if you want auth failures too ----
-      // and authFail
+// 4.  FIND MESSAGES TAGGED TECHNICAL / SOCIALENGINEERING (mv-expand phishTypes)
+let WithPhishTag =
+    Core
+    | mv-expand pt = phishTypes
+    | where tolower(pt) in ("technical","socialengineering")
+    | summarize anyTag = anytrue(1) by _EventId;
+
+// 5.  MERGE & APPLY FINAL GATES
+Core
+| summarize args = make_any(*) by _EventId     // re-uniquify
+| join kind=inner (WithOAuth)   on _EventId
+| join kind=inner (WithPhishTag) on _EventId
+| where (coldSender or riskAI)
       and senderDomain !in (GoodBrandDomains)
 
-//──── Alert output -----------------------------------------------------------------------------------------------------
+// 6.  ALERT FIELDS
 | project
       TimeGenerated,
       senderEmail,
@@ -77,4 +84,5 @@ EgressLog
       severity   = "High",
       tactic     = "Credential Access",
       technique  = "Phishing via OAuth Consent (T1556.007)",
-      alertTitle = strcat("🚨 OAuth-Consent phish from ", senderEmail)
+      alertTitle = strcat("🚨 OAuth-consent phish from ", senderEmail)
+
