@@ -1,15 +1,21 @@
-// ───────── PARAMETERS ─────────
-let Lookback       = 24h;
-let BurstWindow    = 6h;
-let ImpossibleGap  = 2h;
-let ImpossibleGapM = toint(ImpossibleGap / 1m);
-let MinGeos        = 3;
-let MinAttachMB    = 0.1;
-let VpnLocations   = dynamic(["US-VPN-NY","US-VPN-LA"]);
-let SizeField      = "fileSizeBytes";   // change if different
+//  Impossible-Sender / Anomalous Outbound Geo  – FIXED
+//------------------------------------------------------------------
+//  • No heavyweight self-join (uses prev())
+//  • Works even if attachments lack explicit size (default 0.25 MB)
+//  • VPN allow-list, ≥3 geos in 6 h, ≥0.1 MB attachments
+//------------------------------------------------------------------
 
-// ───────── PREP: per-message attachment MB & basic filters ─────────
-let Mail =
+// ─── PARAMETERS ───────────────────────────────────────────────
+let Lookback        = 24h;
+let BurstWindow     = 6h;
+let ImpossibleGapM  = 120;        // 2 h → 120 minutes
+let MinGeos         = 3;
+let MinAttachMB     = 0.1;
+let VpnLocations    = dynamic(["US-VPN-NY","US-VPN-LA"]);
+let SizeField       = "fileSizeBytes";   // change if different
+
+// ─── BASE table: one row per outbound e-mail ─────────────────
+let Base =
     EgressLog
     | where TimeGenerated >= ago(Lookback)
     | where LogSource == "egress"
@@ -20,28 +26,33 @@ let Mail =
               fileMB     = iif(isnull(todouble(attachments[SizeField])),
                                0.25,
                                todouble(attachments[SizeField]) / 1048576.0)
-    | summarize msgMB = sum(fileMB)            // one row per message
+    | summarize msgMB = sum(fileMB)
           by upn, senderLoc, TimeGenerated
     | where isnotempty(upn) and isnotempty(senderLoc)
-    | where senderLoc !in (VpnLocations);
+          and senderLoc !in (VpnLocations);
 
-// ───────── PASS 1: find all “impossible hops” (<2 h, diff geo) ──────
+// ─── PASS 1: detect “impossible” hops (< 2 h, diff geo) ──────
 let Hops =
-    Mail
+    Base
     | sort by upn, TimeGenerated
-    | serialize                          // guarantees sequential prev()
-    | extend prevTime = prev(TimeGenerated),
-             prevLoc  = prev(senderLoc),
-             gapM     = iff(isnull(prevTime), 999999,
-                            abs(datetime_diff('minute', TimeGenerated, prevTime)))
-    | where upn == prev(upn)             // same user as previous row
-          and senderLoc != prevLoc       // geo changed
+    | serialize                            // prev()/next() now reliable
+    | extend
+          prevTime = prev(TimeGenerated),
+          prevLoc  = prev(senderLoc),
+          prevUpn  = prev(upn)
+    | extend
+          sameUser = upn == prevUpn,
+          gapM     = iff(sameUser,
+                         abs(datetime_diff('minute', TimeGenerated, prevTime)),
+                         999999)
+    | where sameUser
+          and senderLoc != prevLoc
           and gapM < ImpossibleGapM
     | project upn, HopTime = TimeGenerated;
 
-// ───────── PASS 2: build 6-hour bursts around each hop ──────────────
+// ─── PASS 2: burst analysis (≥3 geos in 6 h) ─────────────────
 Hops
-| join kind=inner (Mail) on upn
+| join kind=inner (Base) on upn
 | where TimeGenerated between (HopTime .. HopTime + BurstWindow)
 | summarize
       FirstSeen = min(TimeGenerated),
@@ -53,7 +64,7 @@ Hops
 | where GeoCount >= MinGeos
       and MaxMB    >= MinAttachMB
 
-// ───────── ALERT PAYLOAD ────────────────────────────────────────────
+// ─── ALERT PAYLOAD ───────────────────────────────────────────
 | project
       TimeGenerated = FirstSeen,
       upn,
@@ -65,6 +76,7 @@ Hops
       severity   = "High",
       tactic     = "Initial Access",
       technique  = "Valid Accounts (T1078)",
-      alertTitle = strcat("🚨 Impossible-sender burst for ", upn,
-                          " – ", GeoCount, " geos over ",
+      alertTitle = strcat("🚨 Impossible-sender burst for ",
+                          upn, " – ", GeoCount,
+                          " geos over ",
                           tostring(LastSeen - FirstSeen))
