@@ -26,9 +26,27 @@
 // 1.  PARAMETERS
 let Lookback   = 48h;
 let OAuthHosts = dynamic([
-    "accounts.google.com/o/oauth2",
-    "login.microsoftonline.com/common/oauth2",
-    "login.microsoftonline.com/consumers/oauth2"
+  "https://accounts.google.com/o/oauth2",
+  "https://login.microsoftonline.com/common/oauth2",
+  "https://login.microsoftonline.com/consumers/oauth2",
+  "https://login.microsoftonline.com/",                // catches tenant-ID paths
+  "https://*.okta.com/oauth2/v1/authorize",
+  "https://*.auth0.com/authorize",
+  "https://*.amazoncognito.com/oauth2/authorize",
+  "https://www.dropbox.com/oauth2/authorize",
+  "https://slack.com/oauth/v2/authorize",
+  "https://github.com/login/oauth/authorize",
+  "https://zoom.us/oauth/authorize",
+  "https://account.box.com/api/oauth2/authorize",
+  "https://ims-na1.adobelogin.com/ims/authorize",
+  "https://appleid.apple.com/auth/authorize",
+  "https://login.salesforce.com/services/oauth2/authorize",
+  "https://*.my.salesforce.com/services/oauth2/authorize",
+  "https://account.docusign.com/oauth/auth",
+  "https://www.linkedin.com/oauth/v2/authorization",
+  "https://auth.atlassian.com/authorize",
+  "https://app.hubspot.com/oauth/authorize"
+]);
 ]);
 let GoodBrandDomains = dynamic(["@microsoft.com","@google.com"]);
 
