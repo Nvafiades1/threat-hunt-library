@@ -1,57 +1,52 @@
-/* ──────────────────────────────────────────────────────────────────────────
-   Suspicious Inbound Mail – v6
-   • Fixes “authFailed always TRUE”   → now triggers only on **explicit FAILS**
-   • Removes any hit driven solely by cloud bulk-mailer
-   • Excludes phishTypes = grayMail (case-insensitive)
-────────────────────────────────────────────────────────────────────────── */
+// ─────────  File-open events that touch the SAM / SECURITY / SYSTEM hives  ─────────
+database('Endpoint').CrowdStrikeFDR
+| where TimeGenerated >= ago(14d)                                  // look-back
+| where event_simpleName == "FileOpenInfo"
+| project ActingProcessID = tolong(ContextProcessId),
+          TimeGenerated,
+          TargetFile   = tolower(tostring(TargetFileName))
+// cheap string tests instead of regex
+| where TargetFile has @"\windows\system32\config\"
+      and (TargetFile has "sam" or TargetFile has "security" or TargetFile has "system")
+      and (TargetFile endswith ".log" or TargetFile endswith ".sav"
+           or TargetFile endswith ".bak" or TargetFile endswith ".hiv")
+// keep newest row per process ⇒ huge row reduction
+| summarize arg_max(TimeGenerated, TargetFile) by ActingProcessID
 
-source = egress
-| where TimeGenerated >= ago(7d)                     // never run on the full archive
-| extend
-    /* ── primitive fields ─────────────────────────────────────────────── */
-    senderEmail  = tolower(from[0].emailAddress),
-    senderDomain = substring(senderEmail, index_of(senderEmail, "@")),
-    bounceDomain = substring(tostring(mailFrom), index_of(tostring(mailFrom), "@")),
+// ─────────  JOIN to the matching ProcessRollup2 row  ─────────
+| join kind=innerunique (
+    database('Endpoint').CrowdStrikeFDR
+    | where TimeGenerated >= ago(14d)
+    | where event_simpleName == "ProcessRollup2"
+    | project  pid_target   = tolong(TargetProcessId),
+               TimeGenerated,
+               ComputerName,
+               proc_image   = tolower(ImageFileName),
+               parent_image = tolower(ParentBaseFileName),
+               cmdline      = tostring(CommandLine)
+    | summarize arg_max(TimeGenerated, ComputerName,
+                        proc_image, parent_image, cmdline) by pid_target
+) on $left.ActingProcessID == $right.pid_target
 
-    /* normalise auth strings (strip spaces + lower-case) */
-    spfStatus   = trim(" ", tolower(tostring(spf))),      // "pass" / "fail" / "none"
-    dkimStatus  = trim(" ", tolower(tostring(dkim))),
-    dmarcStatus = trim(" ", tolower(tostring(dmarc))),
+// ─────────  Lightweight scoring & noise-gate  ─────────
+| extend is_whitelisted = proc_image in (dynamic([
+        @"c:\windows\system32\lsass.exe",
+        @"c:\windows\system32\services.exe",
+        @"c:\windows\system32\winlogon.exe",
+        @"c:\windows\system32\svchost.exe",
+        @"c:\windows\system32\taskhostw.exe"
+    ])),
+         bad_parent  = parent_image in (dynamic([
+        "cmd.exe","powershell.exe","wscript.exe","explorer.exe"
+    ])),
+         masquerade  = proc_image endswith "lsass.exe"
+                       and not proc_image startswith @"c:\windows\system32"
+| extend file_score  = 1,
+         proc_score  = iff(is_whitelisted, 0, 2),
+         evade_score = iff(bad_parent or masquerade, 3, 0),
+         total_score = file_score + proc_score + evade_score
+| where total_score >= 3                                            // alert threshold
 
-    /* ── red-flag booleans ────────────────────────────────────────────── */
-    isFirstTime    = (relationshipHistory == "FirstTimeSender"),
-
-    /* strict auth failure: DMARC FAIL + (SPF FAIL OR DKIM FAIL) */
-    authFailed     = (dmarcStatus == "fail"
-                      and (spfStatus == "fail" or dkimStatus == "fail")),
-
-    domainMismatch = (bounceDomain != senderDomain),
-
-    /* build a single lower-case string of phishTypes (array → “;”-joined) */
-    pt             = trim(" ", tolower(array_strcat(phishTypes, ";"))),
-
-    /* TRUE if any non-grayMail phishing category present                    */
-    phishClassifier = pt matches regex
-        "(technical|brandimpersonator|companyimpersonator|spear|\
-          socialengineering|scouting|scam419|mailfraud)",
-
-    /* ── composite decision (HIGH risk) ───────────────────────────────── */
-    highRisk = ( isFirstTime
-                 and authFailed
-                 and domainMismatch           // add link-mismatch here if desired
-                 and phishClassifier )        // cloudMailer removed
-
-| where highRisk
-| project
-      TimeGenerated,
-      senderEmail,
-      senderDomain,
-      bounceDomain,
-      subject,
-      spfStatus, dkimStatus, dmarcStatus,
-      phishTypes,
-      relationshipHistory,
-      severity   = "High",
-      tactic     = "Initial Access",
-      technique  = "Phishing (T1566)",
-      alertTitle = strcat("🚨 Suspicious inbound email from ", senderEmail)
+| project-reorder TimeGenerated, ComputerName,
+                   proc_image, parent_image, cmdline,
+                   TargetFile, total_score
