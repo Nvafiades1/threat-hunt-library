@@ -1,0 +1,8 @@
+site_name: Threat-Hunts
+theme:
+  name: material
+nav:
+  - Home: index.md
+  - ATT&CK Matrix: matrix.md
+plugins:
+  - search
