@@ -1,0 +1,23 @@
+name: Build-and-Deploy-Docs
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - name: Install deps
+        run: pip install mkdocs-material stix2[patterns] requests
+      - name: Generate matrix
+        run: python tools/build_matrix.py
+      - name: Deploy MkDocs
+        uses: peaceiris/actions-gh-pages@v4   # thin wrapper around `mkdocs gh-deploy`
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: site
