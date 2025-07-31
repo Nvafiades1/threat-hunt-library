@@ -1,1 +1,77 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><link rel="icon" href="/threat-hunt-library/favicon.ico"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#000000"/><meta name="description" content="Web site created using create-react-app"/><link rel="apple-touch-icon" href="/threat-hunt-library/logo192.png"/><link rel="manifest" href="/threat-hunt-library/manifest.json"/><title>React App</title><script defer="defer" src="/threat-hunt-library/static/js/main.a539213a.js"></script><link href="/threat-hunt-library/static/css/main.f855e6bc.css" rel="stylesheet"></head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Threat-Hunt Library – MITRE Matrix</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {font-family: system-ui, sans-serif; margin: 0; background: #111; color:#eee;}
+    .matrix {display: grid; overflow-x:auto; padding:1rem;
+             grid-auto-rows: minmax(2.5rem,auto);}
+    .tactic    {background:#222; font-weight:600; text-align:center; padding:.5rem; border:1px solid #333;}
+    .technique {background:#1a1a1a; margin:.5rem; padding:.25rem .5rem; border-radius:4px;
+                border:1px solid #444; font-size:.85rem;}
+    a {color:#8cf; text-decoration:none;}
+    a:hover {text-decoration:underline;}
+  </style>
+</head>
+<body>
+<h1 style="text-align:center;margin:1rem 0">Threat-Hunt Library<br>MITRE ATT&CK Matrix</h1>
+<div id="matrix" class="matrix"></div>
+
+<script>
+(async () => {
+  /* ---------- configuration ---------- */
+  const owner  = "Nvafiades1";                 // <- your GitHub user/org
+  const repo   = "threat-hunt-library";        // <- your repo
+  const branch = "main";                       // whichever branch holds the folders
+  const tactics = [                            // Enterprise ATT&CK order
+    "Reconnaissance","Resource Development","Initial Access","Execution",
+    "Persistence","Privilege Escalation","Defense Evasion","Credential Access",
+    "Discovery","Lateral Movement","Collection","Command And Control",
+    "Exfiltration","Impact"
+  ];
+  /* ---------- helpers ---------- */
+  const apiRoot = `https://api.github.com/repos/${owner}/${repo}/contents`;
+  const slugify = str => str.replace(/\s+/g,"%20");       // for API path
+  const nice = str => str.replace(/_/g," ").replace(/T(\d{4})/,"T$1"); // prettify name
+  const matrix = document.getElementById("matrix");
+  matrix.style.gridTemplateColumns = `repeat(${tactics.length}, minmax(12rem,1fr))`;
+  /* ---------- build header row ---------- */
+  tactics.forEach(t => {
+    const cell = document.createElement("div");
+    cell.className = "tactic";
+    cell.textContent = t;
+    matrix.appendChild(cell);
+  });
+  /* ---------- fetch & populate techniques ---------- */
+  for (const tactic of tactics) {
+    try {
+      const res = await fetch(`${apiRoot}/${slugify(tactic)}?ref=${branch}`);
+      if (!res.ok) throw new Error(`${tactic}: ${res.status}`);
+      const items = await res.json();
+      // sort alpha, folders first
+      items
+        .filter(i => i.type === "dir" || i.type === "file")
+        .sort((a,b)=>a.name.localeCompare(b.name))
+        .forEach(({name, html_url}) => {
+          const cell = document.createElement("div");
+          cell.className = "technique";
+          const link = document.createElement("a");
+          link.href = html_url;
+          link.textContent = nice(name);
+          cell.appendChild(link);
+          matrix.appendChild(cell);
+        });
+    } catch (err) {
+      console.error(err);
+      const cell = document.createElement("div");
+      cell.className = "technique";
+      cell.textContent = "(none)";
+      matrix.appendChild(cell);
+    }
+  }
+})();
+</script>
+</body>
+</html>
