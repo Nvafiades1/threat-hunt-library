@@ -32,6 +32,10 @@ TACTICS = [
 
 ROOT       = pathlib.Path(__file__).resolve().parents[1]
 TECH_DIR   = ROOT / "techniques"
+# --- quick sanity probes -----------------------------------------------
+print(f"[DEBUG] TECH_DIR exists? {TECH_DIR.exists()}")
+print(f"[DEBUG] First five items in TECH_DIR: {[p.name for p in sorted(TECH_DIR.iterdir())[:5]]}")
+
 MAP_FILE   = ROOT / "mitre_ttp_mapping.json"
 DOCS_DIR   = ROOT / "docs"
 OUTPUT     = DOCS_DIR / "index.html"
