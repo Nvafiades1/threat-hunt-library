@@ -20,58 +20,75 @@
 <div id="matrix" class="matrix"></div>
 
 <script>
+<script>
 (async () => {
   /* ---------- configuration ---------- */
-  const owner  = "Nvafiades1";                 // <- your GitHub user/org
-  const repo   = "threat-hunt-library";        // <- your repo
-  const branch = "main";                       // whichever branch holds the folders
-  const tactics = [                            // Enterprise ATT&CK order
+  const owner  = "Nvafiades1";
+  const repo   = "threat-hunt-library";
+  const branch = "main";           // whichever branch holds the files
+  const tactics = [
     "Reconnaissance","Resource Development","Initial Access","Execution",
     "Persistence","Privilege Escalation","Defense Evasion","Credential Access",
     "Discovery","Lateral Movement","Collection","Command And Control",
     "Exfiltration","Impact"
   ];
-  /* ---------- helpers ---------- */
-  const apiRoot = `https://api.github.com/repos/${owner}/${repo}/contents`;
-  const slugify = str => str.replace(/\s+/g,"%20");       // for API path
-  const nice = str => str.replace(/_/g," ").replace(/T(\d{4})/,"T$1"); // prettify name
+  const api    = path => `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+  const raw    = path => `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
+
+  /* ---------- build empty matrix ---------- */
   const matrix = document.getElementById("matrix");
   matrix.style.gridTemplateColumns = `repeat(${tactics.length}, minmax(12rem,1fr))`;
-  /* ---------- build header row ---------- */
   tactics.forEach(t => {
-    const cell = document.createElement("div");
-    cell.className = "tactic";
-    cell.textContent = t;
-    matrix.appendChild(cell);
+    const head = document.createElement("div");
+    head.className = "tactic";
+    head.textContent = t;
+    matrix.appendChild(head);
   });
-  /* ---------- fetch & populate techniques ---------- */
-  for (const tactic of tactics) {
-    try {
-      const res = await fetch(`${apiRoot}/${slugify(tactic)}?ref=${branch}`);
-      if (!res.ok) throw new Error(`${tactic}: ${res.status}`);
-      const items = await res.json();
-      // sort alpha, folders first
-      items
-        .filter(i => i.type === "dir" || i.type === "file")
-        .sort((a,b)=>a.name.localeCompare(b.name))
-        .forEach(({name, html_url}) => {
-          const cell = document.createElement("div");
-          cell.className = "technique";
-          const link = document.createElement("a");
-          link.href = html_url;
-          link.textContent = nice(name);
-          cell.appendChild(link);
-          matrix.appendChild(cell);
-        });
-    } catch (err) {
-      console.error(err);
-      const cell = document.createElement("div");
-      cell.className = "technique";
-      cell.textContent = "(none)";
-      matrix.appendChild(cell);
-    }
+
+  /* ---------- load mapping { "T1595": "Reconnaissance", … } ---------- */
+  let map = {};
+  try {
+    map = await (await fetch(raw("mitre_ttp_mapping.json"))).json();
+  } catch(e) {
+    console.error("Could not load mitre_ttp_mapping.json:", e);
   }
+
+  /* ---------- fetch technique folders ---------- */
+  const res = await fetch(api("techniques"));
+  if (!res.ok) {
+    console.error("Cannot read techniques/ folder:", await res.text());
+    return;
+  }
+  const techs = await res.json();
+
+  /* ---------- place each technique ---------- */
+  const colCache = {}; // tactic -> <div> to append into
+  const findCol = tact => {
+    if (colCache[tact]) return colCache[tact];
+    // create a hidden anchor div to keep grid alignment: skip first header row
+    const idx = tactics.indexOf(tact);
+    const anchor = document.createElement("div");
+    anchor.style.gridColumnStart = idx + 1; // grid columns are 1-based
+    matrix.appendChild(anchor);
+    colCache[tact] = anchor;
+    return anchor;
+  };
+
+  techs.forEach(item => {
+    if (item.type !== "dir" && item.type !== "file") return;
+    const name = item.name.replace(/_/g, " ");        // T1595 Search Engines
+    const id   = (name.match(/T\d{4}/) || ["UNK"])[0];
+    const tactic = map[id] || "Unmapped";
+    const cell = document.createElement("div");
+    cell.className = "technique";
+    const link = document.createElement("a");
+    link.href = item.html_url;
+    link.textContent = name;
+    cell.appendChild(link);
+    findCol(tactic).appendChild(cell);
+  });
 })();
+</script>
 </script>
 </body>
 </html>
