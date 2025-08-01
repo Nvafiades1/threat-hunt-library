@@ -5,8 +5,8 @@ Generate docs/index.html – MITRE ATT&CK matrix (dark skin)
 • Collapsible sub-techniques
 • Sticky header + live search (auto-expand matches)
 • Click a tactic header → dim other columns (Esc to reset)
-• Tool-tip: first 2 lines of README.md on hover
-• Fallback: any parent ID that starts with T14* defaults to 'Impact'
+• Tooltip: first 2 lines of README.md on hover
+• Robust fallback so ALL Impact techniques land in ‘Impact’
 """
 
 import html, json, pathlib, sys
@@ -23,6 +23,15 @@ TACTICS = [
     "Discovery", "Lateral Movement", "Collection", "Command And Control",
     "Exfiltration", "Impact",
 ]
+
+# === Every parent ID that belongs to the IMPACT tactic ===============
+IMPACT_IDS = {
+    # T14xx
+    "T1485", "T1486", "T1489", "T1490", "T1491", "T1492", "T1493",
+    "T1494", "T1495", "T1496", "T1498", "T1499",
+    # IDs that start with T15 / T16 but are still Impact
+    "T1529", "T1561", "T1565", "T1646", "T1657",
+}
 
 ROOT      = pathlib.Path(__file__).resolve().parents[1]
 TECH_DIR  = ROOT / TECH_PATH
@@ -63,7 +72,7 @@ def read_snippet(folder: pathlib.Path, n=2) -> str:
         out.append(line)
         if len(out) >= n:
             break
-    return " &#10; ".join(out)            # '&#10;' renders as newline in title
+    return " &#10; ".join(out)            # '&#10;' → line-break in title
 
 def esc(txt: str) -> str:
     return html.escape(txt.replace("_", " "))
@@ -84,13 +93,13 @@ matrix: dict[str, dict[str, tuple[tuple[str, bool] | None,
 unmapped_ids = set()
 
 for item in tech_items:
-    tech   = item.name            # e.g. T1485.001_stuff
-    tid    = tech.split("_")[0]   # T1485.001
-    parent = tid.split(".")[0]    # T1485
+    tech   = item.name            # T1485 or T1485.001_…
+    tid    = tech.split("_")[0]
+    parent = tid.split(".")[0]
     tactic = mapping.get(parent)
-    if tactic is None:
-        # ── fallback: treat T14xx as Impact ────────────────────────────────
-        tactic = "Impact" if parent.startswith("T14") else "Unmapped"
+
+    if tactic is None:                            # not in JSON
+        tactic = "Impact" if parent in IMPACT_IDS else "Unmapped"
         if tactic == "Unmapped":
             unmapped_ids.add(parent)
 
@@ -98,14 +107,13 @@ for item in tech_items:
     bucket = matrix.setdefault(tactic, defaultdict(lambda: [None, []]))
     if "." in tid:                       # sub-technique
         bucket[parent][1].append((tech, filled))
-    else:                               # parent technique
+    else:                               # parent
         bucket[parent][0] = (tech, filled)
 
-# ── debug: list remaining unmapped parents (once) ───────────────────────────
 if unmapped_ids:
-    print("⚠️  Unmapped parent IDs:", ", ".join(sorted(unmapped_ids)))
+    print("⚠️  Unmapped parents:", ", ".join(sorted(unmapped_ids)))
 
-# ── build HTML ───────────────────────────────────────────────────────────────
+# ── build HTML (identical to previous version) ───────────────────────────────
 headers, columns = [], []
 for idx, tact in enumerate(TACTICS):
     headers.append(f'<div class="tactic" data-idx="{idx}">{esc(tact)}</div>')
@@ -147,14 +155,12 @@ for idx, tact in enumerate(TACTICS):
             )
     columns.append(f'<div class="col" data-idx="{idx}">' + "".join(inner) + '</div>')
 
-# prepend unmapped column if still needed
 if "Unmapped" in matrix and matrix["Unmapped"]:
     headers.insert(0, '<div class="tactic unmapped-h" data-idx="-1">Unmapped</div>')
-    columns.insert(0, columns.pop())   # move first data col to front
+    columns.insert(0, columns.pop())
 
 num_cols = len(headers)
 
-# ── HTML doc ─────────────────────────────────────────────────────────────────
 HTML = f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <title>MITRE ATT&CK Matrix</title>
