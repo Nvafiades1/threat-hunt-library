@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 """
-Static MITRE ATT&CK matrix generator
-───────────────────────────────────
+Generate docs/index.html – static, searchable MITRE ATT&CK matrix
+─────────────────────────────────────────────────────────────────
 • Scans techniques/ for T#### folders/files
-• Uses mitre_ttp_mapping.json for tactic mapping
-• Builds docs/index.html with:
-    – sticky header (title + search box)
-    – live keyword filter (client-side JS, no external deps)
-    – coloured pills: green=content, grey=placeholder, red column=Unmapped
+• Colours pills green if the folder has > README content
+• Sticky header with live-filter search box
 """
 
 import html, json, pathlib, sys
 
-# ── repo info for links ────────────────────────────────────────────────
-OWNER, REPO, BRANCH, TECH_PATH = "Nvafiades1", "threat-hunt-library", "main", "techniques"
-# ──────────────────────────────────────────────────────────────────────
+# ── repo specifics ───────────────────────────────────────────────────────────
+OWNER, REPO, BRANCH, TECH_PATH = (
+    "Nvafiades1",            # GitHub user / org
+    "threat-hunt-library",   # repository name
+    "main",                  # branch
+    "techniques",            # folder holding T#### directories
+)
 
 TACTICS = [
     "Reconnaissance", "Resource Development", "Initial Access", "Execution",
     "Persistence", "Privilege Escalation", "Defense Evasion", "Credential Access",
     "Discovery", "Lateral Movement", "Collection", "Command And Control",
-    "Exfiltration", "Impact"
+    "Exfiltration", "Impact",
 ]
 
 ROOT      = pathlib.Path(__file__).resolve().parents[1]
@@ -29,7 +30,7 @@ MAP_FILE  = ROOT / "mitre_ttp_mapping.json"
 DOCS_DIR  = ROOT / "docs"
 OUTPUT    = DOCS_DIR / "index.html"
 
-# ── load & normalise mapping ──────────────────────────────────────────
+# ── load & normalise mapping ────────────────────────────────────────────────
 try:
     raw = json.loads(MAP_FILE.read_text())
 except Exception as e:
@@ -41,7 +42,7 @@ mapping = ({o["technique_id"]: o["tactic"].title().replace("-", " ") for o in ra
            else {k: v.title().replace("-", " ") for k, v in raw.items()})
 print(f"[DEBUG] Mapping entries: {len(mapping)}")
 
-# ── scan techniques ──────────────────────────────────────────────────
+# ── scan techniques folder ──────────────────────────────────────────────────
 if not TECH_DIR.exists():
     print(f"❌  {TECH_DIR} not found!", file=sys.stderr)
     sys.exit(1)
@@ -52,6 +53,7 @@ print(f"[DEBUG] Items in TECH_DIR: {len(tech_items)} "
       f"(first five: {[p.name for p in tech_items[:5]]})")
 
 def has_content(path: pathlib.Path) -> bool:
+    """True if folder/file contains something beyond README.md."""
     if path.is_file():
         return True
     for f in path.iterdir():
@@ -70,7 +72,7 @@ for item in tech_items:
 print("[DEBUG] Counts per tactic:",
       {t: len(v) for t, v in matrix.items() if v})
 
-# ── HTML helpers ──────────────────────────────────────────────────────
+# ── build HTML cells ────────────────────────────────────────────────────────
 def esc(s: str) -> str: return html.escape(s.replace("_", " "))
 
 headers, columns = [], []
@@ -90,7 +92,7 @@ for tact in TACTICS:
             f'<a href="{url}" target="_blank">{esc(tech)}</a></div>')
     columns.append('<div class="col">' + "".join(inner) + '</div>')
 
-# prepend Unmapped column if necessary
+# prepend Unmapped column if needed
 if matrix.get("Unmapped"):
     headers.insert(0, '<div class="tactic unmapped-h">Unmapped</div>')
     unmapped_inner = "".join(
@@ -101,7 +103,7 @@ if matrix.get("Unmapped"):
 
 num_cols = len(headers)
 
-# ── assemble HTML ────────────────────────────────────────────────────
+# ── write HTML (all literal braces doubled) ────────────────────────────────
 HTML = f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <title>MITRE ATT&CK Matrix</title>
@@ -133,9 +135,14 @@ input[type=search]{{padding:.4rem .6rem;border-radius:4px;border:1px solid #444;
 </header>
 <div class="grid" id="matrix">{''.join(headers + columns)}</div>
 <script>
-const q=document.getElementById('search'), pills=[...document.querySelectorAll('.technique')];
-q.addEventListener('input', e=>{ const val=e.target.value.toLowerCase();
-  pills.forEach(p=>p.style.opacity = !val || p.textContent.toLowerCase().includes(val)?'1':'0.15');});
+const q = document.getElementById('search'),
+      pills = [...document.querySelectorAll('.technique')];
+
+q.addEventListener('input', e => {{
+  const val = e.target.value.toLowerCase();
+  pills.forEach(p => p.style.opacity = !val || p.textContent.toLowerCase().includes(val)
+                                   ? '1' : '0.15');
+}});
 </script>
 </body></html>"""
 
