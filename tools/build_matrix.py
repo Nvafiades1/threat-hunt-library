@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 """
-Generate docs/index.html – MITRE ATT&CK matrix (dark theme)
+Generate docs/index.html – MITRE ATT&CK matrix (dark skin)
+
+Features
+────────
 • Collapsible sub-techniques
-• Sticky header + live search
-• Click a tactic header to fade the others (click again or press Esc to reset)
+• Sticky header + search (auto-expand matches)
+• Click a tactic header → dim the rest (Esc to reset)
+• Tooltip: first 2 lines of README.md on hover
+• Horizontal scroll
+
+Drop this file at  tools/build_matrix.py
 """
 
 import html, json, pathlib, sys
@@ -40,6 +47,31 @@ mapping = (
     else {k: v.title().replace("-", " ") for k, v in raw.items()}
 )
 
+# ── helpers ──────────────────────────────────────────────────────────────────
+def has_content(path: pathlib.Path) -> bool:
+    if path.is_file():
+        return True
+    return any(f.is_file() and f.name.lower() not in {"readme.md", ".ds_store"}
+               for f in path.iterdir())
+
+def read_snippet(folder: pathlib.Path, n=2) -> str:
+    """Return first n non-blank lines of README.md (stripped of md syntax)."""
+    md = folder / "README.md"
+    if not md.exists():
+        return ""
+    out = []
+    for line in md.read_text(encoding="utf-8", errors="ignore").splitlines():
+        line = line.strip().lstrip("#").strip()
+        if not line or line.startswith("```") or line.startswith("!["):
+            continue
+        out.append(line)
+        if len(out) >= n:
+            break
+    return " &#10; ".join(out)            # '&#10;' renders as newline in title
+
+def esc(txt: str) -> str:
+    return html.escape(txt.replace("_", " "))
+
 # ── scan technique folders ───────────────────────────────────────────────────
 if not TECH_DIR.exists():
     sys.exit(f"❌  {TECH_DIR} not found")
@@ -47,14 +79,9 @@ if not TECH_DIR.exists():
 tech_items = sorted([p for p in TECH_DIR.iterdir() if p.name.startswith("T")],
                     key=lambda p: p.name.lower())
 
-def has_content(path: pathlib.Path) -> bool:
-    if path.is_file():
-        return True
-    return any(f.is_file() and f.name.lower() not in {"readme.md", ".ds_store"}
-               for f in path.iterdir())
-
 # tactic → parent_id → (parent_info, [sub_items])
-matrix: dict[str, dict[str, tuple[tuple[str, bool] | None, list[tuple[str, bool]]]]] = {
+matrix: dict[str, dict[str, tuple[tuple[str, bool] | None,
+                                  list[tuple[str, bool]]]]] = {
     t: defaultdict(lambda: [None, []]) for t in TACTICS
 }
 
@@ -72,8 +99,6 @@ for item in tech_items:
         bucket[parent][0] = (tech, filled)
 
 # ── build HTML ───────────────────────────────────────────────────────────────
-def esc(s: str) -> str: return html.escape(s.replace("_", " "))
-
 headers, columns = [], []
 for idx, tact in enumerate(TACTICS):
     headers.append(f'<div class="tactic" data-idx="{idx}">{esc(tact)}</div>')
@@ -85,37 +110,44 @@ for idx, tact in enumerate(TACTICS):
     inner = []
     for parent_id in sorted(bucket):
         p_info, subs = bucket[parent_id]
-        if p_info is None:                        # folder missing
+        if p_info is None:
             p_info = (parent_id, False)
         p_name, p_filled = p_info
-        p_cls = "filled" if p_filled else "empty"
-        p_url = f"https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_PATH}/{p_name}"
+        p_cls  = "filled" if p_filled else "empty"
+        p_url  = f"https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_PATH}/{p_name}"
+        p_tip  = html.escape(read_snippet(TECH_DIR / p_name))
+        p_title= f' title="{p_tip}"' if p_tip else ""
 
         if subs:
-            sub_html = "".join(
-                f'<div class="sub"><a href="https://github.com/{OWNER}/{REPO}/tree/'
-                f'{BRANCH}/{TECH_PATH}/{s}" target="_blank">{esc(s)}</a></div>'
-                for s, _ in sorted(subs, key=lambda x: x[0])
-            )
+            sub_html = ""
+            for s_name, s_filled in sorted(subs, key=lambda x: x[0]):
+                s_url   = f"https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_PATH}/{s_name}"
+                s_tip   = html.escape(read_snippet(TECH_DIR / s_name))
+                s_title = f' title="{s_tip}"' if s_tip else ""
+                sub_html += (
+                    f'<div class="sub"{s_title}><a href="{s_url}" '
+                    f'target="_blank">{esc(s_name)}</a></div>'
+                )
             inner.append(
-                f'<details class="technique {p_cls}">'
+                f'<details class="technique {p_cls}"{p_title}>'
                 f'<summary><a href="{p_url}" target="_blank">{esc(p_name)}</a></summary>'
                 f'{sub_html}</details>'
             )
         else:
             inner.append(
-                f'<div class="technique {p_cls}"><a href="{p_url}" '
-                f'target="_blank">{esc(p_name)}</a></div>'
+                f'<div class="technique {p_cls}"{p_title}>'
+                f'<a href="{p_url}" target="_blank">{esc(p_name)}</a></div>'
             )
     columns.append(f'<div class="col" data-idx="{idx}">' + "".join(inner) + '</div>')
 
+# prepend unmapped column if present
 if matrix.get("Unmapped"):
     headers.insert(0, '<div class="tactic unmapped-h" data-idx="-1">Unmapped</div>')
-    columns.insert(0, columns.pop())   # move first data col to front
+    columns.insert(0, columns.pop())
 
 num_cols = len(headers)
 
-# ── write HTML ───────────────────────────────────────────────────────────────
+# ── HTML doc ─────────────────────────────────────────────────────────────────
 HTML = f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <title>MITRE ATT&CK Matrix</title>
@@ -123,7 +155,7 @@ HTML = f"""<!DOCTYPE html>
 *{{box-sizing:border-box}}
 body{{margin:0;background:#111;color:#eee;font-family:system-ui,sans-serif}}
 body.focus .col.dim{{opacity:.15}}
-header{{position:sticky;top:0;left:0;right:0;z-index:999;
+header{{position:sticky;top:0;z-index:999;
         padding:.5rem 1rem;background:#111;border-bottom:1px solid #333;
         display:flex;align-items:center;gap:1rem}}
 h1{{flex:1;text-align:center;margin:0;font-size:1.5rem}}
@@ -166,32 +198,25 @@ const q       = document.getElementById('search'),
       cols    = [...document.querySelectorAll('.col')],
       body    = document.body;
 
-let focused = null;  // currently focused column idx or null
-
+let focused = null;
 function setFocus(idx) {{
   focused = idx;
   body.classList.toggle('focus', idx !== null);
   cols.forEach(c => c.classList.toggle('dim', idx !== null && c.dataset.idx !== String(idx)));
 }}
-
-tactics.forEach(t => {{
-  t.addEventListener('click', () => {{
-    const idx = t.dataset.idx;
-    setFocus(focused === idx ? null : idx);
-  }});
+tactics.forEach(t => t.onclick = () => {{
+  const idx = t.dataset.idx;
+  setFocus(focused === idx ? null : idx);
 }});
+document.addEventListener('keydown', e => e.key === 'Escape' && setFocus(null));
 
-document.addEventListener('keydown', e => {{
-  if (e.key === 'Escape') setFocus(null);
-}});
-
-/* live search */
 q.addEventListener('input', e => {{
   const val = e.target.value.toLowerCase().trim();
   pills.forEach(p => p.style.opacity = (!val || p.textContent.toLowerCase().includes(val)) ? '1' : '0.15');
   details.forEach(d => {{
-    const matchSub = [...d.querySelectorAll('.sub')].some(s => s.textContent.toLowerCase().includes(val));
-    d.open = val ? matchSub : false;
+    const match = [...d.querySelectorAll('.sub')].some(
+      s => s.textContent.toLowerCase().includes(val));
+    d.open = val ? match : false;
   }});
 }});
 </script>
@@ -199,4 +224,4 @@ q.addEventListener('input', e => {{
 
 DOCS_DIR.mkdir(exist_ok=True)
 OUTPUT.write_text(HTML, encoding="utf-8")
-print(f"✅  {OUTPUT} rebuilt")
+print(f"✅  {OUTPUT} rebuilt → {OUTPUT}")
