@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Generate docs/index.html – static, horizontally-scrollable, searchable
-MITRE ATT&CK matrix.
+Generate docs/index.html – static MITRE ATT&CK matrix
+with nested sub-techniques, sticky header & live search.
 """
 
 import html, json, pathlib, sys
+from collections import defaultdict
 
 # ── repo specifics ───────────────────────────────────────────────────────────
 OWNER, REPO, BRANCH, TECH_PATH = (
@@ -63,17 +64,28 @@ def has_content(path: pathlib.Path) -> bool:
             return True
     return False
 
-matrix: dict[str, list[tuple[str, bool]]] = {t: [] for t in TACTICS}
+# tactic → parent_id → (parent_info, [sub_items])
+matrix: dict[str, dict[str, tuple[tuple[str, bool], list[tuple[str, bool]]]]] = {
+    t: defaultdict(lambda: [None, []]) for t in TACTICS
+}
+
 for item in tech_items:
-    tid_full = item.name.split("_")[0]
-    tid_base = tid_full.split(".")[0]
-    tid      = tid_full if tid_full in mapping else tid_base
-    tactic   = mapping.get(tid, "Unmapped")
-    matrix.setdefault(tactic, []).append((item.name, has_content(item)))
+    tech_name = item.name
+    tid_full  = tech_name.split("_")[0]
+    tid_base  = tid_full.split(".")[0]
+    tactic    = mapping.get(tid_base, "Unmapped")  # map by parent ID
+    filled    = has_content(item)
+
+    parent_bucket = matrix.setdefault(tactic, defaultdict(lambda: [None, []]))
+    if "." in tid_full:  # sub-technique
+        parent_bucket[tid_base][1].append((tech_name, filled))
+    else:                # parent technique
+        parent_bucket[tid_base][0] = (tech_name, filled)
 
 print(
     "[DEBUG] Counts per tactic:",
-    {t: len(v) for t, v in matrix.items() if v},
+    {t: sum(len(v[1]) + (1 if v[0] else 0) for v in bucket.values())
+     for t, bucket in matrix.items() if bucket},
 )
 
 # ── build HTML cells ─────────────────────────────────────────────────────────
@@ -83,30 +95,46 @@ def esc(s: str) -> str:
 headers, columns = [], []
 for tact in TACTICS:
     headers.append(f'<div class="tactic">{esc(tact)}</div>')
-    entries = matrix.get(tact, [])
-    if not entries:
+    bucket = matrix.get(tact, {})
+    if not bucket:
         columns.append('<div class="blank">(none)</div>')
         continue
+
     inner = []
-    for tech, filled in entries:
-        url  = f"https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_PATH}/{tech}"
-        cls  = "filled" if filled else "empty"
-        indent = "&nbsp;" * 4 if "." in tech else ""
-        inner.append(
-            f'<div class="technique {cls}">{indent}'
-            f'<a href="{url}" target="_blank">{esc(tech)}</a></div>'
-        )
+    for parent_id in sorted(bucket.keys()):
+        parent_info, subs = bucket[parent_id]
+        # if a parent folder is missing (rare), create a placeholder
+        if parent_info is None:
+            parent_info = (parent_id, False)
+        parent_name, parent_filled = parent_info
+        p_cls = "filled" if parent_filled else "empty"
+        p_url = (f"https://github.com/{OWNER}/{REPO}/tree/"
+                 f"{BRANCH}/{TECH_PATH}/{parent_name}")
+        # build sub-technique list
+        if subs:
+            sub_html = "".join(
+                f'<div class="sub"><a href="https://github.com/{OWNER}/{REPO}/tree/'
+                f'{BRANCH}/{TECH_PATH}/{s}" target="_blank">{esc(s)}</a></div>'
+                for s, _ in sorted(subs, key=lambda x: x[0].lower())
+            )
+            inner.append(
+                f'<details class="technique {p_cls}"><summary>'
+                f'<a href="{p_url}" target="_blank">{esc(parent_name)}</a>'
+                f'</summary>{sub_html}</details>'
+            )
+        else:
+            inner.append(
+                f'<div class="technique {p_cls}"><a href="{p_url}" '
+                f'target="_blank">{esc(parent_name)}</a></div>'
+            )
+
     columns.append('<div class="col">' + "".join(inner) + "</div>")
 
-# Prepend Unmapped column if needed
+# Prepend Unmapped column if present
 if matrix.get("Unmapped"):
     headers.insert(0, '<div class="tactic unmapped-h">Unmapped</div>')
-    unmapped_inner = "".join(
-        f'<div class="technique empty"><a href="https://github.com/{OWNER}/{REPO}/tree/'
-        f'{BRANCH}/{TECH_PATH}/{tech}" target="_blank">{esc(tech)}</a></div>'
-        for tech, _ in matrix["Unmapped"]
-    )
-    columns.insert(0, '<div class="col">' + unmapped_inner + "</div>")
+    unmapped_cols = "".join(columns.pop(TACTICS.index("Unmapped")))
+    columns.insert(0, unmapped_cols)
 
 num_cols = len(headers)
 
@@ -132,12 +160,16 @@ input[type=search]{{padding:.4rem .6rem;border-radius:4px;border:1px solid #444;
 .tactic{{background:#333;font-weight:600;text-align:center;padding:.5rem}}
 .unmapped-h{{background:#800}}
 .col{{display:flex;flex-direction:column;gap:.25rem}}
-.technique{{border:1px solid #444;border-radius:4px;padding:.25rem .5rem;
-           font-size:.85rem;transition:opacity .2s}}
-.technique a{{color:inherit;text-decoration:none}}
+.technique{{border:1px solid #444;border-radius:4px;font-size:.85rem}}
+.technique > summary{{cursor:pointer;list-style:none;padding:.25rem .5rem}}
+.technique > summary::-webkit-details-marker{{display:none}}
+.technique > summary::after{{content:'▸';float:right}}
+details[open] > summary::after{{content:'▾'}}
 .technique.filled{{background:#235820}}
 .technique.empty{{background:#1a1a1a}}
+.technique a{{color:inherit;text-decoration:none}}
 .technique a:hover{{text-decoration:underline}}
+.sub{{padding:.2rem .75rem .2rem 1.5rem;border-top:1px solid #333}}
 .blank{{color:#666;text-align:center;padding:1rem 0}}
 </style>
 </head><body>
@@ -152,7 +184,7 @@ input[type=search]{{padding:.4rem .6rem;border-radius:4px;border:1px solid #444;
 
 <script>
 const q = document.getElementById('search'),
-      pills = [...document.querySelectorAll('.technique')];
+      pills = [...document.querySelectorAll('.technique, .sub')];
 
 q.addEventListener('input', e => {{
   const val = e.target.value.toLowerCase();
