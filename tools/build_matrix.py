@@ -1,31 +1,21 @@
 #!/usr/bin/env python3
 """
-MITRE ATT&CK static matrix ─ Navigator-style
-Features
-• Side-scroll grid (toggleable wrap)
-• Global “show / hide sub-techniques” buttons
-• Live search with highlight & auto-expand parents
-• Copy-ID clipboard icon
-• Deep-link (#T1059.003) expansion + flash
+Generate docs/index.html – MITRE ATT&CK matrix
+• Collapsible sub-techniques
+• Sticky header + live search that auto-expands matches
+• Horizontal scroll
 """
 
-import html, json, pathlib, subprocess, sys
+import html, json, pathlib, sys
 from collections import defaultdict
-from datetime import datetime
 
-# ─── repository paths ────────────────────────────────────────────────────────
-OWNER, REPO, BRANCH, TECH_DIR = (
-    "Nvafiades1",          # change if your username/org differs
-    "threat-hunt-library",
-    "main",
-    "techniques",          # folder that holds Txxxx directories
+# ── repo specifics ───────────────────────────────────────────────────────────
+OWNER, REPO, BRANCH, TECH_PATH = (
+    "Nvafiades1",          # GitHub user/org
+    "threat-hunt-library", # repo
+    "main",                # branch
+    "techniques",          # folder with T#### dirs
 )
-
-ROOT      = pathlib.Path(__file__).resolve().parents[1]
-TECH_PATH = ROOT / TECH_DIR
-MAP_FILE  = ROOT / "mitre_ttp_mapping.json"
-DOCS_DIR  = ROOT / "docs"
-OUTPUT    = DOCS_DIR / "index.html"
 
 TACTICS = [
     "Reconnaissance", "Resource Development", "Initial Access", "Execution",
@@ -34,196 +24,167 @@ TACTICS = [
     "Exfiltration", "Impact",
 ]
 
-# ─── helpers ─────────────────────────────────────────────────────────────────
-def esc(txt: str) -> str:
-    return html.escape(txt.replace("_", " "))
+ROOT      = pathlib.Path(__file__).resolve().parents[1]
+TECH_DIR  = ROOT / TECH_PATH
+MAP_FILE  = ROOT / "mitre_ttp_mapping.json"
+DOCS_DIR  = ROOT / "docs"
+OUTPUT    = DOCS_DIR / "index.html"
 
-def has_content(p: pathlib.Path) -> bool:
-    if p.is_file():
-        return True
-    return any(f.is_file() and f.name.lower() not in {"readme.md", ".ds_store"}
-               for f in p.iterdir())
-
-def git_date(p: pathlib.Path) -> str:
-    """last commit date (YYYY-MM-DD) touching this path; blank if git not there"""
-    try:
-        ts = subprocess.check_output(
-            ["git", "log", "-1", "--format=%cs", "--", str(p)],
-            cwd=ROOT, text=True
-        ).strip()
-        datetime.strptime(ts, "%Y-%m-%d")  # validate
-        return ts
-    except Exception:
-        return ""
-
-# ─── mapping file ───────────────────────────────────────────────────────────
+# ── load tactic mapping ──────────────────────────────────────────────────────
 try:
     raw = json.loads(MAP_FILE.read_text())
 except Exception as e:
-    print(f"⚠️  cannot read {MAP_FILE}: {e}", file=sys.stderr)
-    raw = []
+    print(f"❌  Cannot read {MAP_FILE}: {e}", file=sys.stderr)
+    raw = {}
 
-mapping = {o["technique_id"]: o["tactic"].title().replace("-", " ")
-           for o in raw} if isinstance(raw, list) else {
-           k: v.title().replace("-", " ") for k, v in raw.items()}
+mapping = (
+    {o["technique_id"]: o["tactic"].title().replace("-", " ") for o in raw}
+    if isinstance(raw, list)
+    else {k: v.title().replace("-", " ") for k, v in raw.items()}
+)
 
-# ─── scan technique folders ─────────────────────────────────────────────────
-if not TECH_PATH.exists():
-    sys.exit(f"❌  '{TECH_PATH}' not found – update TECH_DIR variable?")
+# ── scan techniques ──────────────────────────────────────────────────────────
+if not TECH_DIR.exists():
+    sys.exit(f"❌  {TECH_DIR} not found")
 
-folders = sorted([p for p in TECH_PATH.iterdir() if p.name.startswith("T")],
-                 key=lambda p: p.name.lower())
+tech_items = sorted([p for p in TECH_DIR.iterdir() if p.name.startswith("T")],
+                    key=lambda p: p.name.lower())
 
-# tactic ➜ parent_id ➜ (parent_tuple, [sub_tuples])
-matrix: dict[str, dict[str, tuple[tuple, list]]] = {
+def has_content(path: pathlib.Path) -> bool:
+    if path.is_file():
+        return True
+    return any(f.is_file() and f.name.lower() not in {"readme.md", ".ds_store"}
+               for f in path.iterdir())
+
+# tactic → parent_id → (parent_info, [sub_items])
+matrix: dict[str, dict[str, tuple[tuple[str, bool] | None, list[tuple[str, bool]]]]] = {
     t: defaultdict(lambda: [None, []]) for t in TACTICS
 }
 
-for item in folders:
-    name   = item.name                    # e.g. T1003.001
-    tid    = name.split("_")[0]
+for item in tech_items:
+    tech   = item.name
+    tid    = tech.split("_")[0]
     parent = tid.split(".")[0]
     tactic = mapping.get(parent, "Unmapped")
-    info   = (name, has_content(item), git_date(item))  # (id, filled?, date)
+    filled = has_content(item)
 
     bucket = matrix.setdefault(tactic, defaultdict(lambda: [None, []]))
-    if "." in tid:
-        bucket[parent][1].append(info)            # sub-technique
-    else:
-        bucket[parent][0] = info                  # parent
+    if "." in tid:                       # sub-technique
+        bucket[parent][1].append((tech, filled))
+    else:                               # parent technique
+        bucket[parent][0] = (tech, filled)
 
-# ─── build HTML grid ─────────────────────────────────────────────────────────
-heads, cols = [], []
+# ── build HTML ───────────────────────────────────────────────────────────────
+def esc(s: str) -> str: return html.escape(s.replace("_", " "))
+
+headers, columns = [], []
 for tact in TACTICS:
-    heads.append(f'<div class="colHead">{esc(tact)}</div>')
+    headers.append(f'<div class="tactic">{esc(tact)}</div>')
     bucket = matrix.get(tact, {})
-    body   = []
-    for pid in sorted(bucket):
-        pinfo, subs = bucket[pid]
-        if pinfo is None:                         # folder missing
-            pinfo = (pid, False, "")
-        pid_txt, filled, date = pinfo
-        cls  = "filled" if filled else "empty"
-        url  = f"https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_DIR}/{pid_txt}"
-        date_badge = f'<span class="date">{date}</span>' if date else ""
+    if not bucket:
+        columns.append('<div class="blank">(none)</div>')
+        continue
+
+    inner = []
+    for parent_id in sorted(bucket):
+        p_info, subs = bucket[parent_id]
+        if p_info is None:                        # folder missing
+            p_info = (parent_id, False)
+        p_name, p_filled = p_info
+        p_cls = "filled" if p_filled else "empty"
+        p_url = f"https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_PATH}/{p_name}"
+
         if subs:
             sub_html = "".join(
-                f'<div class="sub hide"><a href="https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_DIR}/{s}" '
-                f'target="_blank">{esc(s)}</a></div>'
-                for s, _, _ in sorted(subs, key=lambda x: x[0])
+                f'<div class="sub"><a href="https://github.com/{OWNER}/{REPO}/tree/'
+                f'{BRANCH}/{TECH_PATH}/{s}" target="_blank">{esc(s)}</a></div>'
+                for s, _ in sorted(subs, key=lambda x: x[0])
             )
-            body.append(
-                f'<details class="tech {cls}" data-id="{pid_txt}">'
-                f'<summary><a href="{url}" target="_blank">{esc(pid_txt)}</a>{date_badge}</summary>'
-                f'{sub_html}</details>')
+            inner.append(
+                f'<details class="technique {p_cls}">'
+                f'<summary><a href="{p_url}" target="_blank">{esc(p_name)}</a></summary>'
+                f'{sub_html}</details>'
+            )
         else:
-            body.append(
-                f'<div class="tech {cls}" data-id="{pid_txt}">'
-                f'<a href="{url}" target="_blank">{esc(pid_txt)}</a>{date_badge}</div>')
-    cols.append('<div class="colBody">' + "".join(body) + "</div>")
+            inner.append(
+                f'<div class="technique {p_cls}"><a href="{p_url}" '
+                f'target="_blank">{esc(p_name)}</a></div>'
+            )
+    columns.append('<div class="col">' + "".join(inner) + '</div>')
 
-# ─── HTML template ──────────────────────────────────────────────────────────
-HTML = f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
+# prepend Unmapped column if necessary
+if matrix.get("Unmapped"):
+    headers.insert(0, '<div class="tactic unmapped-h">Unmapped</div>')
+    columns.insert(0, columns.pop())   # move first data col to front
+
+num_cols = len(headers)
+
+# ── write HTML ───────────────────────────────────────────────────────────────
+HTML = f"""<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
 <title>MITRE ATT&CK Matrix</title>
 <style>
-:root{{--grey:#d0d7de;--blue:#1565c0;--bg:#f7f9fc}}
-*{{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}}
-body{{margin:0;background:var(--bg)}}
-/* toolbar */
-.toolbar{{position:sticky;top:0;z-index:999;background:#fff;border-bottom:1px solid var(--grey);
-         display:flex;align-items:center;gap:.6rem;padding:.45rem .8rem}}
-h1{{margin:0 auto;font-size:1.2rem;color:var(--blue)}}
-button{{padding:.3rem .65rem;border:1px solid var(--grey);border-radius:4px;background:#fff;
-        cursor:pointer;font-size:.8rem}}
-button.active{{background:#e8f0fe;border-color:#7aa7ff}}
-input[type=search]{{padding:.3rem .6rem;border:1px solid var(--grey);border-radius:4px}}
-/* grid */
-.matrixWrap.side{{overflow-x:auto;white-space:nowrap}}
-.matrix{{display:inline-grid;grid-auto-flow:column;grid-gap:2px}}
-.colHead{{background:#fff;border:1px solid var(--grey);padding:.65rem .85rem;font-weight:700;
-         color:var(--blue);text-align:center}}
-.colBody{{display:flex;flex-direction:column}}
-.tech,.sub{{border:1px solid var(--grey);background:#fff;position:relative}}
-.tech summary,.tech>a{{display:flex;align-items:center;gap:.25rem;padding:.42rem .55rem;margin:0;cursor:pointer}}
-.tech summary::-webkit-details-marker{{display:none}}
-.tech summary:after{{content:'▸';margin-left:auto;color:var(--blue)}}
-details[open] summary:after{{content:'▾'}}
-.sub a{{display:block;padding:.38rem .9rem .38rem 1.75rem}}
-.hide{{display:none}}
-.filled{{border-left:4px solid #2e7d32}}
-.date{{margin-left:auto;font-size:.7rem;color:#697085}}
-/* clipboard */
-.clip{{position:absolute;right:6px;top:6px;font-size:.8rem;opacity:0;cursor:pointer}}
-.tech:hover .clip,.sub:hover .clip{{opacity:.7}}
-.clip.done{{color:#2ecc71;opacity:1}}
-mark{{background:#ffe066}}
-.blank{{padding:1rem;text-align:center;color:#666}}
-@media(max-width:800px){{button{{font-size:.7rem}}}}
-</style></head><body>
-
-<div class="toolbar">
-  <button id="layoutBtn">layout: side ▾</button>
-  <button id="showBtn">show sub-techniques</button>
-  <button id="hideBtn" style="display:none">hide sub-techniques</button>
-  <input id="search" placeholder="search…">
+*{{box-sizing:border-box}}
+body{{margin:0;background:#111;color:#eee;font-family:system-ui,sans-serif}}
+header{{position:sticky;top:0;left:0;right:0;z-index:999;
+        padding:.5rem 1rem;background:#111;border-bottom:1px solid #333;
+        display:flex;align-items:center;gap:1rem}}
+h1{{flex:1;text-align:center;margin:0;font-size:1.5rem}}
+input[type=search]{{padding:.4rem .6rem;border-radius:4px;border:1px solid #444;
+                   background:#1a1a1a;color:#eee}}
+.scroll-x{{overflow-x:auto}}
+.grid{{display:grid;grid-template-columns:repeat({num_cols},minmax(12rem,1fr));
+      gap:.5rem;padding:1rem min(1rem,50vw) 1rem 1rem}}
+.tactic{{background:#333;font-weight:600;text-align:center;padding:.5rem}}
+.unmapped-h{{background:#800}}
+.col{{display:flex;flex-direction:column;gap:.25rem}}
+.technique{{border:1px solid #444;border-radius:4px;font-size:.85rem}}
+.technique > summary{{cursor:pointer;list-style:none;padding:.25rem .5rem}}
+.technique > summary::-webkit-details-marker{{display:none}}
+.technique > summary::after{{content:'▸';float:right}}
+details[open] > summary::after{{content:'▾'}}
+.technique.filled{{background:#235820}}
+.technique.empty{{background:#1a1a1a}}
+.technique a{{color:inherit;text-decoration:none}}
+.technique a:hover{{text-decoration:underline}}
+.sub{{display:none;padding:.2rem .75rem .2rem 1.5rem;border-top:1px solid #333}}
+details[open] .sub{{display:block}}
+.blank{{color:#666;text-align:center;padding:1rem 0}}
+</style>
+</head><body>
+<header>
   <h1>MITRE&nbsp;ATT&CK&nbsp;Matrix</h1>
-</div>
+  <input id="search" type="search" placeholder="Search…" autocomplete="off">
+</header>
 
-<div id="wrap" class="matrixWrap side">
-  <div class="matrix">{''.join(heads+cols)}</div>
+<div class="scroll-x">
+  <div class="grid" id="matrix">{''.join(headers + columns)}</div>
 </div>
 
 <script>
-const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const wrap=$("#wrap"),layoutBtn=$("#layoutBtn"),showBtn=$("#showBtn"),hideBtn=$("#hideBtn");
-const subs=$$('.sub'),parents=$$('details.tech'),pills=$$('.tech,.sub');
+const q       = document.getElementById('search'),
+      pills   = [...document.querySelectorAll('.technique, .sub')],
+      details = [...document.querySelectorAll('details.technique')];
 
-/* layout toggle */
-layoutBtn.onclick=()=>{wrap.classList.toggle('side');
-  layoutBtn.textContent=wrap.classList.contains('side')?'layout: side ▾':'layout: wrap ▾'}
+q.addEventListener('input', e => {{
+  const val = e.target.value.toLowerCase();
 
-/* show / hide subs */
-showBtn.onclick=()=>{subs.forEach(s=>s.classList.remove('hide'));parents.forEach(d=>d.open=true);
-  showBtn.style.display='none';hideBtn.style.display='inline-block'}
-hideBtn.onclick=()=>{subs.forEach(s=>s.classList.add('hide'));parents.forEach(d=>d.open=false);
-  hideBtn.style.display='none';showBtn.style.display='inline-block'}
+  // show / fade pills
+  pills.forEach(p => {{
+    p.style.opacity = !val || p.textContent.toLowerCase().includes(val) ? '1' : '0.15';
+  }});
 
-/* clipboard icons */
-pills.forEach(p=>{
-  p.dataset.id=p.dataset.id||p.textContent.trim();
-  const c=document.createElement('span');c.textContent='📋';c.className='clip';
-  c.onclick=e=>{e.stopPropagation();
-    navigator.clipboard.writeText(p.dataset.id);
-    c.textContent='✓';c.classList.add('done');
-    setTimeout(()=>{c.textContent='📋';c.classList.remove('done')},900)};
-  (p.querySelector('summary')||p).append(c);
-});
-
-/* live search */
-const search=$("#search");let marks=[];
-function clear(){marks.forEach(m=>m.replaceWith(m.textContent));marks=[]}
-search.oninput=e=>{
-  const q=e.target.value.toLowerCase().trim();clear();
-  pills.forEach(p=>p.style.opacity='1');parents.forEach(d=>d.open=false);
-  if(!q)return;
-  pills.forEach(p=>{
-    const txt=p.textContent.toLowerCase();
-    if(!txt.includes(q)){p.style.opacity='0.2';return;}
-    p.innerHTML=p.innerHTML.replace(new RegExp(q,'gi'),m=>`<mark>${m}</mark>`);marks.push(...p.querySelectorAll('mark'));
-    const par=p.closest('details.tech');if(par)par.open=true;
-  });
-};
-
-/* deep link (#T####) */
-if(location.hash){
-  const id=location.hash.slice(1);const tgt=$(`[data-id="${id}"]`);
-  if(tgt){const par=tgt.closest('details.tech');if(par)par.open=true;
-    setTimeout(()=>tgt.scrollIntoView({behavior:'smooth',block:'center',inline:'center'}),200);
-    tgt.style.background='#ffe066';setTimeout(()=>tgt.style.background='',1600);}
-}
+  // auto-toggle parents if a child matches
+  details.forEach(d => {{
+    const anyMatch = [...d.querySelectorAll('.sub')].some(
+      s => s.textContent.toLowerCase().includes(val)
+    );
+    d.open = val ? anyMatch : false;   // collapse all when search cleared
+  }});
+}});
 </script>
 </body></html>"""
 
 DOCS_DIR.mkdir(exist_ok=True)
 OUTPUT.write_text(HTML, encoding="utf-8")
-print(f"✅  matrix rebuilt → {OUTPUT}")
+print(f"✅  {OUTPUT} rebuilt")
