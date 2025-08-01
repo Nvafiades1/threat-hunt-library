@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 """
-Generate docs/index.html – static, searchable MITRE ATT&CK matrix
-─────────────────────────────────────────────────────────────────
-• Scans techniques/ for T#### folders/files
-• Colours pills green if the folder has > README content
-• Sticky header with live-filter search box
+Generate docs/index.html – static, horizontally-scrollable, searchable
+MITRE ATT&CK matrix.
 """
 
 import html, json, pathlib, sys
@@ -30,30 +27,35 @@ MAP_FILE  = ROOT / "mitre_ttp_mapping.json"
 DOCS_DIR  = ROOT / "docs"
 OUTPUT    = DOCS_DIR / "index.html"
 
-# ── load & normalise mapping ────────────────────────────────────────────────
+# ── load mapping ─────────────────────────────────────────────────────────────
 try:
     raw = json.loads(MAP_FILE.read_text())
 except Exception as e:
     print(f"❌  Cannot read {MAP_FILE}: {e}", file=sys.stderr)
     raw = {}
 
-mapping = ({o["technique_id"]: o["tactic"].title().replace("-", " ") for o in raw}
-           if isinstance(raw, list)
-           else {k: v.title().replace("-", " ") for k, v in raw.items()})
+mapping = (
+    {o["technique_id"]: o["tactic"].title().replace("-", " ") for o in raw}
+    if isinstance(raw, list)
+    else {k: v.title().replace("-", " ") for k, v in raw.items()}
+)
 print(f"[DEBUG] Mapping entries: {len(mapping)}")
 
-# ── scan techniques folder ──────────────────────────────────────────────────
+# ── scan techniques ──────────────────────────────────────────────────────────
 if not TECH_DIR.exists():
     print(f"❌  {TECH_DIR} not found!", file=sys.stderr)
     sys.exit(1)
 
-tech_items = sorted([p for p in TECH_DIR.iterdir() if p.name.startswith("T")],
-                    key=lambda p: p.name.lower())
-print(f"[DEBUG] Items in TECH_DIR: {len(tech_items)} "
-      f"(first five: {[p.name for p in tech_items[:5]]})")
+tech_items = sorted(
+    [p for p in TECH_DIR.iterdir() if p.name.startswith("T")],
+    key=lambda p: p.name.lower(),
+)
+print(
+    f"[DEBUG] Items in TECH_DIR: {len(tech_items)} "
+    f"(first five: {[p.name for p in tech_items[:5]]})"
+)
 
 def has_content(path: pathlib.Path) -> bool:
-    """True if folder/file contains something beyond README.md."""
     if path.is_file():
         return True
     for f in path.iterdir():
@@ -69,11 +71,14 @@ for item in tech_items:
     tactic   = mapping.get(tid, "Unmapped")
     matrix.setdefault(tactic, []).append((item.name, has_content(item)))
 
-print("[DEBUG] Counts per tactic:",
-      {t: len(v) for t, v in matrix.items() if v})
+print(
+    "[DEBUG] Counts per tactic:",
+    {t: len(v) for t, v in matrix.items() if v},
+)
 
-# ── build HTML cells ────────────────────────────────────────────────────────
-def esc(s: str) -> str: return html.escape(s.replace("_", " "))
+# ── build HTML cells ─────────────────────────────────────────────────────────
+def esc(s: str) -> str:
+    return html.escape(s.replace("_", " "))
 
 headers, columns = [], []
 for tact in TACTICS:
@@ -86,37 +91,44 @@ for tact in TACTICS:
     for tech, filled in entries:
         url  = f"https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_PATH}/{tech}"
         cls  = "filled" if filled else "empty"
-        indent = "&nbsp;"*4 if "." in tech else ""
+        indent = "&nbsp;" * 4 if "." in tech else ""
         inner.append(
             f'<div class="technique {cls}">{indent}'
-            f'<a href="{url}" target="_blank">{esc(tech)}</a></div>')
-    columns.append('<div class="col">' + "".join(inner) + '</div>')
+            f'<a href="{url}" target="_blank">{esc(tech)}</a></div>'
+        )
+    columns.append('<div class="col">' + "".join(inner) + "</div>")
 
-# prepend Unmapped column if needed
+# Prepend Unmapped column if needed
 if matrix.get("Unmapped"):
     headers.insert(0, '<div class="tactic unmapped-h">Unmapped</div>')
     unmapped_inner = "".join(
         f'<div class="technique empty"><a href="https://github.com/{OWNER}/{REPO}/tree/'
         f'{BRANCH}/{TECH_PATH}/{tech}" target="_blank">{esc(tech)}</a></div>'
-        for tech, _ in matrix["Unmapped"])
-    columns.insert(0, '<div class="col">' + unmapped_inner + '</div>')
+        for tech, _ in matrix["Unmapped"]
+    )
+    columns.insert(0, '<div class="col">' + unmapped_inner + "</div>")
 
 num_cols = len(headers)
 
-# ── write HTML (all literal braces doubled) ────────────────────────────────
+# ── write HTML ───────────────────────────────────────────────────────────────
 HTML = f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <title>MITRE ATT&CK Matrix</title>
 <style>
 *{{box-sizing:border-box}}
 body{{margin:0;background:#111;color:#eee;font-family:system-ui,sans-serif}}
-header{{position:sticky;top:0;z-index:999;padding:.5rem 1rem;background:#111;
-        display:flex;align-items:center;gap:1rem;border-bottom:1px solid #333}}
+/* Sticky header */
+header{{position:sticky;top:0;left:0;right:0;z-index:999;
+        padding:.5rem 1rem;background:#111;border-bottom:1px solid #333;
+        display:flex;align-items:center;gap:1rem}}
 h1{{flex:1;text-align:center;margin:0;font-size:1.5rem}}
 input[type=search]{{padding:.4rem .6rem;border-radius:4px;border:1px solid #444;
                    background:#1a1a1a;color:#eee}}
+/* Horizontal scroll container */
+.scroll-x{{overflow-x:auto}}
 .grid{{display:grid;grid-template-columns:repeat({num_cols},minmax(12rem,1fr));
-      gap:.5rem;padding:1rem}}
+      gap:.5rem;padding:1rem min(1rem,50vw) 1rem 1rem;}}
+/* Cells */
 .tactic{{background:#333;font-weight:600;text-align:center;padding:.5rem}}
 .unmapped-h{{background:#800}}
 .col{{display:flex;flex-direction:column;gap:.25rem}}
@@ -133,15 +145,19 @@ input[type=search]{{padding:.4rem .6rem;border-radius:4px;border:1px solid #444;
   <h1>MITRE&nbsp;ATT&CK&nbsp;Matrix</h1>
   <input id="search" type="search" placeholder="Search…" autocomplete="off">
 </header>
-<div class="grid" id="matrix">{''.join(headers + columns)}</div>
+
+<div class="scroll-x">
+  <div class="grid" id="matrix">{''.join(headers + columns)}</div>
+</div>
+
 <script>
 const q = document.getElementById('search'),
       pills = [...document.querySelectorAll('.technique')];
 
 q.addEventListener('input', e => {{
   const val = e.target.value.toLowerCase();
-  pills.forEach(p => p.style.opacity = !val || p.textContent.toLowerCase().includes(val)
-                                   ? '1' : '0.15');
+  pills.forEach(p => p.style.opacity =
+      !val || p.textContent.toLowerCase().includes(val) ? '1' : '0.15');
 }});
 </script>
 </body></html>"""
