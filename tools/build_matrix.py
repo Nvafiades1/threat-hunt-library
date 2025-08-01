@@ -2,15 +2,11 @@
 """
 Generate docs/index.html – MITRE ATT&CK matrix (dark skin)
 
-Features
-────────
 • Collapsible sub-techniques
-• Sticky header + search (auto-expand matches)
-• Click a tactic header → dim the rest (Esc to reset)
-• Tooltip: first 2 lines of README.md on hover
-• Horizontal scroll
-
-Drop this file at  tools/build_matrix.py
+• Sticky header + live search (auto-expand matches)
+• Click a tactic header → dim other columns (Esc to reset)
+• Tool-tip: first 2 lines of README.md on hover
+• Fallback: any parent ID that starts with T14* defaults to 'Impact'
 """
 
 import html, json, pathlib, sys
@@ -85,18 +81,29 @@ matrix: dict[str, dict[str, tuple[tuple[str, bool] | None,
     t: defaultdict(lambda: [None, []]) for t in TACTICS
 }
 
-for item in tech_items:
-    tech   = item.name
-    tid    = tech.split("_")[0]
-    parent = tid.split(".")[0]
-    tactic = mapping.get(parent, "Unmapped")
-    filled = has_content(item)
+unmapped_ids = set()
 
+for item in tech_items:
+    tech   = item.name            # e.g. T1485.001_stuff
+    tid    = tech.split("_")[0]   # T1485.001
+    parent = tid.split(".")[0]    # T1485
+    tactic = mapping.get(parent)
+    if tactic is None:
+        # ── fallback: treat T14xx as Impact ────────────────────────────────
+        tactic = "Impact" if parent.startswith("T14") else "Unmapped"
+        if tactic == "Unmapped":
+            unmapped_ids.add(parent)
+
+    filled = has_content(item)
     bucket = matrix.setdefault(tactic, defaultdict(lambda: [None, []]))
     if "." in tid:                       # sub-technique
         bucket[parent][1].append((tech, filled))
     else:                               # parent technique
         bucket[parent][0] = (tech, filled)
+
+# ── debug: list remaining unmapped parents (once) ───────────────────────────
+if unmapped_ids:
+    print("⚠️  Unmapped parent IDs:", ", ".join(sorted(unmapped_ids)))
 
 # ── build HTML ───────────────────────────────────────────────────────────────
 headers, columns = [], []
@@ -140,10 +147,10 @@ for idx, tact in enumerate(TACTICS):
             )
     columns.append(f'<div class="col" data-idx="{idx}">' + "".join(inner) + '</div>')
 
-# prepend unmapped column if present
-if matrix.get("Unmapped"):
+# prepend unmapped column if still needed
+if "Unmapped" in matrix and matrix["Unmapped"]:
     headers.insert(0, '<div class="tactic unmapped-h" data-idx="-1">Unmapped</div>')
-    columns.insert(0, columns.pop())
+    columns.insert(0, columns.pop())   # move first data col to front
 
 num_cols = len(headers)
 
