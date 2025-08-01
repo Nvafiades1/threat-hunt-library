@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-Generate docs/index.html – static MITRE ATT&CK matrix with clickable technique links
------------------------------------------------------------------------------------
-• Techniques are any files/folders in *repo-root* whose name starts with T####.
-• Mapping file can be list-of-dicts or a dict.
-• Outputs a single self-contained HTML page; no JS, no runtime API calls.
+Static MITRE ATT&CK matrix generator
+-----------------------------------
+• Scans techniques/ for T#### folders or files.
+• Reads mitre_ttp_mapping.json (dict OR list-of-dicts, kebab- or space-case).
+• Builds docs/index.html with clickable technique pills.
 """
 
 import html, json, pathlib, sys
 
-# ── EDIT THESE THREE LINES IF YOUR REPO NAME / USERNAME CHANGES ────────────────
-OWNER  = "Nvafiades1"             # GitHub user/org
+# ──────────────────────────── repo info for links ────────────────────────────
+OWNER  = "Nvafiades1"             # GitHub user / org
 REPO   = "threat-hunt-library"    # repository name
 BRANCH = "main"                   # branch that holds the folders
-# ───────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 
 TACTICS = [
     "Reconnaissance", "Resource Development", "Initial Access", "Execution",
@@ -22,30 +22,29 @@ TACTICS = [
     "Exfiltration", "Impact"
 ]
 
-ROOT      = pathlib.Path(__file__).resolve().parents[1]      # repo root
-TECH_DIR  = ROOT                                            # scanning root
+ROOT      = pathlib.Path(__file__).resolve().parents[1]     # repo root
+TECH_DIR  = ROOT / "techniques"                             # <- correct path
 MAP_FILE  = ROOT / "mitre_ttp_mapping.json"
 DOCS_DIR  = ROOT / "docs"
 OUTPUT    = DOCS_DIR / "index.html"
 
-# ── LOAD & NORMALISE MAPPING ───────────────────────────────────────────────────
+# ── load & normalise mapping ────────────────────────────────────────────────
 try:
     raw = json.loads(MAP_FILE.read_text())
 except Exception as e:
     print(f"❌  Cannot read {MAP_FILE}: {e}", file=sys.stderr)
     raw = {}
 
-if isinstance(raw, list):                                    # list-of-dicts → dict
-    mapping = {
-        obj["technique_id"]: obj["tactic"].title().replace("-", " ")
-        for obj in raw if "technique_id" in obj and "tactic" in obj
-    }
-else:                                                        # already dict
-    mapping = {k: v.title().replace("-", " ") for k, v in raw.items()}
+mapping = (
+    {obj["technique_id"]: obj["tactic"].title().replace("-", " ")
+     for obj in raw}
+    if isinstance(raw, list)
+    else {k: v.title().replace("-", " ") for k, v in raw.items()}
+)
 
 print(f"[DEBUG] Mapping entries: {len(mapping)}")
 
-# ── SCAN TECHNIQUES ────────────────────────────────────────────────────────────
+# ── scan techniques directory ───────────────────────────────────────────────
 if not TECH_DIR.exists():
     print(f"❌  {TECH_DIR} not found!", file=sys.stderr)
     sys.exit(1)
@@ -57,16 +56,17 @@ print(f"[DEBUG] Items in TECH_DIR: {len(tech_items)} "
 
 matrix = {t: [] for t in TACTICS}
 for item in tech_items:
-    tid_full = item.name.split("_")[0]        # strip human slug after _
-    tid_base = tid_full.split(".")[0]         # parent ID for sub-techs
+    tid_full = item.name.split("_")[0]      # strip slug
+    tid_base = tid_full.split(".")[0]       # parent ID for sub-tech
     tid      = tid_full if tid_full in mapping else tid_base
     tactic   = mapping.get(tid, "Unmapped")
     matrix.setdefault(tactic, []).append(item.name)
 
-print("[DEBUG] Counts per tactic:", {t: len(v) for t, v in matrix.items() if v})
+print("[DEBUG] Counts per tactic:",
+      {t: len(v) for t, v in matrix.items() if v})
 
-# ── BUILD HTML ────────────────────────────────────────────────────────────────
-def esc(s: str) -> str:           # replace _ and escape HTML
+# ── build HTML ──────────────────────────────────────────────────────────────
+def esc(s: str) -> str:
     return html.escape(s.replace("_", " "))
 
 cells = []
@@ -79,6 +79,7 @@ for tact in TACTICS:
     if not techs:
         cells.append('<div class="blank">(none)</div>')
         continue
+
     inner = []
     for tech in techs:
         indent = "&nbsp;"*4 if "." in tech else ""
@@ -90,7 +91,7 @@ for tact in TACTICS:
         )
     cells.append('<div class="col">' + "".join(inner) + '</div>')
 
-# add an “Unmapped” column if needed
+# add visible Unmapped column if needed
 if matrix.get("Unmapped"):
     cells.insert(0, '<div class="tactic" style="background:#800">Unmapped</div>')
     unmapped_inner = "".join(
@@ -100,13 +101,16 @@ if matrix.get("Unmapped"):
     )
     cells.insert(1, '<div class="col">' + unmapped_inner + '</div>')
 
+# number of tactic columns now
+num_cols = int(len([c for c in cells if 'tactic' in c]) / 1)  # one cell per header
+
 HTML = f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <title>MITRE ATT&CK Matrix</title>
 <style>
 body{{margin:0;background:#111;color:#eee;font-family:system-ui,sans-serif}}
 h1{{text-align:center;margin:1rem 0 .5rem}}
-.grid{{display:grid;grid-template-columns:repeat({len(cell for cell in cells if 'tactic' in cell)//2},minmax(12rem,1fr));
+.grid{{display:grid;grid-template-columns:repeat({num_cols},minmax(12rem,1fr));
       gap:.5rem;padding:1rem}}
 .tactic{{background:#333;font-weight:600;text-align:center;padding:.5rem}}
 .col{{display:flex;flex-direction:column;gap:.25rem}}
