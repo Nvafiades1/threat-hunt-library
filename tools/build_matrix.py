@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """
-Generate docs/index.html – MITRE ATT&CK matrix (dark skin)
+Generate docs/index.html – Threat Hunt Matrix (MITRE ATT&CK-based)
 
+Features
+────────
 • Collapsible sub-techniques
 • Sticky header + live search (auto-expand matches)
 • Click a tactic header → dim other columns (Esc to reset)
 • Tooltip: first 2 lines of README.md on hover
+• Dark / Light mode toggle (☀️ / 🌙, persisted)
 • Robust fallback so ALL Impact techniques land in ‘Impact’
 """
 
@@ -24,12 +27,12 @@ TACTICS = [
     "Exfiltration", "Impact",
 ]
 
-# === Every parent ID that belongs to the IMPACT tactic ===============
+# —— All parent IDs that belong to IMPACT (even if mapping JSON is missing) —
 IMPACT_IDS = {
     # T14xx
     "T1485", "T1486", "T1489", "T1490", "T1491", "T1492", "T1493",
     "T1494", "T1495", "T1496", "T1498", "T1499",
-    # IDs that start with T15 / T16 but are still Impact
+    # Extras sometimes flagged as Impact
     "T1529", "T1561", "T1565", "T1646", "T1657",
 }
 
@@ -60,19 +63,19 @@ def has_content(path: pathlib.Path) -> bool:
                for f in path.iterdir())
 
 def read_snippet(folder: pathlib.Path, n=2) -> str:
-    """Return first n non-blank lines of README.md (stripped of md syntax)."""
+    """Return first n non-blank lines of README.md (stripped of MD)."""
     md = folder / "README.md"
     if not md.exists():
         return ""
     out = []
-    for line in md.read_text(encoding="utf-8", errors="ignore").splitlines():
-        line = line.strip().lstrip("#").strip()
-        if not line or line.startswith("```") or line.startswith("!["):
+    for ln in md.read_text("utf-8", "ignore").splitlines():
+        ln = ln.strip().lstrip("#").strip()
+        if not ln or ln.startswith("```") or ln.startswith("!["):
             continue
-        out.append(line)
+        out.append(ln)
         if len(out) >= n:
             break
-    return " &#10; ".join(out)            # '&#10;' → line-break in title
+    return " &#10; ".join(out)       # '&#10;' → newline inside title tooltip
 
 def esc(txt: str) -> str:
     return html.escape(txt.replace("_", " "))
@@ -93,27 +96,27 @@ matrix: dict[str, dict[str, tuple[tuple[str, bool] | None,
 unmapped_ids = set()
 
 for item in tech_items:
-    tech   = item.name            # T1485 or T1485.001_…
-    tid    = tech.split("_")[0]
-    parent = tid.split(".")[0]
+    tech   = item.name
+    tid    = tech.split("_")[0]   # e.g. T1485.001
+    parent = tid.split(".")[0]    # T1485
     tactic = mapping.get(parent)
 
-    if tactic is None:                            # not in JSON
+    if tactic is None:                        # not in JSON
         tactic = "Impact" if parent in IMPACT_IDS else "Unmapped"
         if tactic == "Unmapped":
             unmapped_ids.add(parent)
 
     filled = has_content(item)
     bucket = matrix.setdefault(tactic, defaultdict(lambda: [None, []]))
-    if "." in tid:                       # sub-technique
+    if "." in tid:                            # sub-technique
         bucket[parent][1].append((tech, filled))
-    else:                               # parent
+    else:                                     # parent
         bucket[parent][0] = (tech, filled)
 
 if unmapped_ids:
-    print("⚠️  Unmapped parents:", ", ".join(sorted(unmapped_ids)))
+    print("⚠️  Still unmapped:", ", ".join(sorted(unmapped_ids)))
 
-# ── build HTML (identical to previous version) ───────────────────────────────
+# ── build HTML ───────────────────────────────────────────────────────────────
 headers, columns = [], []
 for idx, tact in enumerate(TACTICS):
     headers.append(f'<div class="tactic" data-idx="{idx}">{esc(tact)}</div>')
@@ -157,45 +160,62 @@ for idx, tact in enumerate(TACTICS):
 
 if "Unmapped" in matrix and matrix["Unmapped"]:
     headers.insert(0, '<div class="tactic unmapped-h" data-idx="-1">Unmapped</div>')
-    columns.insert(0, columns.pop())
+    columns.insert(0, columns.pop())   # move first data col to front
 
 num_cols = len(headers)
 
+# ── HTML document ────────────────────────────────────────────────────────────
 HTML = f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
-<title>MITRE ATT&CK Matrix</title>
+<title>Threat Hunt Matrix</title>
 <style>
+/* --------- colour tokens (dark default) --------- */
+:root {{
+  --bg:#111; --text:#eee; --border:#333;
+  --card-filled:#235820; --card-empty:#1a1a1a;
+  --tactic:#333; --unmapped:#800; --input-bg:#1a1a1a; --input-border:#444;
+}}
+body.light {{
+  --bg:#fff; --text:#111; --border:#ccc;
+  --card-filled:#c7f5c7; --card-empty:#f5f5f5;
+  --tactic:#ddd; --unmapped:#c00; --input-bg:#fff; --input-border:#bbb;
+}}
+
+/* --------- basic layout --------- */
 *{{box-sizing:border-box}}
-body{{margin:0;background:#111;color:#eee;font-family:system-ui,sans-serif}}
+body{{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif}}
 body.focus .col.dim{{opacity:.15}}
-header{{position:sticky;top:0;z-index:999;
-        padding:.5rem 1rem;background:#111;border-bottom:1px solid #333;
-        display:flex;align-items:center;gap:1rem}}
-h1{{flex:1;text-align:center;margin:0;font-size:1.5rem}}
-input[type=search]{{padding:.4rem .6rem;border-radius:4px;border:1px solid #444;
-                   background:#1a1a1a;color:#eee}}
+header{{position:sticky;top:0;z-index:999;display:flex;align-items:center;gap:.75rem;
+        padding:.5rem 1rem;background:var(--bg);border-bottom:1px solid var(--border)}}
+h1{{flex:1;text-align:center;margin:0;font-size:1.5rem;user-select:none}}
+#modeToggle{{cursor:pointer;font-size:1.1rem;background:none;color:var(--text);
+            border:none;padding:.2rem .4rem}}
+#modeToggle:focus-visible{{outline:2px solid var(--text)}}
+input[type=search]{{padding:.4rem .6rem;border-radius:4px;border:1px solid var(--input-border);
+                   background:var(--input-bg);color:var(--text)}}
 .scroll-x{{overflow-x:auto}}
 .grid{{display:grid;grid-template-columns:repeat({num_cols},minmax(12rem,1fr));
       gap:.5rem;padding:1rem min(1rem,50vw) 1rem 1rem}}
-.tactic{{background:#333;font-weight:600;text-align:center;padding:.5rem;cursor:pointer}}
-.unmapped-h{{background:#800}}
+.tactic{{background:var(--tactic);font-weight:600;text-align:center;padding:.5rem;cursor:pointer}}
+.unmapped-h{{background:var(--unmapped)}}
 .col{{display:flex;flex-direction:column;gap:.25rem}}
-.technique{{border:1px solid #444;border-radius:4px;font-size:.85rem}}
+.technique{{border:1px solid var(--border);border-radius:4px;font-size:.85rem}}
 .technique > summary{{cursor:pointer;list-style:none;padding:.25rem .5rem}}
 .technique > summary::-webkit-details-marker{{display:none}}
 .technique > summary::after{{content:'▸';float:right}}
 details[open] > summary::after{{content:'▾'}}
-.technique.filled{{background:#235820}}
-.technique.empty{{background:#1a1a1a}}
+.technique.filled{{background:var(--card-filled)}}
+.technique.empty{{background:var(--card-empty)}}
 .technique a{{color:inherit;text-decoration:none}}
 .technique a:hover{{text-decoration:underline}}
-.sub{{display:none;padding:.2rem .75rem .2rem 1.5rem;border-top:1px solid #333}}
+.sub{{display:none;padding:.2rem .75rem .2rem 1.5rem;border-top:1px solid var(--border)}}
 details[open] .sub{{display:block}}
-.blank{{color:#666;text-align:center;padding:1rem 0}}
+.blank{{color:#888;text-align:center;padding:1rem 0}}
 </style>
 </head><body>
 <header>
-  <h1>MITRE&nbsp;ATT&CK&nbsp;Matrix</h1>
+  <button id="modeToggle" title="Toggle light/dark (Alt+D)">🌙</button>
+  <h1>Threat&nbsp;Hunt&nbsp;Matrix</h1>
   <input id="search" type="search" placeholder="Search…" autocomplete="off">
 </header>
 
@@ -204,12 +224,13 @@ details[open] .sub{{display:block}}
 </div>
 
 <script>
-const q       = document.getElementById('search'),
-      pills   = [...document.querySelectorAll('.technique, .sub')],
-      details = [...document.querySelectorAll('details.technique')],
-      tactics = [...document.querySelectorAll('.tactic')],
-      cols    = [...document.querySelectorAll('.col')],
-      body    = document.body;
+const q        = document.getElementById('search'),
+      pills    = [...document.querySelectorAll('.technique, .sub')],
+      details  = [...document.querySelectorAll('details.technique')],
+      tactics  = [...document.querySelectorAll('.tactic')],
+      cols     = [...document.querySelectorAll('.col')],
+      body     = document.body,
+      toggle   = document.getElementById('modeToggle');
 
 let focused = null;
 function setFocus(idx) {{
@@ -221,7 +242,10 @@ tactics.forEach(t => t.onclick = () => {{
   const idx = t.dataset.idx;
   setFocus(focused === idx ? null : idx);
 }});
-document.addEventListener('keydown', e => e.key === 'Escape' && setFocus(null));
+document.addEventListener('keydown', e => {{
+  if (e.key === 'Escape') setFocus(null);
+  if (e.key.toLowerCase() === 'd' && e.altKey) toggle.click();
+}});
 
 q.addEventListener('input', e => {{
   const val = e.target.value.toLowerCase().trim();
@@ -232,6 +256,18 @@ q.addEventListener('input', e => {{
     d.open = val ? match : false;
   }});
 }});
+
+/* === light / dark toggle =============================================== */
+function applyMode(light) {{
+  body.classList.toggle('light', light);
+  toggle.textContent = light ? '🌙' : '☀️';
+}}
+applyMode(localStorage.getItem('prefersLight') === 'true');
+toggle.onclick = () => {{
+  const toLight = !body.classList.contains('light');
+  applyMode(toLight);
+  localStorage.setItem('prefersLight', toLight);
+}};
 </script>
 </body></html>"""
 
