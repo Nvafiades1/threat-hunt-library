@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-Generate docs/index.html – static MITRE ATT&CK matrix
-with collapsible sub-techniques, sticky header & live search.
+Generate docs/index.html – MITRE ATT&CK matrix
+• Collapsible sub-techniques
+• Sticky header + live search that auto-expands matches
+• Horizontal scroll
 """
 
 import html, json, pathlib, sys
@@ -9,10 +11,10 @@ from collections import defaultdict
 
 # ── repo specifics ───────────────────────────────────────────────────────────
 OWNER, REPO, BRANCH, TECH_PATH = (
-    "Nvafiades1",
-    "threat-hunt-library",
-    "main",
-    "techniques",
+    "Nvafiades1",          # GitHub user/org
+    "threat-hunt-library", # repo
+    "main",                # branch
+    "techniques",          # folder with T#### dirs
 )
 
 TACTICS = [
@@ -41,7 +43,7 @@ mapping = (
     else {k: v.title().replace("-", " ") for k, v in raw.items()}
 )
 
-# ── scan techniques directory ───────────────────────────────────────────────
+# ── scan techniques ──────────────────────────────────────────────────────────
 if not TECH_DIR.exists():
     sys.exit(f"❌  {TECH_DIR} not found")
 
@@ -72,7 +74,7 @@ for item in tech_items:
     else:                               # parent technique
         bucket[parent][0] = (tech, filled)
 
-# ── build HTML cells ─────────────────────────────────────────────────────────
+# ── build HTML ───────────────────────────────────────────────────────────────
 def esc(s: str) -> str: return html.escape(s.replace("_", " "))
 
 headers, columns = [], []
@@ -85,10 +87,10 @@ for tact in TACTICS:
 
     inner = []
     for parent_id in sorted(bucket):
-        parent_info, subs = bucket[parent_id]
-        if parent_info is None:                 # folder missing
-            parent_info = (parent_id, False)
-        p_name, p_filled = parent_info
+        p_info, subs = bucket[parent_id]
+        if p_info is None:                        # folder missing
+            p_info = (parent_id, False)
+        p_name, p_filled = p_info
         p_cls = "filled" if p_filled else "empty"
         p_url = f"https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_PATH}/{p_name}"
 
@@ -110,11 +112,10 @@ for tact in TACTICS:
             )
     columns.append('<div class="col">' + "".join(inner) + '</div>')
 
-# Prepend Unmapped column if present
+# prepend Unmapped column if necessary
 if matrix.get("Unmapped"):
     headers.insert(0, '<div class="tactic unmapped-h">Unmapped</div>')
-    unmapped = columns.pop(0)
-    columns.insert(0, unmapped)
+    columns.insert(0, columns.pop())   # move first data col to front
 
 num_cols = len(headers)
 
@@ -125,18 +126,15 @@ HTML = f"""<!DOCTYPE html>
 <style>
 *{{box-sizing:border-box}}
 body{{margin:0;background:#111;color:#eee;font-family:system-ui,sans-serif}}
-/* Sticky header */
 header{{position:sticky;top:0;left:0;right:0;z-index:999;
         padding:.5rem 1rem;background:#111;border-bottom:1px solid #333;
         display:flex;align-items:center;gap:1rem}}
 h1{{flex:1;text-align:center;margin:0;font-size:1.5rem}}
 input[type=search]{{padding:.4rem .6rem;border-radius:4px;border:1px solid #444;
                    background:#1a1a1a;color:#eee}}
-/* Horizontal scroll */
 .scroll-x{{overflow-x:auto}}
 .grid{{display:grid;grid-template-columns:repeat({num_cols},minmax(12rem,1fr));
       gap:.5rem;padding:1rem min(1rem,50vw) 1rem 1rem}}
-/* Cells */
 .tactic{{background:#333;font-weight:600;text-align:center;padding:.5rem}}
 .unmapped-h{{background:#800}}
 .col{{display:flex;flex-direction:column;gap:.25rem}}
@@ -149,7 +147,6 @@ details[open] > summary::after{{content:'▾'}}
 .technique.empty{{background:#1a1a1a}}
 .technique a{{color:inherit;text-decoration:none}}
 .technique a:hover{{text-decoration:underline}}
-/* sub-tech list hidden by default */
 .sub{{display:none;padding:.2rem .75rem .2rem 1.5rem;border-top:1px solid #333}}
 details[open] .sub{{display:block}}
 .blank{{color:#666;text-align:center;padding:1rem 0}}
@@ -165,13 +162,25 @@ details[open] .sub{{display:block}}
 </div>
 
 <script>
-const q = document.getElementById('search'),
-      pills = [...document.querySelectorAll('.technique, .sub')];
+const q       = document.getElementById('search'),
+      pills   = [...document.querySelectorAll('.technique, .sub')],
+      details = [...document.querySelectorAll('details.technique')];
 
 q.addEventListener('input', e => {{
   const val = e.target.value.toLowerCase();
-  pills.forEach(p => p.style.opacity =
-      !val || p.textContent.toLowerCase().includes(val) ? '1' : '0.15');
+
+  // show / fade pills
+  pills.forEach(p => {{
+    p.style.opacity = !val || p.textContent.toLowerCase().includes(val) ? '1' : '0.15';
+  }});
+
+  // auto-toggle parents if a child matches
+  details.forEach(d => {{
+    const anyMatch = [...d.querySelectorAll('.sub')].some(
+      s => s.textContent.toLowerCase().includes(val)
+    );
+    d.open = val ? anyMatch : false;   // collapse all when search cleared
+  }});
 }});
 </script>
 </body></html>"""
