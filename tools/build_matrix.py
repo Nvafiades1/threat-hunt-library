@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Generate docs/index.html – MITRE ATT&CK matrix
+Generate docs/index.html – MITRE ATT&CK matrix (dark theme)
 • Collapsible sub-techniques
-• Sticky header + live search that auto-expands matches
-• Horizontal scroll
+• Sticky header + live search
+• Click a tactic header to fade the others (click again or press Esc to reset)
 """
 
 import html, json, pathlib, sys
@@ -11,10 +11,7 @@ from collections import defaultdict
 
 # ── repo specifics ───────────────────────────────────────────────────────────
 OWNER, REPO, BRANCH, TECH_PATH = (
-    "Nvafiades1",          # GitHub user/org
-    "threat-hunt-library", # repo
-    "main",                # branch
-    "techniques",          # folder with T#### dirs
+    "Nvafiades1", "threat-hunt-library", "main", "techniques",
 )
 
 TACTICS = [
@@ -43,7 +40,7 @@ mapping = (
     else {k: v.title().replace("-", " ") for k, v in raw.items()}
 )
 
-# ── scan techniques ──────────────────────────────────────────────────────────
+# ── scan technique folders ───────────────────────────────────────────────────
 if not TECH_DIR.exists():
     sys.exit(f"❌  {TECH_DIR} not found")
 
@@ -78,11 +75,11 @@ for item in tech_items:
 def esc(s: str) -> str: return html.escape(s.replace("_", " "))
 
 headers, columns = [], []
-for tact in TACTICS:
-    headers.append(f'<div class="tactic">{esc(tact)}</div>')
+for idx, tact in enumerate(TACTICS):
+    headers.append(f'<div class="tactic" data-idx="{idx}">{esc(tact)}</div>')
     bucket = matrix.get(tact, {})
     if not bucket:
-        columns.append('<div class="blank">(none)</div>')
+        columns.append(f'<div class="blank col" data-idx="{idx}">(none)</div>')
         continue
 
     inner = []
@@ -110,11 +107,10 @@ for tact in TACTICS:
                 f'<div class="technique {p_cls}"><a href="{p_url}" '
                 f'target="_blank">{esc(p_name)}</a></div>'
             )
-    columns.append('<div class="col">' + "".join(inner) + '</div>')
+    columns.append(f'<div class="col" data-idx="{idx}">' + "".join(inner) + '</div>')
 
-# prepend Unmapped column if necessary
 if matrix.get("Unmapped"):
-    headers.insert(0, '<div class="tactic unmapped-h">Unmapped</div>')
+    headers.insert(0, '<div class="tactic unmapped-h" data-idx="-1">Unmapped</div>')
     columns.insert(0, columns.pop())   # move first data col to front
 
 num_cols = len(headers)
@@ -126,6 +122,7 @@ HTML = f"""<!DOCTYPE html>
 <style>
 *{{box-sizing:border-box}}
 body{{margin:0;background:#111;color:#eee;font-family:system-ui,sans-serif}}
+body.focus .col.dim{{opacity:.15}}
 header{{position:sticky;top:0;left:0;right:0;z-index:999;
         padding:.5rem 1rem;background:#111;border-bottom:1px solid #333;
         display:flex;align-items:center;gap:1rem}}
@@ -135,7 +132,7 @@ input[type=search]{{padding:.4rem .6rem;border-radius:4px;border:1px solid #444;
 .scroll-x{{overflow-x:auto}}
 .grid{{display:grid;grid-template-columns:repeat({num_cols},minmax(12rem,1fr));
       gap:.5rem;padding:1rem min(1rem,50vw) 1rem 1rem}}
-.tactic{{background:#333;font-weight:600;text-align:center;padding:.5rem}}
+.tactic{{background:#333;font-weight:600;text-align:center;padding:.5rem;cursor:pointer}}
 .unmapped-h{{background:#800}}
 .col{{display:flex;flex-direction:column;gap:.25rem}}
 .technique{{border:1px solid #444;border-radius:4px;font-size:.85rem}}
@@ -164,22 +161,37 @@ details[open] .sub{{display:block}}
 <script>
 const q       = document.getElementById('search'),
       pills   = [...document.querySelectorAll('.technique, .sub')],
-      details = [...document.querySelectorAll('details.technique')];
+      details = [...document.querySelectorAll('details.technique')],
+      tactics = [...document.querySelectorAll('.tactic')],
+      cols    = [...document.querySelectorAll('.col')],
+      body    = document.body;
 
-q.addEventListener('input', e => {{
-  const val = e.target.value.toLowerCase();
+let focused = null;  // currently focused column idx or null
 
-  // show / fade pills
-  pills.forEach(p => {{
-    p.style.opacity = !val || p.textContent.toLowerCase().includes(val) ? '1' : '0.15';
+function setFocus(idx) {{
+  focused = idx;
+  body.classList.toggle('focus', idx !== null);
+  cols.forEach(c => c.classList.toggle('dim', idx !== null && c.dataset.idx !== String(idx)));
+}}
+
+tactics.forEach(t => {{
+  t.addEventListener('click', () => {{
+    const idx = t.dataset.idx;
+    setFocus(focused === idx ? null : idx);
   }});
+}});
 
-  // auto-toggle parents if a child matches
+document.addEventListener('keydown', e => {{
+  if (e.key === 'Escape') setFocus(null);
+}});
+
+/* live search */
+q.addEventListener('input', e => {{
+  const val = e.target.value.toLowerCase().trim();
+  pills.forEach(p => p.style.opacity = (!val || p.textContent.toLowerCase().includes(val)) ? '1' : '0.15');
   details.forEach(d => {{
-    const anyMatch = [...d.querySelectorAll('.sub')].some(
-      s => s.textContent.toLowerCase().includes(val)
-    );
-    d.open = val ? anyMatch : false;   // collapse all when search cleared
+    const matchSub = [...d.querySelectorAll('.sub')].some(s => s.textContent.toLowerCase().includes(val));
+    d.open = val ? matchSub : false;
   }});
 }});
 </script>
