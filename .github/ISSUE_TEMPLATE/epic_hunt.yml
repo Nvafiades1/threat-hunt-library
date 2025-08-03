@@ -1,0 +1,90 @@
+name: Epic Hunt
+description: Track a multi-TTP threat-actor campaign without cluttering the board
+title: "Hunt: <ACTOR-CODE-NAME> – <Objective>"
+labels:
+  - type: epic
+  - status: planning
+projects: []          # add your GitHub Project ID(s) if you want auto-linking
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Goal  
+        Describe the bigger picture you’re after – e.g., “Uncover and mitigate all active Scattered Spider footholds.”
+
+  - type: input
+    id: actor
+    attributes:
+      label: Threat actor or campaign name
+      placeholder: "Scattered Spider / UNC3944 / Oktapus"
+    validations:
+      required: true
+
+  - type: textarea
+    id: background
+    attributes:
+      label: Intelligence background
+      description: "Why are we hunting this actor now? Paste CTI summaries, CVEs, recent incidents, etc."
+      placeholder: |
+        * Last spotted abusing Okta support SAML tokens (July 2025)  
+        * New TTP: Live-streamed SIM-swap takeover of exec devices  
+        * Targeting Tradeweb sector peers
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope & key data sources
+      placeholder: |
+        * Tenant:  corp.example.com  
+        * Data: CrowdStrike, Okta logs, Zscaler, ADX auth events
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: sub_hunts
+    attributes:
+      label: Sub-hunts (checklist = child issues)
+      description: |
+        List each concrete hunt as a task.  
+        After opening the Epic, **convert each task to a sub-issue** so progress rolls up automatically.
+      placeholder: |
+        - [ ] Create #️⃣“Hunt – credential-phish lure detection”
+        - [ ] Create #️⃣“Hunt – SIM-swap anomaly”
+        - [ ] Create #️⃣“Hunt – Okta session hijack”
+      render: markdown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - 🟥 Critical
+        - 🟧 High
+        - 🟨 Medium
+        - 🟩 Low
+    validations:
+      required: true
+
+  - type: textarea
+    id: timeline
+    attributes:
+      label: Target timeline / milestones
+      placeholder: |
+        * Planning complete by **2025-08-10**  
+        * All sub-hunts kicked off by **2025-08-17**  
+        * Initial findings review **2025-09-01**
+      render: markdown
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+          **House-rules automation idea**  
+        If every sub-issue closes, auto-archive this Epic so it disappears from the board.  
+        (_Less kanban chaos = happier hunters._)
