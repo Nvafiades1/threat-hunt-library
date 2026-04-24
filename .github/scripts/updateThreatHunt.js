@@ -5,9 +5,10 @@
   const fs = require("fs");
   const path = require("path");
 
-  const octokit = new Octokit({ auth: process.env.PAT_TOKEN, request: { fetch } });
+  const token = process.env.GITHUB_TOKEN;
+  const octokit = new Octokit({ auth: token, request: { fetch } });
   const gql = graphql.defaults({
-    headers: { authorization: `token ${process.env.PAT_TOKEN}` }
+    headers: { authorization: `token ${token}` }
   });
 
   function generateSlug(title) {
@@ -68,8 +69,8 @@
       message: commitMessage,
       content: Buffer.from(content, "utf8").toString("base64"),
       branch: "main",
-      committer: { name: "Nvafiades1", email: "nvafiades@protonmail.com" },
-      author: { name: "Nvafiades1", email: "nvafiades@protonmail.com" },
+      committer: { name: "github-actions[bot]", email: "41898282+github-actions[bot]@users.noreply.github.com" },
+      author: { name: "github-actions[bot]", email: "41898282+github-actions[bot]@users.noreply.github.com" },
       sha: fileExists ? sha : undefined
     };
 
@@ -183,9 +184,11 @@
       return;
     }
 
-    const techniqueId = extractTechniqueId(issuePayload.body);
+    const techniqueId =
+      extractTechniqueId(issuePayload.title) ||
+      extractTechniqueId(issuePayload.body);
     if (!techniqueId) {
-      console.log("No technique ID (T#### or T####.###) found in issue body; skipping.");
+      console.log("No technique ID (T#### or T####.###) found in issue title or body; skipping.");
       return;
     }
 
