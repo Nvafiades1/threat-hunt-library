@@ -1,0 +1,43 @@
+# T1059.001 APT29 PowerShell discovery
+
+### MITRE Technique ID
+
+T1059.001
+
+### Threat Hunt ID
+
+TH-VERIFY-001
+
+### Created
+
+2026-04-24T12:00:00Z
+
+### Hypothesis
+
+PowerShell is being used by APT29 for post-exploitation discovery via encoded commands.
+
+### Hunt Platform
+
+Splunk
+
+### Severity
+
+High
+
+### Confidence
+
+90%
+
+### Query Fidelity
+
+High
+
+### Threat Actor
+
+APT29
+
+### Status
+
+Completed
+
+_Created by @Nvafiades1_
