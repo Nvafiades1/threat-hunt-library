@@ -4,45 +4,44 @@ on:
   issues:
     types: [opened]
 
+permissions:
+  contents: write
+  issues: read
+
 jobs:
   save_issue:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create issue file
+        env:
+          TITLE: ${{ github.event.issue.title }}
+          BODY: ${{ github.event.issue.body }}
+          AUTHOR: ${{ github.event.issue.user.login }}
+          NUM: ${{ github.event.issue.number }}
         run: |
-          # Define folder name and create it if it doesn't exist
           FOLDER="test"
           mkdir -p "$FOLDER"
+          FILE="$FOLDER/issue-${NUM}.md"
+          {
+            printf '# %s\n\n' "$TITLE"
+            printf '%s\n\n' "$BODY"
+            printf '_Created by @%s_\n' "$AUTHOR"
+          } > "$FILE"
 
-          # Use the issue number for a unique filename
-          FILE="$FOLDER/issue-${{ github.event.issue.number }}.md"
-
-          # Create file content with issue title, body, and author info
-          echo "# ${{ github.event.issue.title }}" > "$FILE"
-          echo "" >> "$FILE"
-          echo "${{ github.event.issue.body }}" >> "$FILE"
-          echo "" >> "$FILE"
-          echo "_Created by @${{ github.event.issue.user.login }}_" >> "$FILE"
-
-      - name: Commit and Push Changes
+      - name: Commit and push
         env:
-          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+          NUM: ${{ github.event.issue.number }}
+          TITLE: ${{ github.event.issue.title }}
         run: |
-          # Configure Git with your info
-          git config --global user.name "Nvafiades1"
-          git config --global user.email "nvafiades@protonmail.com"
-          
-          # Update remote URL to use the PAT
-          git remote set-url origin "https://${PAT_TOKEN}@github.com/Nvafiades1/threat-hunt-library.git"
-          
-          # Stage changes in the 'test' folder
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add test/
-          
-          # Attempt to commit changes. If there are no changes, this will fail, so we use "||" to handle that gracefully.
-          git commit -m "Add issue ${{ github.event.issue.number }}: ${{ github.event.issue.title }}" || echo "No changes to commit in test folder."
-          
-          # Push changes to the main branch
-          git push origin main
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Add issue ${NUM}: ${TITLE}"
+          git push origin HEAD:main
