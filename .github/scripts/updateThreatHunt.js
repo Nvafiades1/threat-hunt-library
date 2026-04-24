@@ -21,6 +21,103 @@
     return m ? m[1].toUpperCase() : null;
   }
 
+  // ─── archive markdown builder ────────────────────────────────────────────
+  const NONE_VALUES = new Set(["", "_no response_", "n/a", "none", "tbd"]);
+
+  function parseSections(body) {
+    const order = [];
+    const map = {};
+    let current = null;
+    for (const line of (body || "").split("\n")) {
+      const m = line.match(/^###\s+(.+?)\s*$/);
+      if (m) {
+        current = m[1].trim();
+        if (!(current in map)) { order.push(current); map[current] = []; }
+      } else if (current !== null) {
+        map[current].push(line);
+      }
+    }
+    return { order, map };
+  }
+
+  function fieldValue(map, label) {
+    const lines = map[label];
+    if (!lines) return null;
+    const v = lines.join("\n").trim();
+    return NONE_VALUES.has(v.toLowerCase()) ? null : v;
+  }
+
+  function filterCheckedOnly(content) {
+    // Keep only ticked items from a GH-form checkboxes block
+    const kept = content.split("\n")
+      .filter(l => /^\s*-\s*\[[xX]\]/.test(l))
+      .map(l => l.replace(/^\s*-\s*\[[xX]\]\s*/, "- "));
+    return kept.join("\n").trim();
+  }
+
+  function truncate(s, max) {
+    if (!s) return "";
+    return [...s].length <= max ? s : [...s].slice(0, max - 1).join("") + "\u2026";
+  }
+
+  // visibleLen accounts for fullwidth / multibyte safely via spread
+  function padRight(s, width) {
+    const visible = [...s].length;
+    return visible >= width ? s : s + " ".repeat(width - visible);
+  }
+
+  function buildArchive({ issueTitle, issueNumber, issueBody, techniqueId, closedAt, repoSlug }) {
+    const { order, map } = parseSections(issueBody);
+
+    const sev    = fieldValue(map, "Severity")       || "\u2014";
+    const conf   = fieldValue(map, "Confidence")     || "\u2014";
+    const fid    = fieldValue(map, "Query Fidelity") || "\u2014";
+    const plat   = fieldValue(map, "Hunt Platform")  || "\u2014";
+    const actor  = fieldValue(map, "Threat Actor")   || "\u2014";
+    const status = fieldValue(map, "Status")         || "Completed";
+
+    const issueUrl = `https://github.com/${repoSlug}/issues/${issueNumber}`;
+
+    // Box banner (unicode box-drawing, wrapped in a code fence so it renders as monospace)
+    const INNER = 72;
+    const line1 = truncate(` THREAT HUNT \u00B7 ${techniqueId}`, INNER);
+    const line2 = truncate(` ${issueTitle}`, INNER);
+    const banner = [
+      "```",
+      "\u2554" + "\u2550".repeat(INNER) + "\u2557",
+      "\u2551" + padRight(line1, INNER) + "\u2551",
+      "\u2551" + padRight(line2, INNER) + "\u2551",
+      "\u255A" + "\u2550".repeat(INNER) + "\u255D",
+      "```",
+    ].join("\n");
+
+    const summary = [
+      `> **Severity** ${sev} \u00B7 **Confidence** ${conf} \u00B7 **Query Fidelity** ${fid}  `,
+      `> **Platform** ${plat} \u00B7 **Threat Actor** ${actor} \u00B7 **Status** ${status}  `,
+      `> Archived from [#${issueNumber}](${issueUrl}) on ${closedAt}`,
+    ].join("\n");
+
+    // Body: emit each field under a divider, skip empty / "_No response_" entries,
+    // compress the Tactics checkbox block to just ticked items.
+    const bodyChunks = [];
+    for (const label of order) {
+      let value = fieldValue(map, label);
+      if (value === null) continue;
+      if (label.toLowerCase().includes("tactic") && value.includes("- [")) {
+        value = filterCheckedOnly(value);
+        if (!value) continue;
+      }
+      bodyChunks.push(`---\n\n### ${label}\n\n${value}`);
+    }
+
+    const footer =
+      `---\n\n_Auto-archived by \`updateThreatHunt.js\` from issue ` +
+      `[#${issueNumber}](${issueUrl}) on ${closedAt}. The issue is the source of truth; ` +
+      `this file is regenerated on re-close._`;
+
+    return [banner, "", summary, "", bodyChunks.join("\n\n"), "", footer, ""].join("\n");
+  }
+
   async function getRepoInfo() {
     const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
     return { owner, repo };
@@ -192,16 +289,15 @@
       return;
     }
 
-    const content = [
-      `# ${issuePayload.title}`,
-      ``,
-      `**Technique:** ${techniqueId}`,
-      ``,
-      `**Details:**`,
-      `${issuePayload.body}`,
-      ``,
-      `**Status:** Completed`
-    ].join("\n");
+    const closedAt = new Date().toISOString().slice(0, 10);
+    const content = buildArchive({
+      issueTitle:  issuePayload.title,
+      issueNumber: issuePayload.number,
+      issueBody:   issuePayload.body,
+      techniqueId,
+      closedAt,
+      repoSlug:    process.env.GITHUB_REPOSITORY,
+    });
 
     await upsertFile({
       techniqueId,

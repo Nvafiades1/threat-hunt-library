@@ -70,8 +70,10 @@ def tactic_of(parent_id: str) -> str:
 
 # ── hunt parser ──────────────────────────────────────────────────────────────
 _section_re = re.compile(r"^###\s+(.+?)\s*$")
-# Bold-meta lines written by updateThreatHunt.js wrapper (**Technique:**, **Status:**, **Details:**)
+# Bold-meta lines (**Technique:**, **Status:**, **Details:**) — legacy wrapper format
 _meta_re = re.compile(r"^\*\*[^*:]+:\*\*")
+# Horizontal rule lines — used as section dividers in the current archive format
+_hr_re = re.compile(r"^[-=_*]{3,}\s*$")
 # Checkbox rows from issue-form checkboxes blocks
 _checkbox_re = re.compile(r"^\s*-\s*\[(x|X| )\]\s*(.+?)\s*$")
 _none_values = {"", "_no response_", "n/a", "none", "tbd"}
@@ -85,8 +87,8 @@ def parse_hunt(md_text: str) -> dict[str, str]:
             current = m.group(1).strip()
             sections.setdefault(current, [])
             continue
-        if _meta_re.match(line):
-            # Sentinel written by archive script; stop gathering until the next ### header.
+        if _meta_re.match(line) or _hr_re.match(line):
+            # Sentinel / divider; stop gathering until the next ### header.
             current = None
             continue
         if current is not None:

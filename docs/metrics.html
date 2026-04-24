@@ -74,7 +74,7 @@ h2{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:uppercas
 </head><body>
 <header>
   <div class="brand">Threat Hunt <span class="accent">Metrics</span></div>
-  <span class="meta">Generated 2026-04-24 13:25 UTC</span>
+  <span class="meta">Generated 2026-04-24 13:33 UTC</span>
   <a class="nav-link" href="./index.html">Matrix &rarr;</a>
   <button id="modeToggle" title="Toggle light/dark">☼</button>
 </header>
@@ -83,12 +83,12 @@ h2{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:uppercas
 <section class="kpis">
   <div class="kpi orange">
     <div class="kpi-label">Total Hunts</div>
-    <div class="kpi-value">1</div>
-    <div class="kpi-sub">last hunt 2026-04-24</div>
+    <div class="kpi-value">0</div>
+    <div class="kpi-sub">awaiting first hunt</div>
   </div>
   <div class="kpi green">
     <div class="kpi-label">Techniques Covered</div>
-    <div class="kpi-value">1</div>
+    <div class="kpi-value">0</div>
     <div class="kpi-sub">of 216 mapped techniques</div>
   </div>
   <div class="kpi blue">
@@ -104,8 +104,13 @@ h2{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:uppercas
 </section>
 
 
+<div class="empty" style="margin-top:2rem">
+  <div class="empty-title">No hunts archived yet.</div>
+  <div>Open a Threat Hunt issue, move it to <b>Completed</b> on the project board, and this dashboard will populate automatically.</div>
+</div>
 
-<div id="charts" style="">
+
+<div id="charts" style="display:none">
 <h2>Activity</h2>
 <div class="grid">
   <div class="card span-8">
@@ -157,7 +162,7 @@ h2{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:uppercas
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
-const DATA = {"totals": {"hunts": 1, "techniques": 1, "actors": 0, "coverage": 0, "universe": 216, "last_hunt": "2026-04-24"}, "timeline": {"labels": ["2026-04"], "monthly": [1], "cumulative": [1]}, "tactics": {"labels": ["Credential Access"], "hunts": [1], "covered": [1]}, "actors": {"labels": [], "values": []}, "severity": {"labels": ["Critical"], "values": [1]}, "confidence": {"labels": ["High"], "values": [1]}, "techniques": {"labels": ["T1003"], "values": [1]}, "platforms": {"labels": ["Splunk"], "values": [1]}};
+const DATA = {"totals": {"hunts": 0, "techniques": 0, "actors": 0, "coverage": 0, "universe": 216, "last_hunt": null}, "timeline": {"labels": [], "monthly": [], "cumulative": []}, "tactics": {"labels": [], "hunts": [], "covered": []}, "actors": {"labels": [], "values": []}, "severity": {"labels": [], "values": []}, "confidence": {"labels": [], "values": []}, "techniques": {"labels": [], "values": []}, "platforms": {"labels": [], "values": []}};
 
 function cssVar(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
