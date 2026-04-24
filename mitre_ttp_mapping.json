@@ -4,8 +4,16 @@
     "tactic": "Command-and-control"
   },
   {
+    "technique_id": "T1002",
+    "tactic": "Exfiltration"
+  },
+  {
     "technique_id": "T1003",
     "tactic": "Credential-access"
+  },
+  {
+    "technique_id": "T1004",
+    "tactic": "Persistence"
   },
   {
     "technique_id": "T1005",
@@ -24,6 +32,10 @@
     "tactic": "Command-and-control"
   },
   {
+    "technique_id": "T1009",
+    "tactic": "Defense-evasion"
+  },
+  {
     "technique_id": "T1010",
     "tactic": "Discovery"
   },
@@ -36,16 +48,40 @@
     "tactic": "Discovery"
   },
   {
+    "technique_id": "T1013",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1013",
+    "tactic": "Privilege-escalation"
+  },
+  {
     "technique_id": "T1014",
     "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1015",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1015",
+    "tactic": "Privilege-escalation"
   },
   {
     "technique_id": "T1016",
     "tactic": "Discovery"
   },
   {
+    "technique_id": "T1017",
+    "tactic": "Lateral-movement"
+  },
+  {
     "technique_id": "T1018",
     "tactic": "Discovery"
+  },
+  {
+    "technique_id": "T1019",
+    "tactic": "Persistence"
   },
   {
     "technique_id": "T1020",
@@ -56,12 +92,36 @@
     "tactic": "Lateral-movement"
   },
   {
+    "technique_id": "T1022",
+    "tactic": "Exfiltration"
+  },
+  {
+    "technique_id": "T1023",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1024",
+    "tactic": "Command-and-control"
+  },
+  {
     "technique_id": "T1025",
     "tactic": "Collection"
   },
   {
+    "technique_id": "T1026",
+    "tactic": "Command-and-control"
+  },
+  {
     "technique_id": "T1027",
     "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1028",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1028",
+    "tactic": "Lateral-movement"
   },
   {
     "technique_id": "T1029",
@@ -72,8 +132,28 @@
     "tactic": "Exfiltration"
   },
   {
+    "technique_id": "T1031",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1032",
+    "tactic": "Command-and-control"
+  },
+  {
     "technique_id": "T1033",
     "tactic": "Discovery"
+  },
+  {
+    "technique_id": "T1034",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1034",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1035",
+    "tactic": "Execution"
   },
   {
     "technique_id": "T1036",
@@ -85,6 +165,18 @@
   },
   {
     "technique_id": "T1037",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1038",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1038",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1038",
     "tactic": "Privilege-escalation"
   },
   {
@@ -104,6 +196,26 @@
     "tactic": "Exfiltration"
   },
   {
+    "technique_id": "T1042",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1043",
+    "tactic": "Command-and-control"
+  },
+  {
+    "technique_id": "T1044",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1044",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1045",
+    "tactic": "Defense-evasion"
+  },
+  {
     "technique_id": "T1046",
     "tactic": "Discovery"
   },
@@ -120,6 +232,18 @@
     "tactic": "Discovery"
   },
   {
+    "technique_id": "T1050",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1050",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1051",
+    "tactic": "Lateral-movement"
+  },
+  {
     "technique_id": "T1052",
     "tactic": "Exfiltration"
   },
@@ -134,6 +258,10 @@
   {
     "technique_id": "T1053",
     "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1054",
+    "tactic": "Defense-evasion"
   },
   {
     "technique_id": "T1055",
@@ -156,8 +284,52 @@
     "tactic": "Discovery"
   },
   {
+    "technique_id": "T1058",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1058",
+    "tactic": "Privilege-escalation"
+  },
+  {
     "technique_id": "T1059",
     "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1060",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1061",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1062",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1063",
+    "tactic": "Discovery"
+  },
+  {
+    "technique_id": "T1064",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1064",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1065",
+    "tactic": "Command-and-control"
+  },
+  {
+    "technique_id": "T1066",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1067",
+    "tactic": "Persistence"
   },
   {
     "technique_id": "T1068",
@@ -184,8 +356,24 @@
     "tactic": "Lateral-movement"
   },
   {
+    "technique_id": "T1073",
+    "tactic": "Defense-evasion"
+  },
+  {
     "technique_id": "T1074",
     "tactic": "Collection"
+  },
+  {
+    "technique_id": "T1075",
+    "tactic": "Lateral-movement"
+  },
+  {
+    "technique_id": "T1076",
+    "tactic": "Lateral-movement"
+  },
+  {
+    "technique_id": "T1077",
+    "tactic": "Lateral-movement"
   },
   {
     "technique_id": "T1078",
@@ -204,8 +392,16 @@
     "tactic": "Privilege-escalation"
   },
   {
+    "technique_id": "T1079",
+    "tactic": "Command-and-control"
+  },
+  {
     "technique_id": "T1080",
     "tactic": "Lateral-movement"
+  },
+  {
+    "technique_id": "T1081",
+    "tactic": "Credential-access"
   },
   {
     "technique_id": "T1082",
@@ -216,8 +412,36 @@
     "tactic": "Discovery"
   },
   {
+    "technique_id": "T1084",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1085",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1085",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1086",
+    "tactic": "Execution"
+  },
+  {
     "technique_id": "T1087",
     "tactic": "Discovery"
+  },
+  {
+    "technique_id": "T1088",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1088",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1089",
+    "tactic": "Defense-evasion"
   },
   {
     "technique_id": "T1090",
@@ -236,8 +460,24 @@
     "tactic": "Command-and-control"
   },
   {
+    "technique_id": "T1093",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1094",
+    "tactic": "Command-and-control"
+  },
+  {
     "technique_id": "T1095",
     "tactic": "Command-and-control"
+  },
+  {
+    "technique_id": "T1096",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1097",
+    "tactic": "Lateral-movement"
   },
   {
     "technique_id": "T1098",
@@ -248,8 +488,32 @@
     "tactic": "Privilege-escalation"
   },
   {
+    "technique_id": "T1099",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1100",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1100",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1101",
+    "tactic": "Persistence"
+  },
+  {
     "technique_id": "T1102",
     "tactic": "Command-and-control"
+  },
+  {
+    "technique_id": "T1103",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1103",
+    "tactic": "Privilege-escalation"
   },
   {
     "technique_id": "T1104",
@@ -262,6 +526,26 @@
   {
     "technique_id": "T1106",
     "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1107",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1108",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1108",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1109",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1109",
+    "tactic": "Persistence"
   },
   {
     "technique_id": "T1110",
@@ -292,12 +576,48 @@
     "tactic": "Collection"
   },
   {
+    "technique_id": "T1116",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1117",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1117",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1118",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1118",
+    "tactic": "Execution"
+  },
+  {
     "technique_id": "T1119",
     "tactic": "Collection"
   },
   {
     "technique_id": "T1120",
     "tactic": "Discovery"
+  },
+  {
+    "technique_id": "T1121",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1121",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1122",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1122",
+    "tactic": "Persistence"
   },
   {
     "technique_id": "T1123",
@@ -312,12 +632,28 @@
     "tactic": "Collection"
   },
   {
+    "technique_id": "T1126",
+    "tactic": "Defense-evasion"
+  },
+  {
     "technique_id": "T1127",
     "tactic": "Defense-evasion"
   },
   {
+    "technique_id": "T1128",
+    "tactic": "Persistence"
+  },
+  {
     "technique_id": "T1129",
     "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1130",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1131",
+    "tactic": "Persistence"
   },
   {
     "technique_id": "T1132",
@@ -352,20 +688,296 @@
     "tactic": "Persistence"
   },
   {
+    "technique_id": "T1138",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1138",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1139",
+    "tactic": "Credential-access"
+  },
+  {
     "technique_id": "T1140",
     "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1141",
+    "tactic": "Credential-access"
+  },
+  {
+    "technique_id": "T1142",
+    "tactic": "Credential-access"
+  },
+  {
+    "technique_id": "T1143",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1144",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1145",
+    "tactic": "Credential-access"
+  },
+  {
+    "technique_id": "T1146",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1147",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1148",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1149",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1150",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1150",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1150",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1151",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1151",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1152",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1152",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1152",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1153",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1154",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1154",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1155",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1156",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1157",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1157",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1158",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1158",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1159",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1160",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1160",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1161",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1162",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1163",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1164",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1165",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1165",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1166",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1166",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1167",
+    "tactic": "Credential-access"
+  },
+  {
+    "technique_id": "T1168",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1168",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1169",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1170",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1170",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1171",
+    "tactic": "Credential-access"
+  },
+  {
+    "technique_id": "T1172",
+    "tactic": "Command-and-control"
+  },
+  {
+    "technique_id": "T1173",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1174",
+    "tactic": "Credential-access"
+  },
+  {
+    "technique_id": "T1175",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1175",
+    "tactic": "Lateral-movement"
   },
   {
     "technique_id": "T1176",
     "tactic": "Persistence"
   },
   {
+    "technique_id": "T1177",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1177",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1178",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1179",
+    "tactic": "Credential-access"
+  },
+  {
+    "technique_id": "T1179",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1179",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1180",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1181",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1181",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1182",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1182",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1183",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1183",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1183",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1184",
+    "tactic": "Lateral-movement"
+  },
+  {
     "technique_id": "T1185",
     "tactic": "Collection"
   },
   {
+    "technique_id": "T1186",
+    "tactic": "Defense-evasion"
+  },
+  {
     "technique_id": "T1187",
     "tactic": "Credential-access"
+  },
+  {
+    "technique_id": "T1188",
+    "tactic": "Command-and-control"
   },
   {
     "technique_id": "T1189",
@@ -376,8 +988,36 @@
     "tactic": "Initial-access"
   },
   {
+    "technique_id": "T1191",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1191",
+    "tactic": "Execution"
+  },
+  {
+    "technique_id": "T1192",
+    "tactic": "Initial-access"
+  },
+  {
+    "technique_id": "T1193",
+    "tactic": "Initial-access"
+  },
+  {
+    "technique_id": "T1194",
+    "tactic": "Initial-access"
+  },
+  {
     "technique_id": "T1195",
     "tactic": "Initial-access"
+  },
+  {
+    "technique_id": "T1196",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1196",
+    "tactic": "Execution"
   },
   {
     "technique_id": "T1197",
@@ -385,6 +1025,14 @@
   },
   {
     "technique_id": "T1197",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1198",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1198",
     "tactic": "Persistence"
   },
   {
@@ -424,8 +1072,20 @@
     "tactic": "Persistence"
   },
   {
+    "technique_id": "T1206",
+    "tactic": "Privilege-escalation"
+  },
+  {
     "technique_id": "T1207",
     "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1208",
+    "tactic": "Credential-access"
+  },
+  {
+    "technique_id": "T1209",
+    "tactic": "Persistence"
   },
   {
     "technique_id": "T1210",
@@ -442,6 +1102,14 @@
   {
     "technique_id": "T1213",
     "tactic": "Collection"
+  },
+  {
+    "technique_id": "T1214",
+    "tactic": "Credential-access"
+  },
+  {
+    "technique_id": "T1215",
+    "tactic": "Persistence"
   },
   {
     "technique_id": "T1216",
@@ -472,12 +1140,24 @@
     "tactic": "Defense-evasion"
   },
   {
+    "technique_id": "T1223",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1223",
+    "tactic": "Execution"
+  },
+  {
     "technique_id": "T1480",
     "tactic": "Defense-evasion"
   },
   {
     "technique_id": "T1482",
     "tactic": "Discovery"
+  },
+  {
+    "technique_id": "T1483",
+    "tactic": "Command-and-control"
   },
   {
     "technique_id": "T1484",
@@ -496,6 +1176,14 @@
     "tactic": "Impact"
   },
   {
+    "technique_id": "T1487",
+    "tactic": "Impact"
+  },
+  {
+    "technique_id": "T1488",
+    "tactic": "Impact"
+  },
+  {
     "technique_id": "T1489",
     "tactic": "Impact"
   },
@@ -505,6 +1193,18 @@
   },
   {
     "technique_id": "T1491",
+    "tactic": "Impact"
+  },
+  {
+    "technique_id": "T1492",
+    "tactic": "Impact"
+  },
+  {
+    "technique_id": "T1493",
+    "tactic": "Impact"
+  },
+  {
+    "technique_id": "T1494",
     "tactic": "Impact"
   },
   {
@@ -532,12 +1232,64 @@
     "tactic": "Impact"
   },
   {
+    "technique_id": "T1500",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1501",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1502",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1502",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1503",
+    "tactic": "Credential-access"
+  },
+  {
+    "technique_id": "T1504",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1504",
+    "tactic": "Privilege-escalation"
+  },
+  {
     "technique_id": "T1505",
     "tactic": "Persistence"
   },
   {
+    "technique_id": "T1506",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1506",
+    "tactic": "Lateral-movement"
+  },
+  {
+    "technique_id": "T1514",
+    "tactic": "Privilege-escalation"
+  },
+  {
     "technique_id": "T1518",
     "tactic": "Discovery"
+  },
+  {
+    "technique_id": "T1519",
+    "tactic": "Persistence"
+  },
+  {
+    "technique_id": "T1519",
+    "tactic": "Privilege-escalation"
+  },
+  {
+    "technique_id": "T1522",
+    "tactic": "Credential-access"
   },
   {
     "technique_id": "T1525",
@@ -546,6 +1298,14 @@
   {
     "technique_id": "T1526",
     "tactic": "Discovery"
+  },
+  {
+    "technique_id": "T1527",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1527",
+    "tactic": "Lateral-movement"
   },
   {
     "technique_id": "T1528",
@@ -569,6 +1329,10 @@
   },
   {
     "technique_id": "T1535",
+    "tactic": "Defense-evasion"
+  },
+  {
+    "technique_id": "T1536",
     "tactic": "Defense-evasion"
   },
   {

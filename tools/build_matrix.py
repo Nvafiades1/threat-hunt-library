@@ -137,18 +137,10 @@ headers, columns = [], []
 def tactic_parent_count(tact: str) -> int:
     return len([p for p in matrix.get(tact, {}).values() if p["parent"]])
 
-for idx, tact in enumerate(TACTICS):
-    count = tactic_parent_count(tact)
-    headers.append(
-        f'<div class="tactic" data-idx="{idx}">'
-        f'<div class="tactic-name">{esc(tact)}</div>'
-        f'<div class="tactic-count">{count} techniques</div>'
-        f'</div>'
-    )
+def render_column(tact, idx, extra_class=""):
     bucket = matrix.get(tact, {})
     if not bucket:
-        columns.append(f'<div class="col blank" data-idx="{idx}">&mdash;</div>')
-        continue
+        return f'<div class="col blank{(" " + extra_class) if extra_class else ""}" data-idx="{idx}">&mdash;</div>'
 
     inner = []
     for parent_id in sorted(bucket):
@@ -191,7 +183,18 @@ for idx, tact in enumerate(TACTICS):
                 f'<a class="technique {p_cls}"{p_title} href="{p_url}" target="_blank">'
                 f'<span class="t-id">{esc(p_id)}</span>{name_html}</a>'
             )
-    columns.append(f'<div class="col" data-idx="{idx}">' + "".join(inner) + '</div>')
+    cls = "col" + (f" {extra_class}" if extra_class else "")
+    return f'<div class="{cls}" data-idx="{idx}">' + "".join(inner) + '</div>'
+
+for idx, tact in enumerate(TACTICS):
+    count = tactic_parent_count(tact)
+    headers.append(
+        f'<div class="tactic" data-idx="{idx}">'
+        f'<div class="tactic-name">{esc(tact)}</div>'
+        f'<div class="tactic-count">{count} techniques</div>'
+        f'</div>'
+    )
+    columns.append(render_column(tact, idx))
 
 if "Unmapped" in matrix and matrix["Unmapped"]:
     count = tactic_parent_count("Unmapped")
@@ -200,7 +203,7 @@ if "Unmapped" in matrix and matrix["Unmapped"]:
         '<div class="tactic-name">Unmapped</div>'
         f'<div class="tactic-count">{count} techniques</div>'
         '</div>')
-    columns.insert(0, columns.pop())
+    columns.insert(0, render_column("Unmapped", "-1", extra_class="unmapped-col"))
 
 num_cols = len(headers)
 

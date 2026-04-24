@@ -48,10 +48,19 @@ function buildReadme(technique, id, mitreUrl, version, bundleName) {
   const dataSources = technique.x_mitre_data_sources || [];
   const detection   = (technique.x_mitre_detection || "").trim();
   const isSub       = id.includes(".");
+  const isDeprecated = !!technique.x_mitre_deprecated;
+  const isRevoked    = !!technique.revoked;
 
   const sections = [];
   sections.push(`# ${name}`);
   sections.push("");
+
+  if (isRevoked || isDeprecated) {
+    const label = isRevoked ? "REVOKED" : "DEPRECATED";
+    sections.push(`> **STATUS: ${label}** — This technique is no longer part of the active MITRE ATT&CK matrix. The folder is kept for historical reference; existing hunt files remain valid but new hunts should target a current technique.`);
+    sections.push("");
+  }
+
   sections.push(`**Technique ID:** \`${id}\`${isSub ? " (sub-technique)" : ""}  `);
   sections.push(`**Tactic(s):** ${tacticLabels.join(", ") || "—"}  `);
   sections.push(`**Platforms:** ${platforms.join(", ") || "—"}  `);
@@ -97,12 +106,30 @@ async function main() {
   const version    = collection?.x_mitre_version || "unknown";
   const bundleName = collection?.name || "Enterprise ATT&CK";
 
-  // Active techniques only
-  const techniques = stix.objects.filter(o =>
-    o.type === "attack-pattern" &&
-    !o.revoked &&
-    !o.x_mitre_deprecated
-  );
+  // Prior mapping: used as a last-resort fallback for techniques STIX no longer
+  // carries any tactic information for (very old revoked entries).
+  let priorMapping = [];
+  try { priorMapping = JSON.parse(fs.readFileSync(MAPPING_FILE, "utf8")); } catch (_) {}
+  const priorByTechnique = new Map();
+  for (const row of priorMapping) {
+    const arr = priorByTechnique.get(row.technique_id) || [];
+    arr.push(row.tactic);
+    priorByTechnique.set(row.technique_id, arr);
+  }
+
+  // Index 'revoked-by' relationships so revoked techniques can inherit their
+  // successor's tactic when their own kill_chain_phases have been stripped.
+  const revokedBy = new Map();    // source STIX id -> target STIX id
+  const stixById  = new Map();
+  for (const o of stix.objects) if (o.id) stixById.set(o.id, o);
+  for (const o of stix.objects) {
+    if (o.type === "relationship" && o.relationship_type === "revoked-by") {
+      revokedBy.set(o.source_ref, o.target_ref);
+    }
+  }
+
+  // Include active + deprecated + revoked so every folder in the repo has a mapping
+  const techniques = stix.objects.filter(o => o.type === "attack-pattern");
 
   fs.mkdirSync(TECH_DIR, { recursive: true });
 
@@ -123,24 +150,38 @@ async function main() {
 
     // Mapping: parents only (sub-techniques inherit their parent's tactic column)
     if (!id.includes(".")) {
-      const phases = (t.kill_chain_phases || [])
+      let phases = (t.kill_chain_phases || [])
         .filter(kc => kc.kill_chain_name === "mitre-attack")
-        .map(kc => capFirst(kc.phase_name));
-      for (const tactic of phases) {
-        mapping.push({ technique_id: id, tactic });
+        .map(kc => kc.phase_name);
+
+      // Revoked technique: follow the revoked-by relationship to pick up the
+      // replacement's tactic(s).
+      if (phases.length === 0 && t.revoked && revokedBy.has(t.id)) {
+        const successor = stixById.get(revokedBy.get(t.id));
+        if (successor?.kill_chain_phases) {
+          phases = successor.kill_chain_phases
+            .filter(kc => kc.kill_chain_name === "mitre-attack")
+            .map(kc => kc.phase_name);
+        }
+      }
+
+      // Last-resort fallback: whatever this technique was mapped to previously.
+      if (phases.length === 0 && priorByTechnique.has(id)) {
+        phases = priorByTechnique.get(id).map(s => s.toLowerCase().replace(/\s+/g, "-"));
+      }
+
+      for (const phase of phases) {
+        mapping.push({ technique_id: id, tactic: capFirst(phase) });
       }
     }
 
-    const readmePath    = path.join(folder, "README.md");
-    const nextContent   = buildReadme(t, id, mitreRef.url, version, bundleName);
-    const existing      = fs.existsSync(readmePath)
+    const readmePath  = path.join(folder, "README.md");
+    const nextContent = buildReadme(t, id, mitreRef.url, version, bundleName);
+    const existing    = fs.existsSync(readmePath)
       ? fs.readFileSync(readmePath, "utf8")
       : null;
 
-    if (existing === nextContent) {
-      unchanged++;
-      continue;
-    }
+    if (existing === nextContent) { unchanged++; continue; }
     fs.writeFileSync(readmePath, nextContent);
     if (existing === null) created++;
     else                   rewritten++;
@@ -156,13 +197,21 @@ async function main() {
   fs.writeFileSync(MAPPING_FILE, JSON.stringify(mappingArr, null, 2) + "\n");
   fs.writeFileSync(VERSION_FILE, version + "\n");
 
+  // Diagnostic: which folders are still unmapped?
+  const mappedIds = new Set(mappingArr.map(m => m.technique_id));
+  const folderIds = fs.readdirSync(TECH_DIR)
+    .filter(n => /^T\d{4}$/.test(n));
+  const stillUnmapped = folderIds.filter(id => !mappedIds.has(id));
+
   console.log(`${bundleName} v${version}`);
-  console.log(`  techniques processed : ${techniques.length}`);
+  console.log(`  techniques processed : ${techniques.length} (active + deprecated + revoked)`);
   console.log(`  skipped (no mitre id): ${skipped}`);
   console.log(`  READMEs created      : ${created}`);
   console.log(`  READMEs rewritten    : ${rewritten}`);
   console.log(`  READMEs unchanged    : ${unchanged}`);
   console.log(`  mapping entries      : ${mappingArr.length}`);
+  console.log(`  still-unmapped folders: ${stillUnmapped.length}` +
+    (stillUnmapped.length ? ` (${stillUnmapped.slice(0, 8).join(", ")}${stillUnmapped.length > 8 ? ", ..." : ""})` : ""));
 }
 
 main().catch(err => {
