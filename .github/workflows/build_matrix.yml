@@ -24,14 +24,17 @@ jobs:
       - name: Rebuild docs/index.html
         run: python tools/build_matrix.py
 
-      - name: Commit & push page
+      - name: Rebuild docs/metrics.html
+        run: python tools/build_metrics.py
+
+      - name: Commit & push pages
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/index.html
+          git add docs/index.html docs/metrics.html
           if git diff --cached --quiet; then
             echo "No changes"
             exit 0
           fi
-          git commit -m "Auto-build matrix [skip ci]"
+          git commit -m "Auto-build matrix & metrics [skip ci]"
           git push

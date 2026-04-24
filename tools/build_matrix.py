@@ -291,6 +291,11 @@ header{{
   padding:.3rem .55rem;
 }}
 #modeToggle:hover{{border-color:var(--accent)}}
+.nav-link{{
+  color:var(--text-dim); text-decoration:none; font-size:.82rem;
+  padding:.3rem .55rem; border:1px solid var(--input-border); border-radius:4px;
+}}
+.nav-link:hover{{color:var(--accent); border-color:var(--accent)}}
 
 /* ── grid ─────────────────────────────────────────────────────────────────── */
 .scroll-x{{overflow-x:auto}}
@@ -398,6 +403,7 @@ details:not([open]) > summary .sub-count::before{{content:"\u25B8 "; color:var(-
 <header>
   <div class="brand">Threat Hunt <span class="accent">Matrix</span></div>
   <div class="stats"><b>{total_filled}</b> / {total_parents} techniques covered &middot; <b>{pct}%</b></div>
+  <a class="nav-link" href="./metrics.html">Metrics &rarr;</a>
   <input id="search" type="search" placeholder="Search techniques&hellip;" autocomplete="off">
   <button id="modeToggle" title="Toggle light/dark (Alt+D)" aria-label="Toggle theme">\u263C</button>
 </header>

@@ -7,8 +7,9 @@
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK-e87722?style=flat-square&labelColor=23394a)](https://attack.mitre.org/matrices/enterprise/)
 [![Built with GitHub Actions](https://img.shields.io/badge/automation-GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)](.github/workflows)
 [![Live Matrix](https://img.shields.io/badge/view-Live_Matrix-2fbf71?style=flat-square)](https://nvafiades1.github.io/threat-hunt-library/)
+[![Metrics](https://img.shields.io/badge/view-Metrics-3a9cd8?style=flat-square)](https://nvafiades1.github.io/threat-hunt-library/metrics.html)
 
-**[View the Live Threat Hunt Matrix &rarr;](https://nvafiades1.github.io/threat-hunt-library/)**
+**[View the Live Threat Hunt Matrix &rarr;](https://nvafiades1.github.io/threat-hunt-library/)** &middot; **[Executive Metrics Dashboard &rarr;](https://nvafiades1.github.io/threat-hunt-library/metrics.html)**
 
 </div>
 
@@ -72,7 +73,8 @@ No manual file creation, no folder navigation &mdash; the project board drives t
 
 ### For executives / audit
 
-- Coverage percentage is shown in the header of the live matrix.
+- **[Metrics Dashboard](https://nvafiades1.github.io/threat-hunt-library/metrics.html)** shows total hunts, techniques covered, threat actors tracked, coverage %, and trend charts over time.
+- Coverage percentage is also shown in the header of the live matrix.
 - Every completed hunt is committed and timestamped &mdash; suitable for audit evidence.
 - The project board shows throughput and current work in one glance.
 
@@ -84,7 +86,8 @@ No manual file creation, no folder navigation &mdash; the project board drives t
 threat-hunt-library/
 ├── README.md                     ← you are here
 ├── docs/
-│   └── index.html                ← the live matrix (auto-generated)
+│   ├── index.html                ← the live matrix (auto-generated)
+│   └── metrics.html              ← executive metrics dashboard (auto-generated)
 ├── techniques/
 │   ├── T1003/                    ← OS Credential Dumping
 │   │   ├── README.md             ← MITRE description (auto-updated)
@@ -93,7 +96,8 @@ threat-hunt-library/
 │   └── ... (836 technique folders, full enterprise coverage)
 ├── mitre_ttp_mapping.json        ← technique → tactic mapping
 ├── tools/
-│   └── build_matrix.py           ← generates docs/index.html
+│   ├── build_matrix.py           ← generates docs/index.html
+│   └── build_metrics.py          ← generates docs/metrics.html
 └── .github/
     ├── ISSUE_TEMPLATE/           ← threat-hunt form template
     ├── scripts/

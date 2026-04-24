@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Threat Hunt Metrics</title>
+<style>
+:root {
+  --bg:#0f1620; --surface:#17202c; --surface-2:#1e2833;
+  --border:#2a3644; --text:#e6ecf2; --text-dim:#8a97a8;
+  --accent:#e87722; --coverage:#2fbf71; --danger:#e04848; --info:#3a9cd8;
+  --chip-bg:#243142; --chip-fg:#a9b4c2;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+body.light {
+  --bg:#f6f6f6; --surface:#ffffff; --surface-2:#ffffff;
+  --border:#dfe3e8; --text:#23394a; --text-dim:#5b6a7a;
+  --accent:#c75f11; --coverage:#17905a; --danger:#b8302e; --info:#1c77b0;
+  --chip-bg:#eef1f5; --chip-fg:#4a5a6c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+     font-family:var(--font-sans);font-size:14px;line-height:1.4;
+     -webkit-font-smoothing:antialiased}
+header{position:sticky;top:0;z-index:999;display:flex;align-items:center;gap:.75rem;
+       padding:.6rem 1rem;background:var(--surface);border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:baseline;gap:.5rem;margin-right:auto;font-weight:600;font-size:1.05rem}
+.brand .accent{color:var(--accent)}
+.nav-link{color:var(--text-dim);text-decoration:none;font-size:.82rem;
+          padding:.3rem .55rem;border:1px solid var(--border);border-radius:4px}
+.nav-link:hover{color:var(--accent);border-color:var(--accent)}
+.nav-link.active{color:var(--text);border-color:var(--text-dim)}
+.meta{color:var(--text-dim);font-size:.78rem;margin-right:.5rem}
+#modeToggle{cursor:pointer;font-size:1rem;background:none;color:var(--text);
+            border:1px solid var(--border);border-radius:4px;padding:.3rem .55rem}
+#modeToggle:hover{border-color:var(--accent)}
+
+main{max-width:1280px;margin:0 auto;padding:1.5rem 1rem 3rem}
+h2{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+   color:var(--text-dim);margin:2rem 0 .75rem}
+
+/* ── KPI tiles ─────────────────────────────────────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:1rem}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+     padding:1.1rem 1.25rem;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.kpi.green::before{background:var(--coverage)}
+.kpi.blue::before{background:var(--info)}
+.kpi.orange::before{background:var(--accent)}
+.kpi.red::before{background:var(--danger)}
+.kpi-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)}
+.kpi-value{font-size:2.25rem;font-weight:700;line-height:1.1;margin-top:.35rem;
+           font-variant-numeric:tabular-nums}
+.kpi-sub{font-size:.75rem;color:var(--text-dim);margin-top:.2rem}
+
+/* ── chart cards ───────────────────────────────────────────────────────── */
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+       padding:1.1rem 1.25rem}
+.card h3{margin:0 0 .75rem;font-size:.85rem;font-weight:600;letter-spacing:.03em;color:var(--text)}
+.card .sub-label{font-size:.72rem;color:var(--text-dim);margin-bottom:.75rem}
+.card canvas{max-width:100%}
+.span-6{grid-column:span 6}
+.span-4{grid-column:span 4}
+.span-8{grid-column:span 8}
+.span-12{grid-column:span 12}
+@media (max-width:900px) {
+  .span-6,.span-4,.span-8{grid-column:span 12}
+}
+
+.empty{padding:2rem;text-align:center;color:var(--text-dim);
+       border:1px dashed var(--border);border-radius:8px;background:var(--surface)}
+.empty-title{font-size:1rem;color:var(--text);margin-bottom:.25rem}
+</style>
+</head><body>
+<header>
+  <div class="brand">Threat Hunt <span class="accent">Metrics</span></div>
+  <span class="meta">Generated 2026-04-24 12:44 UTC</span>
+  <a class="nav-link" href="./index.html">Matrix &rarr;</a>
+  <button id="modeToggle" title="Toggle light/dark">☼</button>
+</header>
+
+<main>
+<section class="kpis">
+  <div class="kpi orange">
+    <div class="kpi-label">Total Hunts</div>
+    <div class="kpi-value">0</div>
+    <div class="kpi-sub">awaiting first hunt</div>
+  </div>
+  <div class="kpi green">
+    <div class="kpi-label">Techniques Covered</div>
+    <div class="kpi-value">0</div>
+    <div class="kpi-sub">of 343 mapped techniques</div>
+  </div>
+  <div class="kpi blue">
+    <div class="kpi-label">Threat Actors Tracked</div>
+    <div class="kpi-value">0</div>
+    <div class="kpi-sub">none referenced yet</div>
+  </div>
+  <div class="kpi red">
+    <div class="kpi-label">Coverage</div>
+    <div class="kpi-value">0%</div>
+    <div class="kpi-sub">of MITRE ATT&amp;CK Enterprise</div>
+  </div>
+</section>
+
+
+<div class="empty" style="margin-top:2rem">
+  <div class="empty-title">No hunts archived yet.</div>
+  <div>Open a Threat Hunt issue, move it to <b>Completed</b> on the project board, and this dashboard will populate automatically.</div>
+</div>
+
+
+<div id="charts" style="display:none">
+<h2>Activity</h2>
+<div class="grid">
+  <div class="card span-8">
+    <h3>Hunts Over Time</h3>
+    <div class="sub-label">Monthly volume (bars) and cumulative total (line)</div>
+    <canvas id="chart-timeline" height="110"></canvas>
+  </div>
+  <div class="card span-4">
+    <h3>Severity</h3>
+    <div class="sub-label">Distribution of completed hunts</div>
+    <canvas id="chart-severity" height="180"></canvas>
+  </div>
+</div>
+
+<h2>Coverage</h2>
+<div class="grid">
+  <div class="card span-8">
+    <h3>Coverage by Tactic</h3>
+    <div class="sub-label">Unique techniques covered (dark) and total hunts (light) per MITRE tactic</div>
+    <canvas id="chart-tactics" height="220"></canvas>
+  </div>
+  <div class="card span-4">
+    <h3>Confidence</h3>
+    <div class="sub-label">Hunter confidence in findings</div>
+    <canvas id="chart-confidence" height="180"></canvas>
+  </div>
+</div>
+
+<h2>Top Lists</h2>
+<div class="grid">
+  <div class="card span-6">
+    <h3>Top Threat Actors</h3>
+    <div class="sub-label">Most-referenced in completed hunts</div>
+    <canvas id="chart-actors" height="200"></canvas>
+  </div>
+  <div class="card span-6">
+    <h3>Top Techniques</h3>
+    <div class="sub-label">Most-hunted MITRE techniques</div>
+    <canvas id="chart-techniques" height="200"></canvas>
+  </div>
+  <div class="card span-12">
+    <h3>Hunt Platforms</h3>
+    <div class="sub-label">Tools used across hunts</div>
+    <canvas id="chart-platforms" height="100"></canvas>
+  </div>
+</div>
+</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+const DATA = {"totals": {"hunts": 0, "techniques": 0, "actors": 0, "coverage": 0, "universe": 343, "last_hunt": null}, "timeline": {"labels": [], "monthly": [], "cumulative": []}, "tactics": {"labels": [], "hunts": [], "covered": []}, "actors": {"labels": [], "values": []}, "severity": {"labels": [], "values": []}, "confidence": {"labels": [], "values": []}, "techniques": {"labels": [], "values": []}, "platforms": {"labels": [], "values": []}};
+
+function cssVar(name) {
+  return getComputedStyle(document.body).getPropertyValue(name).trim();
+}
+function applyMode(light) {
+  document.body.classList.toggle('light', light);
+  document.getElementById('modeToggle').textContent = light ? '☽' : '☼';
+  renderAll();
+}
+applyMode(localStorage.getItem('prefersLight') === 'true');
+document.getElementById('modeToggle').addEventListener('click', () => {
+  const toLight = !document.body.classList.contains('light');
+  localStorage.setItem('prefersLight', toLight);
+  applyMode(toLight);
+});
+
+Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+
+const charts = {};
+function destroyAll() { for (const k in charts) charts[k]?.destroy(); }
+
+function palette() {
+  return {
+    text:     cssVar('--text'),
+    dim:      cssVar('--text-dim'),
+    grid:     cssVar('--border'),
+    accent:   cssVar('--accent'),
+    coverage: cssVar('--coverage'),
+    info:     cssVar('--info'),
+    danger:   cssVar('--danger'),
+    sev: {
+      'Critical':     cssVar('--danger'),
+      'High':         cssVar('--accent'),
+      'Medium':       cssVar('--info'),
+      'Low':          cssVar('--coverage'),
+      'Informational':cssVar('--text-dim'),
+    },
+  };
+}
+
+function baseOpts(p) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: p.text, boxWidth: 10, font: { size: 11 } } },
+      tooltip: { enabled: true },
+    },
+    scales: {},
+  };
+}
+
+function renderAll() {
+  destroyAll();
+  if (!DATA.totals.hunts) return;
+  const p = palette();
+
+  // ── Timeline ───────────────────────────────────────────────────────────
+  charts.timeline = new Chart(document.getElementById('chart-timeline'), {
+    data: {
+      labels: DATA.timeline.labels,
+      datasets: [
+        { type:'bar', label:'Hunts per month',
+          data:DATA.timeline.monthly, backgroundColor:p.accent, yAxisID:'y' },
+        { type:'line', label:'Cumulative',
+          data:DATA.timeline.cumulative, borderColor:p.coverage,
+          backgroundColor:'transparent', tension:.25, pointRadius:3, yAxisID:'y1' },
+      ],
+    },
+    options: {
+      ...baseOpts(p),
+      scales: {
+        x:  { ticks:{color:p.dim}, grid:{color:p.grid} },
+        y:  { beginAtZero:true, ticks:{color:p.dim, precision:0}, grid:{color:p.grid} },
+        y1: { position:'right', beginAtZero:true, ticks:{color:p.dim, precision:0}, grid:{drawOnChartArea:false} },
+      },
+    },
+  });
+
+  // ── Severity donut ─────────────────────────────────────────────────────
+  charts.severity = new Chart(document.getElementById('chart-severity'), {
+    type:'doughnut',
+    data: {
+      labels: DATA.severity.labels,
+      datasets: [{
+        data: DATA.severity.values,
+        backgroundColor: DATA.severity.labels.map(l => p.sev[l] || p.info),
+        borderWidth: 2, borderColor: cssVar('--surface'),
+      }],
+    },
+    options: { ...baseOpts(p), cutout:'62%' },
+  });
+
+  // ── Confidence donut ───────────────────────────────────────────────────
+  charts.confidence = new Chart(document.getElementById('chart-confidence'), {
+    type:'doughnut',
+    data: {
+      labels: DATA.confidence.labels,
+      datasets: [{
+        data: DATA.confidence.values,
+        backgroundColor: DATA.confidence.labels.map(l =>
+          l==='High'?p.coverage : l==='Medium'?p.info : l==='Low'?p.danger : p.dim),
+        borderWidth: 2, borderColor: cssVar('--surface'),
+      }],
+    },
+    options: { ...baseOpts(p), cutout:'62%' },
+  });
+
+  // ── Tactics ────────────────────────────────────────────────────────────
+  charts.tactics = new Chart(document.getElementById('chart-tactics'), {
+    type:'bar',
+    data: {
+      labels: DATA.tactics.labels,
+      datasets: [
+        { label:'Techniques covered', data:DATA.tactics.covered, backgroundColor:p.coverage },
+        { label:'Total hunts',        data:DATA.tactics.hunts,   backgroundColor:p.accent },
+      ],
+    },
+    options: {
+      ...baseOpts(p),
+      indexAxis:'y',
+      scales: {
+        x: { beginAtZero:true, ticks:{color:p.dim, precision:0}, grid:{color:p.grid} },
+        y: { ticks:{color:p.text}, grid:{display:false} },
+      },
+    },
+  });
+
+  // ── Top actors ─────────────────────────────────────────────────────────
+  charts.actors = new Chart(document.getElementById('chart-actors'), {
+    type:'bar',
+    data: {
+      labels: DATA.actors.labels,
+      datasets: [{ data: DATA.actors.values, backgroundColor: p.info }],
+    },
+    options: {
+      ...baseOpts(p), indexAxis:'y',
+      plugins:{ ...baseOpts(p).plugins, legend:{display:false} },
+      scales: {
+        x: { beginAtZero:true, ticks:{color:p.dim, precision:0}, grid:{color:p.grid} },
+        y: { ticks:{color:p.text}, grid:{display:false} },
+      },
+    },
+  });
+
+  // ── Top techniques ─────────────────────────────────────────────────────
+  charts.techniques = new Chart(document.getElementById('chart-techniques'), {
+    type:'bar',
+    data: {
+      labels: DATA.techniques.labels,
+      datasets: [{ data: DATA.techniques.values, backgroundColor: p.accent }],
+    },
+    options: {
+      ...baseOpts(p), indexAxis:'y',
+      plugins:{ ...baseOpts(p).plugins, legend:{display:false} },
+      scales: {
+        x: { beginAtZero:true, ticks:{color:p.dim, precision:0}, grid:{color:p.grid} },
+        y: { ticks:{color:p.text}, grid:{display:false} },
+      },
+    },
+  });
+
+  // ── Platforms ──────────────────────────────────────────────────────────
+  charts.platforms = new Chart(document.getElementById('chart-platforms'), {
+    type:'bar',
+    data: {
+      labels: DATA.platforms.labels,
+      datasets: [{ data: DATA.platforms.values, backgroundColor: p.coverage }],
+    },
+    options: {
+      ...baseOpts(p), indexAxis:'y',
+      plugins:{ ...baseOpts(p).plugins, legend:{display:false} },
+      scales: {
+        x: { beginAtZero:true, ticks:{color:p.dim, precision:0}, grid:{color:p.grid} },
+        y: { ticks:{color:p.text}, grid:{display:false} },
+      },
+    },
+  });
+}
+
+renderAll();
+</script>
+</body></html>
