@@ -1,55 +1,40 @@
 name: Update MITRE Folders
+
 on:
-  push:
-    branches:
-      - main
   schedule:
-    - cron: "0 0 * * 0"  # Weekly run; adjust as needed
+    - cron: "0 0 * * 0"   # Weekly, Sunday 00:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  generate-folders:
+  sync-attack:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          persist-credentials: false
+          fetch-depth: 1
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: "16"
+          node-version: "20"
 
       - name: Install dependencies
         run: npm install node-fetch@2
 
-      - name: Run MITRE folder creation script
+      - name: Sync techniques/ and mapping from MITRE STIX
         run: node .github/scripts/createMitreFolders.js
 
-      - name: Debug PAT Token
-        env:
-          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+      - name: Commit & push if changed
         run: |
-          echo "PAT token length: ${#PAT_TOKEN}"
-
-      - name: Commit and Push Changes
-        env:
-          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
-        run: |
-          git config --global user.name "Nvafiades1"
-          git config --global user.email "nvafiades@protonmail.com"
-          echo "Before updating remote:"
-          git remote -v
-          # Update remote URL to use the PAT only (no trailing slash)
-          git remote set-url origin "https://${PAT_TOKEN}@github.com/Nvafiades1/threat-hunt-library.git"
-          echo "After updating remote:"
-          git remote -v
-          # Stage only changes in the techniques folder
-          git add techniques/
-          # Check if there are changes in the techniques folder
-          if [ -n "$(git status --porcelain techniques/)" ]; then
-            git commit -m "Update MITRE technique folders"
-            git push origin main
-          else
-            echo "No changes to commit in techniques folder."
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add techniques/ mitre_ttp_mapping.json .mitre-attack-version
+          if git diff --cached --quiet; then
+            echo "No MITRE ATT&CK changes to sync."
+            exit 0
           fi
+          VERSION=$(cat .mitre-attack-version 2>/dev/null | tr -d '\n' || echo "unknown")
+          git commit -m "Sync with MITRE ATT&CK Enterprise v${VERSION}"
+          git push
