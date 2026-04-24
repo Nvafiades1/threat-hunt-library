@@ -4,15 +4,17 @@ Generate docs/index.html – Threat Hunt Matrix (MITRE ATT&CK-based)
 
 Features
 ────────
-• Collapsible sub-techniques
+• MITRE ATT&CK-style matrix layout (tactic columns, technique cards)
+• Technique names parsed from each technique's README.md heading
+• Per-tactic technique count badges
+• Subtle left-border accent on techniques with hunt coverage
+• Collapsible sub-techniques with sub-count indicator
 • Sticky header + live search (auto-expand matches)
 • Click a tactic header → dim other columns (Esc to reset)
-• Tooltip: first 2 lines of README.md on hover
-• Dark / Light mode toggle (☀️ / 🌙, persisted)
-• Robust fallback so ALL Impact techniques land in ‘Impact’
+• Dark / Light mode toggle (persisted)
 """
 
-import html, json, pathlib, sys
+import html, json, pathlib, re, sys
 from collections import defaultdict
 
 # ── repo specifics ───────────────────────────────────────────────────────────
@@ -27,12 +29,9 @@ TACTICS = [
     "Exfiltration", "Impact",
 ]
 
-# —— All parent IDs that belong to IMPACT (even if mapping JSON is missing) —
 IMPACT_IDS = {
-    # T14xx
     "T1485", "T1486", "T1489", "T1490", "T1491", "T1492", "T1493",
     "T1494", "T1495", "T1496", "T1498", "T1499",
-    # Extras sometimes flagged as Impact
     "T1529", "T1561", "T1565", "T1646", "T1657",
 }
 
@@ -46,7 +45,7 @@ OUTPUT    = DOCS_DIR / "index.html"
 try:
     raw = json.loads(MAP_FILE.read_text())
 except Exception as e:
-    print(f"❌  Cannot read {MAP_FILE}: {e}", file=sys.stderr)
+    print(f"Cannot read {MAP_FILE}: {e}", file=sys.stderr)
     raw = {}
 
 mapping = (
@@ -57,13 +56,32 @@ mapping = (
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 def has_content(path: pathlib.Path) -> bool:
+    """True if the technique folder contains a hunt file (anything besides README)."""
     if path.is_file():
         return True
     return any(f.is_file() and f.name.lower() not in {"readme.md", ".ds_store"}
                for f in path.iterdir())
 
-def read_snippet(folder: pathlib.Path, n=2) -> str:
-    """Return first n non-blank lines of README.md (stripped of MD)."""
+_heading_re = re.compile(r"^\s*#+\s*(.+?)\s*$")
+
+def read_name(folder: pathlib.Path) -> str:
+    """Return the first markdown heading from README.md as the technique name."""
+    md = folder / "README.md"
+    if not md.exists():
+        return ""
+    try:
+        for ln in md.read_text("utf-8", "ignore").splitlines():
+            m = _heading_re.match(ln)
+            if m:
+                name = m.group(1).strip()
+                name = re.sub(r"\s*\(T\d{4}(?:\.\d{3})?\)\s*$", "", name)
+                return name
+    except Exception:
+        pass
+    return ""
+
+def read_snippet(folder: pathlib.Path, n: int = 2) -> str:
+    """First n non-trivial lines from README.md (for hover tooltip)."""
     md = folder / "README.md"
     if not md.exists():
         return ""
@@ -75,148 +93,313 @@ def read_snippet(folder: pathlib.Path, n=2) -> str:
         out.append(ln)
         if len(out) >= n:
             break
-    return " &#10; ".join(out)       # '&#10;' → newline inside title tooltip
+    return " \u2014 ".join(out)
 
 def esc(txt: str) -> str:
     return html.escape(txt.replace("_", " "))
 
 # ── scan technique folders ───────────────────────────────────────────────────
 if not TECH_DIR.exists():
-    sys.exit(f"❌  {TECH_DIR} not found")
+    sys.exit(f"{TECH_DIR} not found")
 
 tech_items = sorted([p for p in TECH_DIR.iterdir() if p.name.startswith("T")],
                     key=lambda p: p.name.lower())
 
-# tactic → parent_id → (parent_info, [sub_items])
-matrix: dict[str, dict[str, tuple[tuple[str, bool] | None,
-                                  list[tuple[str, bool]]]]] = {
-    t: defaultdict(lambda: [None, []]) for t in TACTICS
-}
-
-unmapped_ids = set()
+# tactic -> parent_id -> {"parent": (id, name, filled)|None, "subs": [(id,name,filled)]}
+matrix: dict[str, dict[str, dict]] = {t: defaultdict(lambda: {"parent": None, "subs": []})
+                                      for t in TACTICS}
+unmapped_ids: set[str] = set()
 
 for item in tech_items:
     tech   = item.name
-    tid    = tech.split("_")[0]   # e.g. T1485.001
-    parent = tid.split(".")[0]    # T1485
+    tid    = tech.split("_")[0]
+    parent = tid.split(".")[0]
     tactic = mapping.get(parent)
-
-    if tactic is None:                        # not in JSON
+    if tactic is None:
         tactic = "Impact" if parent in IMPACT_IDS else "Unmapped"
         if tactic == "Unmapped":
             unmapped_ids.add(parent)
 
     filled = has_content(item)
-    bucket = matrix.setdefault(tactic, defaultdict(lambda: [None, []]))
-    if "." in tid:                            # sub-technique
-        bucket[parent][1].append((tech, filled))
-    else:                                     # parent
-        bucket[parent][0] = (tech, filled)
+    name   = read_name(item)
+    bucket = matrix.setdefault(tactic, defaultdict(lambda: {"parent": None, "subs": []}))
+    if "." in tid:
+        bucket[parent]["subs"].append((tech, name, filled))
+    else:
+        bucket[parent]["parent"] = (tech, name, filled)
 
 if unmapped_ids:
-    print("⚠️  Still unmapped:", ", ".join(sorted(unmapped_ids)))
+    print("Still unmapped:", ", ".join(sorted(unmapped_ids)))
 
 # ── build HTML ───────────────────────────────────────────────────────────────
 headers, columns = [], []
+
+def tactic_parent_count(tact: str) -> int:
+    return len([p for p in matrix.get(tact, {}).values() if p["parent"]])
+
 for idx, tact in enumerate(TACTICS):
-    headers.append(f'<div class="tactic" data-idx="{idx}">{esc(tact)}</div>')
+    count = tactic_parent_count(tact)
+    headers.append(
+        f'<div class="tactic" data-idx="{idx}">'
+        f'<div class="tactic-name">{esc(tact)}</div>'
+        f'<div class="tactic-count">{count} techniques</div>'
+        f'</div>'
+    )
     bucket = matrix.get(tact, {})
     if not bucket:
-        columns.append(f'<div class="blank col" data-idx="{idx}">(none)</div>')
+        columns.append(f'<div class="col blank" data-idx="{idx}">&mdash;</div>')
         continue
 
     inner = []
     for parent_id in sorted(bucket):
-        p_info, subs = bucket[parent_id]
-        if p_info is None:
-            p_info = (parent_id, False)
-        p_name, p_filled = p_info
-        p_cls  = "filled" if p_filled else "empty"
-        p_url  = f"https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_PATH}/{p_name}"
-        p_tip  = html.escape(read_snippet(TECH_DIR / p_name))
+        info = bucket[parent_id]
+        p_info = info["parent"] or (parent_id, "", False)
+        subs   = info["subs"]
+        p_id, p_name, p_filled = p_info
+        p_cls  = "filled" if p_filled else ""
+        p_url  = f"https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_PATH}/{p_id}"
+        p_tip  = html.escape(read_snippet(TECH_DIR / p_id))
         p_title= f' title="{p_tip}"' if p_tip else ""
+        name_html = f'<span class="t-name">{esc(p_name)}</span>' if p_name else ''
 
         if subs:
             sub_html = ""
-            for s_name, s_filled in sorted(subs, key=lambda x: x[0]):
-                s_url   = f"https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_PATH}/{s_name}"
-                s_tip   = html.escape(read_snippet(TECH_DIR / s_name))
-                s_title = f' title="{s_tip}"' if s_tip else ""
+            for s_id, s_name, s_filled in sorted(subs, key=lambda x: x[0]):
+                s_cls  = "filled" if s_filled else ""
+                s_url  = f"https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_PATH}/{s_id}"
+                s_tip  = html.escape(read_snippet(TECH_DIR / s_id))
+                s_title= f' title="{s_tip}"' if s_tip else ""
+                s_name_html = f'<span class="t-name">{esc(s_name)}</span>' if s_name else ''
+                s_short = s_id.split(".", 1)[1] if "." in s_id else s_id
                 sub_html += (
-                    f'<div class="sub"{s_title}><a href="{s_url}" '
-                    f'target="_blank">{esc(s_name)}</a></div>'
+                    f'<a class="sub {s_cls}"{s_title} href="{s_url}" target="_blank">'
+                    f'<span class="t-id">.{esc(s_short)}</span>'
+                    f'{s_name_html}</a>'
                 )
             inner.append(
                 f'<details class="technique {p_cls}"{p_title}>'
-                f'<summary><a href="{p_url}" target="_blank">{esc(p_name)}</a></summary>'
-                f'{sub_html}</details>'
+                f'<summary>'
+                f'<a class="t-link" href="{p_url}" target="_blank">'
+                f'<span class="t-id">{esc(p_id)}</span>{name_html}</a>'
+                f'<span class="sub-count">{len(subs)}</span>'
+                f'</summary>'
+                f'<div class="subs">{sub_html}</div>'
+                f'</details>'
             )
         else:
             inner.append(
-                f'<div class="technique {p_cls}"{p_title}>'
-                f'<a href="{p_url}" target="_blank">{esc(p_name)}</a></div>'
+                f'<a class="technique {p_cls}"{p_title} href="{p_url}" target="_blank">'
+                f'<span class="t-id">{esc(p_id)}</span>{name_html}</a>'
             )
     columns.append(f'<div class="col" data-idx="{idx}">' + "".join(inner) + '</div>')
 
 if "Unmapped" in matrix and matrix["Unmapped"]:
-    headers.insert(0, '<div class="tactic unmapped-h" data-idx="-1">Unmapped</div>')
-    columns.insert(0, columns.pop())   # move first data col to front
+    count = tactic_parent_count("Unmapped")
+    headers.insert(0,
+        '<div class="tactic unmapped-h" data-idx="-1">'
+        '<div class="tactic-name">Unmapped</div>'
+        f'<div class="tactic-count">{count} techniques</div>'
+        '</div>')
+    columns.insert(0, columns.pop())
 
 num_cols = len(headers)
 
+total_parents = sum(tactic_parent_count(t) for t in TACTICS)
+total_filled  = sum(1 for t in TACTICS for p in matrix.get(t, {}).values()
+                    if p["parent"] and p["parent"][2])
+pct = round(100 * total_filled / total_parents) if total_parents else 0
+
 # ── HTML document ────────────────────────────────────────────────────────────
 HTML = f"""<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8">
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Threat Hunt Matrix</title>
 <style>
-/* --------- colour tokens (dark default) --------- */
+/* ── tokens ──────────────────────────────────────────────────────────────── */
 :root {{
-  --bg:#111; --text:#eee; --border:#333;
-  --card-filled:#235820; --card-empty:#1a1a1a;
-  --tactic:#333; --unmapped:#800; --input-bg:#1a1a1a; --input-border:#444;
+  --bg:          #0f1620;
+  --surface:     #17202c;
+  --surface-2:   #1e2833;
+  --border:      #2a3644;
+  --text:        #e6ecf2;
+  --text-dim:    #8a97a8;
+  --tactic-bg:   #1b2736;
+  --tactic-fg:   #e6ecf2;
+  --accent:      #e87722;
+  --coverage:    #2fbf71;
+  --chip-bg:     #243142;
+  --chip-fg:     #a9b4c2;
+  --unmapped:    #7a1f1f;
+  --input-bg:    #17202c;
+  --input-border:#33425a;
+  --focus-dim:   .18;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
 }}
 body.light {{
-  --bg:#fff; --text:#111; --border:#ccc;
-  --card-filled:#c7f5c7; --card-empty:#f5f5f5;
-  --tactic:#ddd; --unmapped:#c00; --input-bg:#fff; --input-border:#bbb;
+  --bg:          #f6f6f6;
+  --surface:     #ffffff;
+  --surface-2:   #ffffff;
+  --border:      #dfe3e8;
+  --text:        #23394a;
+  --text-dim:    #5b6a7a;
+  --tactic-bg:   #23394a;
+  --tactic-fg:   #ffffff;
+  --accent:      #c75f11;
+  --coverage:    #17905a;
+  --chip-bg:     #eef1f5;
+  --chip-fg:     #4a5a6c;
+  --unmapped:    #a02020;
+  --input-bg:    #ffffff;
+  --input-border:#cfd6de;
 }}
 
-/* --------- basic layout --------- */
+/* ── base ────────────────────────────────────────────────────────────────── */
 *{{box-sizing:border-box}}
-body{{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif}}
-body.focus .col.dim{{opacity:.15}}
-header{{position:sticky;top:0;z-index:999;display:flex;align-items:center;gap:.75rem;
-        padding:.5rem 1rem;background:var(--bg);border-bottom:1px solid var(--border)}}
-h1{{flex:1;text-align:center;margin:0;font-size:1.5rem;user-select:none}}
-#modeToggle{{cursor:pointer;font-size:1.1rem;background:none;color:var(--text);
-            border:none;padding:.2rem .4rem}}
-#modeToggle:focus-visible{{outline:2px solid var(--text)}}
-input[type=search]{{padding:.4rem .6rem;border-radius:4px;border:1px solid var(--input-border);
-                   background:var(--input-bg);color:var(--text)}}
+html,body{{height:100%}}
+body{{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--font-sans); font-size:14px; line-height:1.35;
+  -webkit-font-smoothing:antialiased;
+}}
+
+/* ── header ──────────────────────────────────────────────────────────────── */
+header{{
+  position:sticky; top:0; z-index:999;
+  display:flex; align-items:center; gap:.75rem;
+  padding:.6rem 1rem;
+  background:var(--surface); border-bottom:1px solid var(--border);
+}}
+.brand{{
+  display:flex; align-items:baseline; gap:.5rem; margin-right:auto;
+  font-weight:600; font-size:1.05rem; letter-spacing:.2px;
+}}
+.brand .accent{{color:var(--accent)}}
+.stats{{color:var(--text-dim); font-size:.82rem; margin-right:.5rem}}
+.stats b{{color:var(--text)}}
+#search{{
+  padding:.4rem .65rem; border-radius:4px;
+  border:1px solid var(--input-border);
+  background:var(--input-bg); color:var(--text);
+  min-width:14rem; font-family:inherit; font-size:.85rem;
+}}
+#search:focus{{outline:2px solid var(--accent); outline-offset:-1px}}
+#modeToggle{{
+  cursor:pointer; font-size:1rem; background:none; color:var(--text);
+  border:1px solid var(--input-border); border-radius:4px;
+  padding:.3rem .55rem;
+}}
+#modeToggle:hover{{border-color:var(--accent)}}
+
+/* ── grid ─────────────────────────────────────────────────────────────────── */
 .scroll-x{{overflow-x:auto}}
-.grid{{display:grid;grid-template-columns:repeat({num_cols},minmax(12rem,1fr));
-      gap:.5rem;padding:1rem min(1rem,50vw) 1rem 1rem}}
-.tactic{{background:var(--tactic);font-weight:600;text-align:center;padding:.5rem;cursor:pointer}}
-.unmapped-h{{background:var(--unmapped)}}
-.col{{display:flex;flex-direction:column;gap:.25rem}}
-.technique{{border:1px solid var(--border);border-radius:4px;font-size:.85rem}}
-.technique > summary{{cursor:pointer;list-style:none;padding:.25rem .5rem}}
-.technique > summary::-webkit-details-marker{{display:none}}
-.technique > summary::after{{content:'▸';float:right}}
-details[open] > summary::after{{content:'▾'}}
-.technique.filled{{background:var(--card-filled)}}
-.technique.empty{{background:var(--card-empty)}}
-.technique a{{color:inherit;text-decoration:none}}
-.technique a:hover{{text-decoration:underline}}
-.sub{{display:none;padding:.2rem .75rem .2rem 1.5rem;border-top:1px solid var(--border)}}
-details[open] .sub{{display:block}}
-.blank{{color:#888;text-align:center;padding:1rem 0}}
+.grid{{
+  display:grid;
+  grid-template-columns:repeat({num_cols}, 11rem);
+  gap:1px;
+  padding:1rem;
+  background:var(--border);
+  min-width:min-content;
+}}
+
+/* ── tactic header ──────────────────────────────────────────────────────── */
+.tactic{{
+  background:var(--tactic-bg); color:var(--tactic-fg);
+  padding:.55rem .5rem .5rem; text-align:center; cursor:pointer;
+  border-bottom:2px solid transparent; user-select:none;
+}}
+.tactic:hover{{border-bottom-color:var(--accent)}}
+.tactic-name{{font-size:.82rem; font-weight:600; letter-spacing:.02em}}
+.tactic-count{{
+  margin-top:.15rem; font-size:.7rem; opacity:.75;
+  font-variant-numeric:tabular-nums;
+}}
+.tactic.active{{border-bottom-color:var(--accent)}}
+.unmapped-h{{background:var(--unmapped); color:#fff}}
+
+/* ── column ──────────────────────────────────────────────────────────────── */
+.col{{
+  display:flex; flex-direction:column; gap:1px;
+  background:var(--border); min-width:0;
+}}
+body.focus .col.dim{{opacity:var(--focus-dim)}}
+body.focus .col.dim .technique{{pointer-events:none}}
+.col.blank{{
+  background:var(--surface); color:var(--text-dim);
+  display:flex; align-items:center; justify-content:center;
+  padding:.5rem; font-size:.8rem;
+}}
+
+/* ── technique card ──────────────────────────────────────────────────────── */
+.technique{{
+  display:block; background:var(--surface); color:inherit;
+  text-decoration:none; padding:.4rem .55rem .45rem;
+  font-size:.78rem; line-height:1.25;
+  border-left:3px solid transparent;
+  transition:background .15s, border-color .15s;
+}}
+.technique:hover{{background:var(--surface-2)}}
+.technique.filled{{border-left-color:var(--coverage)}}
+.t-id{{
+  display:inline-block; color:var(--chip-fg);
+  font-family: "SF Mono", "Menlo", "Consolas", monospace;
+  font-size:.72rem; font-weight:500;
+  padding:.05rem .3rem; border-radius:3px;
+  background:var(--chip-bg);
+  margin-right:.35rem; vertical-align:middle;
+}}
+.t-name{{color:var(--text); font-weight:500}}
+
+/* ── details (parent with sub-techniques) ───────────────────────────────── */
+details.technique{{padding:0}}
+details.technique > summary{{
+  list-style:none; cursor:pointer;
+  padding:.4rem .55rem .45rem; display:flex; align-items:center; gap:.4rem;
+}}
+details.technique > summary::-webkit-details-marker{{display:none}}
+.t-link{{color:inherit; text-decoration:none; flex:1; min-width:0;
+        overflow:hidden; text-overflow:ellipsis}}
+.t-link:hover .t-name{{text-decoration:underline}}
+.sub-count{{
+  flex:none; font-size:.68rem; color:var(--text-dim);
+  background:var(--chip-bg); padding:.05rem .35rem; border-radius:3px;
+  font-variant-numeric:tabular-nums;
+}}
+details[open] > summary .sub-count::before{{content:"\u25BE "; color:var(--accent)}}
+details:not([open]) > summary .sub-count::before{{content:"\u25B8 "; color:var(--text-dim)}}
+.subs{{
+  background:var(--bg); border-top:1px solid var(--border);
+  display:flex; flex-direction:column;
+}}
+.sub{{
+  display:block; padding:.3rem .55rem .35rem 1.1rem;
+  color:var(--text); text-decoration:none;
+  font-size:.74rem; line-height:1.25;
+  border-left:3px solid transparent;
+  border-top:1px solid var(--border);
+}}
+.sub:first-child{{border-top:none}}
+.sub:hover{{background:var(--surface-2)}}
+.sub.filled{{border-left-color:var(--coverage)}}
+.sub .t-id{{font-size:.68rem}}
+
+/* ── search highlights ──────────────────────────────────────────────────── */
+.search-active .technique:not(.match),
+.search-active .sub:not(.match){{opacity:.2}}
+
+@media (max-width:600px){{
+  .brand{{font-size:.95rem}}
+  .stats{{display:none}}
+  #search{{min-width:8rem}}
+}}
 </style>
 </head><body>
 <header>
-  <button id="modeToggle" title="Toggle light/dark (Alt+D)">🌙</button>
-  <h1>Threat&nbsp;Hunt&nbsp;Matrix</h1>
-  <input id="search" type="search" placeholder="Search…" autocomplete="off">
+  <div class="brand">Threat Hunt <span class="accent">Matrix</span></div>
+  <div class="stats"><b>{total_filled}</b> / {total_parents} techniques covered &middot; <b>{pct}%</b></div>
+  <input id="search" type="search" placeholder="Search techniques&hellip;" autocomplete="off">
+  <button id="modeToggle" title="Toggle light/dark (Alt+D)" aria-label="Toggle theme">\u263C</button>
 </header>
 
 <div class="scroll-x">
@@ -224,53 +407,70 @@ details[open] .sub{{display:block}}
 </div>
 
 <script>
-const q        = document.getElementById('search'),
-      pills    = [...document.querySelectorAll('.technique, .sub')],
-      details  = [...document.querySelectorAll('details.technique')],
-      tactics  = [...document.querySelectorAll('.tactic')],
-      cols     = [...document.querySelectorAll('.col')],
-      body     = document.body,
-      toggle   = document.getElementById('modeToggle');
+(() => {{
+  const q       = document.getElementById('search');
+  const details = [...document.querySelectorAll('details.technique')];
+  const allTech = [...document.querySelectorAll('.technique, .sub')];
+  const tactics = [...document.querySelectorAll('.tactic')];
+  const cols    = [...document.querySelectorAll('.col')];
+  const body    = document.body;
+  const toggle  = document.getElementById('modeToggle');
 
-let focused = null;
-function setFocus(idx) {{
-  focused = idx;
-  body.classList.toggle('focus', idx !== null);
-  cols.forEach(c => c.classList.toggle('dim', idx !== null && c.dataset.idx !== String(idx)));
-}}
-tactics.forEach(t => t.onclick = () => {{
-  const idx = t.dataset.idx;
-  setFocus(focused === idx ? null : idx);
-}});
-document.addEventListener('keydown', e => {{
-  if (e.key === 'Escape') setFocus(null);
-  if (e.key.toLowerCase() === 'd' && e.altKey) toggle.click();
-}});
-
-q.addEventListener('input', e => {{
-  const val = e.target.value.toLowerCase().trim();
-  pills.forEach(p => p.style.opacity = (!val || p.textContent.toLowerCase().includes(val)) ? '1' : '0.15');
-  details.forEach(d => {{
-    const match = [...d.querySelectorAll('.sub')].some(
-      s => s.textContent.toLowerCase().includes(val));
-    d.open = val ? match : false;
+  let focused = null;
+  function setFocus(idx) {{
+    focused = idx;
+    body.classList.toggle('focus', idx !== null);
+    cols.forEach(c => c.classList.toggle('dim',
+      idx !== null && c.dataset.idx !== String(idx)));
+    tactics.forEach(t => t.classList.toggle('active',
+      idx !== null && t.dataset.idx === String(idx)));
+  }}
+  tactics.forEach(t => t.addEventListener('click', () => {{
+    const idx = t.dataset.idx;
+    setFocus(focused === idx ? null : idx);
+  }}));
+  document.addEventListener('keydown', e => {{
+    if (e.key === 'Escape') {{ setFocus(null); q.value=''; q.dispatchEvent(new Event('input')); }}
+    if (e.key.toLowerCase() === 'd' && e.altKey) toggle.click();
+    if (e.key === '/' && document.activeElement !== q) {{ e.preventDefault(); q.focus(); }}
   }});
-}});
 
-/* === light / dark toggle =============================================== */
-function applyMode(light) {{
-  body.classList.toggle('light', light);
-  toggle.textContent = light ? '🌙' : '☀️';
-}}
-applyMode(localStorage.getItem('prefersLight') === 'true');
-toggle.onclick = () => {{
-  const toLight = !body.classList.contains('light');
-  applyMode(toLight);
-  localStorage.setItem('prefersLight', toLight);
-}};
+  q.addEventListener('input', e => {{
+    const val = e.target.value.toLowerCase().trim();
+    if (!val) {{
+      body.classList.remove('search-active');
+      allTech.forEach(el => el.classList.remove('match'));
+      details.forEach(d => d.open = false);
+      return;
+    }}
+    body.classList.add('search-active');
+    allTech.forEach(el => {{
+      const hit = el.textContent.toLowerCase().includes(val);
+      el.classList.toggle('match', hit);
+    }});
+    details.forEach(d => {{
+      const parentHit = d.querySelector('summary').textContent.toLowerCase().includes(val);
+      const subHit = [...d.querySelectorAll('.sub')].some(
+        s => s.textContent.toLowerCase().includes(val));
+      d.open = parentHit || subHit;
+      if (parentHit) d.classList.add('match');
+    }});
+  }});
+
+  function applyMode(light) {{
+    body.classList.toggle('light', light);
+    toggle.textContent = light ? '\u263D' : '\u263C';
+  }}
+  applyMode(localStorage.getItem('prefersLight') === 'true');
+  toggle.addEventListener('click', () => {{
+    const toLight = !body.classList.contains('light');
+    applyMode(toLight);
+    localStorage.setItem('prefersLight', toLight);
+  }});
+}})();
 </script>
 </body></html>"""
 
 DOCS_DIR.mkdir(exist_ok=True)
 OUTPUT.write_text(HTML, encoding="utf-8")
-print(f"✅  {OUTPUT} rebuilt → {OUTPUT}")
+print(f"{OUTPUT} rebuilt ({total_filled}/{total_parents} covered, {pct}%)")
