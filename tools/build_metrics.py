@@ -70,6 +70,10 @@ def tactic_of(parent_id: str) -> str:
 
 # ── hunt parser ──────────────────────────────────────────────────────────────
 _section_re = re.compile(r"^###\s+(.+?)\s*$")
+# Bold-meta lines written by updateThreatHunt.js wrapper (**Technique:**, **Status:**, **Details:**)
+_meta_re = re.compile(r"^\*\*[^*:]+:\*\*")
+# Checkbox rows from issue-form checkboxes blocks
+_checkbox_re = re.compile(r"^\s*-\s*\[(x|X| )\]\s*(.+?)\s*$")
 _none_values = {"", "_no response_", "n/a", "none", "tbd"}
 
 def parse_hunt(md_text: str) -> dict[str, str]:
@@ -80,7 +84,12 @@ def parse_hunt(md_text: str) -> dict[str, str]:
         if m:
             current = m.group(1).strip()
             sections.setdefault(current, [])
-        elif current is not None:
+            continue
+        if _meta_re.match(line):
+            # Sentinel written by archive script; stop gathering until the next ### header.
+            current = None
+            continue
+        if current is not None:
             sections[current].append(line)
     out: dict[str, str] = {}
     for k, lines in sections.items():
@@ -89,6 +98,11 @@ def parse_hunt(md_text: str) -> dict[str, str]:
             continue
         out[k] = v
     return out
+
+def parse_checked(text: str) -> list[str]:
+    """Return checked items from a GitHub issue-form checkboxes block body."""
+    return [m.group(2).strip() for line in text.splitlines()
+            if (m := _checkbox_re.match(line)) and m.group(1).lower() == "x"]
 
 def normalize_level(val: str) -> str | None:
     """Map free-text severity/confidence to canonical buckets."""
