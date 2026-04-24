@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "Browse the Live Matrix"
+    url: "https://nvafiades1.github.io/threat-hunt-library/"
+    about: "See which techniques already have hunt coverage before opening a new one."
+  - name: "Executive Metrics Dashboard"
+    url: "https://nvafiades1.github.io/threat-hunt-library/metrics.html"
+    about: "KPI tiles, coverage trends, top threat actors."

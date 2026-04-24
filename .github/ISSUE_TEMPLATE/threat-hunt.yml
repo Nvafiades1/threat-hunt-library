@@ -1,135 +1,302 @@
-name: "Threat Hunt Submission"
-description: "Submit a new threat hunt for review"
-title: "[THREAT HUNT] <Short Title>"
+name: "Threat Hunt"
+description: "Submit a new threat hunt for review, archiving, and coverage tracking."
+title: "[Hunt] <T#### — short descriptive title>"
 labels:
   - threat-hunt
 body:
+  # ─────────────────────────── Intro ───────────────────────────
   - type: markdown
     attributes:
       value: |
         ## Threat Hunt Submission
-        Please fill in the details below. **Be sure to include the MITRE technique in the format:**
-        
-        **Technique: T####**
-        
-        This is required for automated processing.
+
+        Fill in as many fields as apply. Required fields are marked.
+        The **MITRE Technique ID** is what drives automated archiving into `techniques/T####/` on completion.
+
+        > **Tip:** Every textarea below accepts drag-and-drop screenshots, log exports, and file attachments. Just drop the file into the box and GitHub will upload and embed it for you.
+
+  # ─────────────────────── 1. Summary ───────────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 1. Summary
+
   - type: input
     id: technique
     attributes:
       label: "MITRE Technique ID"
-      description: "Enter the technique ID in the format T#### (e.g., T1003). **Note:** This must exactly match the syntax 'Technique: T###' in your issue description for automated processing."
-      placeholder: "T1003"
+      description: "Technique or sub-technique ID (e.g., `T1059.001`). Drives automated archiving — must be a valid ATT&CK ID."
+      placeholder: "T1059.001"
+    validations:
+      required: true
+
   - type: input
     id: hunt_id
     attributes:
       label: "Threat Hunt ID"
-      description: "Enter a unique hunt identifier (e.g., TH-2025-001)"
-      placeholder: "TH-2025-001"
+      description: "Unique identifier for this hunt (e.g., `TH-2026-014`). Optional but useful for cross-referencing."
+      placeholder: "TH-2026-014"
+
   - type: input
     id: created
     attributes:
       label: "Created"
-      description: "Date/time the hunt was initiated in ISO 8601 format (e.g., 2025-03-01T12:00:00Z)"
-      placeholder: "2025-03-01T12:00:00Z"
+      description: "Date the hunt started (ISO 8601). Leave blank to use the issue creation time."
+      placeholder: "2026-04-24T12:00:00Z"
+
   - type: input
     id: modified
     attributes:
-      label: "Modified"
-      description: "Date/time the hunt was last updated in ISO 8601 format (e.g., 2025-03-01T12:00:00Z)"
-      placeholder: "2025-03-01T12:00:00Z"
+      label: "Last Modified"
+      description: "Date of most recent update."
+      placeholder: "2026-04-24T12:00:00Z"
+
+  # ─────────────────── 2. Hypothesis & Scope ───────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 2. Hypothesis & Scope
 
   - type: textarea
     id: hypothesis
     attributes:
       label: "Hypothesis"
-      description: "Enter your hypothesis or the assumption you're trying to validate with this threat hunt."
-      placeholder: "Describe your hypothesis here..."
+      description: "What are you testing? One or two sentences. Example: *\"Attackers are using PowerShell encoded commands for post-exploitation discovery on workstations.\"*"
+      placeholder: "Adversaries are using ... to achieve ... on ..."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: tactics
+    attributes:
+      label: "Applicable ATT&CK Tactic(s)"
+      description: "Tick every tactic this hunt covers."
+      options:
+        - label: "Reconnaissance"
+        - label: "Resource Development"
+        - label: "Initial Access"
+        - label: "Execution"
+        - label: "Persistence"
+        - label: "Privilege Escalation"
+        - label: "Defense Evasion"
+        - label: "Credential Access"
+        - label: "Discovery"
+        - label: "Lateral Movement"
+        - label: "Collection"
+        - label: "Command and Control"
+        - label: "Exfiltration"
+        - label: "Impact"
 
   - type: textarea
-    id: labels_list
-    attributes:
-      label: "Additional Labels"
-      description: "Enter any additional labels (comma-separated) relevant to this hunt (e.g., malware, network, endpoint)"
-      placeholder: "malware, endpoint"
-  - type: input
-    id: hunt_platform
-    attributes:
-      label: "Hunt Platform"
-      description: "Specify the platform used (e.g., Splunk, ELK, SIEM tool)"
-      placeholder: "Splunk"
-  - type: textarea
-    id: hunter_notes
-    attributes:
-      label: "Hunter Notes"
-      description: "Enter detailed notes about your methodology, observations, and any anomalies."
-      placeholder: "Enter your detailed hunter notes here..."
-  - type: textarea
-    id: query
-    attributes:
-      label: "Hunt Query"
-      description: "Add your threat hunt query or search script here. (It will render as a code block.)"
-      render: markdown
-      placeholder: |
-        ```kusto
-        // Add your threat hunt query here
-        ```
-  - type: input
-    id: query_fidelity
-    attributes:
-      label: "Query Fidelity"
-      description: "How reliable is this query? (e.g., High, Medium, Low)"
-      placeholder: "High"
-  - type: input
-    id: severity
-    attributes:
-      label: "Severity"
-      description: "Enter the severity level (e.g., Critical, High, Medium, Low)"
-      placeholder: "High"
-  - type: input
-    id: confidence
-    attributes:
-      label: "Confidence"
-      description: "Enter your confidence in the findings (e.g., High, Medium, Low or a percentage)"
-      placeholder: "90%"
-  - type: input
-    id: status
-    attributes:
-      label: "Status"
-      description: "Current status of the hunt (e.g., In Progress, Completed, False Positive)"
-      placeholder: "Completed"
-  - type: input
-    id: threat_actor
-    attributes:
-      label: "Threat Actor"
-      description: "Specify any known or suspected threat actor(s), if applicable"
-      placeholder: "APT29"
-  - type: input
     id: impacted_systems
     attributes:
       label: "Impacted Systems"
-      description: "List or describe the systems impacted"
-      placeholder: "Workstations, Servers, etc."
+      description: "Systems, environments, or populations in scope — be specific."
+      placeholder: |
+        - Workstations: corporate Windows 11
+        - Servers: Active Directory domain controllers
+        - Cloud: Azure tenant, Entra ID
+
   - type: input
     id: detection_window
     attributes:
       label: "Detection Window"
-      description: "Specify the time period during which the activity was detected (e.g., Start Date - End Date)"
-      placeholder: "2025-02-25 to 2025-03-01"
+      description: "Time range of interest (a date range or rolling window)."
+      placeholder: "2026-04-01 to 2026-04-24"
+
+  # ─────────────────────── 3. Methodology ───────────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 3. Methodology
+
+  - type: dropdown
+    id: hunt_platform
+    attributes:
+      label: "Hunt Platform"
+      description: "Where did the hunt run?"
+      options:
+        - Splunk
+        - Elastic / ELK
+        - Microsoft Sentinel
+        - Microsoft Defender XDR
+        - CrowdStrike Falcon
+        - SentinelOne
+        - Chronicle / Google SecOps
+        - Sumo Logic
+        - Panther
+        - Carbon Black
+        - Other (note in Hunter Notes)
+    validations:
+      required: true
+
+  - type: textarea
+    id: data_sources
+    attributes:
+      label: "Data Sources"
+      description: "Which logs / indexes / tables did you search?"
+      placeholder: |
+        - Windows Security events (4688, 4689)
+        - Sysmon (1, 3, 7, 10)
+        - Okta System Log
+
+  - type: textarea
+    id: query
+    attributes:
+      label: "Hunt Query"
+      description: "Paste the query verbatim. Renders as a code block."
+      render: markdown
+      placeholder: |
+        ```kql
+        DeviceProcessEvents
+        | where ProcessCommandLine has_any ("-enc", "-encodedCommand")
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: hunter_notes
+    attributes:
+      label: "Hunter Notes"
+      description: "Methodology, pivots, dead-ends, and anomalies. **Drop dashboard screenshots or suspicious-event screenshots directly into this box.**"
+      placeholder: "Initial search returned X results. After filtering for ... we found ..."
+
+  # ──────────────────────── 4. Findings ────────────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 4. Findings
+
+  - type: textarea
+    id: findings_summary
+    attributes:
+      label: "Findings Summary"
+      description: "One-paragraph TL;DR of what you found and what it means for the org."
+      placeholder: "We confirmed / ruled out / partially confirmed ..."
+
+  - type: input
+    id: threat_actor
+    attributes:
+      label: "Threat Actor"
+      description: "Known or suspected actor(s) associated with the activity. Leave blank if unknown."
+      placeholder: "APT29, Scattered Spider, etc."
+
   - type: textarea
     id: observed_indicators
     attributes:
-      label: "Observed Indicators"
-      description: "List any indicators of compromise (IOCs) or key observations"
-      placeholder: "Indicator1, Indicator2, ..."
+      label: "Observed Indicators (IOCs)"
+      description: "Concrete indicators: hashes, domains, IPs, file paths, registry keys, etc."
+      placeholder: |
+        - SHA256: ...
+        - Domain: suspicious.example.com
+        - Path: C:\Users\Public\...
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "Supporting Evidence / Screenshots"
+      description: "**Drop screenshots, log exports, dashboards, or any supporting files directly into this box.** GitHub will upload and embed them automatically. External links work too."
+      placeholder: "Drag-and-drop screenshots or files here, or paste links to external evidence."
+
+  # ─────────────────────── 5. Assessment ───────────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 5. Assessment
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: "Severity"
+      description: "How severe are the findings (if any)?"
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+        - Informational
+    validations:
+      required: true
+
+  - type: dropdown
+    id: confidence
+    attributes:
+      label: "Confidence"
+      description: "How confident are you in the findings?"
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: dropdown
+    id: query_fidelity
+    attributes:
+      label: "Query Fidelity"
+      description: "How reliable is the query itself (signal-to-noise)?"
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: "Status"
+      description: "Current state of the hunt."
+      options:
+        - In Progress
+        - Completed
+        - False Positive
+        - Inconclusive
+    validations:
+      required: true
+
+  # ──────────────────────── 6. Follow-up ────────────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 6. Follow-up
+
   - type: textarea
     id: visibility_gaps
     attributes:
       label: "Visibility Gaps"
-      description: "Note any gaps in detection or monitoring that were observed"
-      placeholder: "Enter any visibility gaps here..."
+      description: "What couldn't you see? Missing logs, sampling limits, un-instrumented systems."
+      placeholder: |
+        - No Sysmon on macOS fleet
+        - Authentication logs retention = 7 days only
+
   - type: textarea
-    id: supporting_evidence
+    id: recommended_actions
     attributes:
-      label: "Supporting Evidence"
-      description: "Attach or provide links to any supporting evidence (e.g., images, screenshots, documents). You can drag-and-drop files into the comment box."
-      placeholder: "Enter links or details here..."
+      label: "Recommended Actions"
+      description: "Detections to build, mitigations to apply, or policy changes to propose."
+      placeholder: |
+        - Add alert for ...
+        - Enable logging on ...
+
+  - type: textarea
+    id: next_steps
+    attributes:
+      label: "Next Steps"
+      description: "Follow-up hunts, IR tickets opened, or owners assigned."
+      placeholder: |
+        - Open IR ticket for affected host H-1234
+        - Sister hunt for sub-technique T1059.003
+
+  - type: textarea
+    id: labels_list
+    attributes:
+      label: "Additional Tags"
+      description: "Optional comma-separated tags for search and reporting."
+      placeholder: "malware, endpoint, identity"

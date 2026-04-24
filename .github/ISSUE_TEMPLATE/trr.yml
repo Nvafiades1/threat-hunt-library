@@ -1,0 +1,223 @@
+name: "Threat Research Report (TRR)"
+description: "Document a technique, its procedures, emulation plans, and detection opportunities."
+title: "[TRR] <TRR ID> — <short title>"
+labels:
+  - TRR
+assignees: []
+body:
+  # ─────────────────────────── Intro ───────────────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ## Threat Research Report
+
+        Use this template to document a technique in depth — including procedures, emulation tests, and detection guidance. TRRs feed into the hunt library as longer-form reference material.
+
+        > **Tip:** Every textarea accepts drag-and-drop screenshots, diagrams, and file attachments.
+
+  # ─────────────────────── 1. Metadata ───────────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 1. Metadata
+
+  - type: input
+    id: template_title
+    attributes:
+      label: "Short Title"
+      description: "Human-readable title for this TRR."
+      placeholder: "Abuse of scheduled tasks for persistence"
+    validations:
+      required: true
+
+  - type: input
+    id: id
+    attributes:
+      label: "TRR ID"
+      description: "Unique identifier (e.g., `TRR0042`)."
+      placeholder: "TRR0042"
+    validations:
+      required: true
+
+  - type: input
+    id: external_ids
+    attributes:
+      label: "External IDs"
+      description: "Related MITRE ATT&CK / Azure TRM / other framework IDs."
+      placeholder: "T1053.005, AZT301"
+
+  - type: input
+    id: tactics
+    attributes:
+      label: "Tactics"
+      description: "Comma-separated MITRE tactics this TRR covers."
+      placeholder: "Persistence, Privilege Escalation"
+
+  - type: input
+    id: platforms
+    attributes:
+      label: "Platforms"
+      description: "Comma-separated list of affected platforms."
+      placeholder: "Windows, Linux, macOS, Azure, AWS"
+
+  - type: input
+    id: contributors
+    attributes:
+      label: "Contributors"
+      description: "Comma-separated authors / reviewers."
+      placeholder: "Jane Doe, John Smith"
+
+  # ─────────────────── 2. Technique Overview ───────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 2. Technique Overview
+
+  - type: textarea
+    id: technique_overview
+    attributes:
+      label: "Technique Overview"
+      description: "What is the technique, why it matters, and who abuses it. Keep it concise — a paragraph or two."
+      placeholder: "Adversaries register scheduled tasks to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical_background
+    attributes:
+      label: "Technical Background"
+      description: "Deeper technical details, mechanics, and prerequisites. **Drop architecture diagrams or reference screenshots here.**"
+      placeholder: "Scheduled tasks on Windows are registered via..."
+
+  # ─────────────────────── 3. Procedure 1 ───────────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 3. Procedure 1
+
+  - type: input
+    id: procedure_1_id
+    attributes:
+      label: "Procedure 1 ID"
+      description: "Sub-procedure identifier."
+      placeholder: "TRR0042.WIN.A"
+
+  - type: input
+    id: procedure_1_title
+    attributes:
+      label: "Procedure 1 Title"
+      description: "Name of this specific procedure."
+      placeholder: "Persistence via schtasks.exe with system context"
+
+  - type: input
+    id: procedure_1_tactic
+    attributes:
+      label: "Procedure 1 Tactic(s)"
+      placeholder: "Persistence"
+
+  - type: textarea
+    id: procedure_1_details
+    attributes:
+      label: "Procedure 1 Details"
+      description: "Execution steps, detection data model, relevant telemetry. **Drop screenshots of the procedure running or of suspicious telemetry.**"
+      placeholder: "Steps: 1) ... 2) ... Expected telemetry: ..."
+
+  # ─────────────────────── 4. Procedure 2 ───────────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 4. Procedure 2 (optional)
+
+  - type: input
+    id: procedure_2_id
+    attributes:
+      label: "Procedure 2 ID"
+      placeholder: "TRR0042.WIN.B"
+
+  - type: input
+    id: procedure_2_title
+    attributes:
+      label: "Procedure 2 Title"
+      placeholder: "Persistence via COM object hijack"
+
+  - type: input
+    id: procedure_2_tactic
+    attributes:
+      label: "Procedure 2 Tactic(s)"
+      placeholder: "Persistence, Defense Evasion"
+
+  - type: textarea
+    id: procedure_2_details
+    attributes:
+      label: "Procedure 2 Details"
+      placeholder: "Steps: 1) ... 2) ... Expected telemetry: ..."
+
+  - type: textarea
+    id: additional_procedures
+    attributes:
+      label: "Additional Procedures"
+      description: "Need more than two? Document the rest here in the same format."
+      placeholder: |
+        #### Procedure 3 — <title>
+        **ID:** TRR0042.LIN.A  ·  **Tactic:** Persistence
+        Steps: ...
+
+  # ─────────────────────── 5. Emulation Tests ───────────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 5. Emulation Tests
+
+  - type: input
+    id: emulation_test_1_id
+    attributes:
+      label: "Emulation Test 1 ID"
+      placeholder: "TRR0042.WIN.A"
+
+  - type: input
+    id: emulation_test_1_link
+    attributes:
+      label: "Emulation Test 1 Link"
+      description: "Link to Atomic Red Team, CALDERA plan, or internal runbook."
+      placeholder: "https://github.com/redcanaryco/atomic-red-team/..."
+
+  - type: input
+    id: emulation_test_2_id
+    attributes:
+      label: "Emulation Test 2 ID"
+      placeholder: "TRR0042.WIN.B"
+
+  - type: input
+    id: emulation_test_2_link
+    attributes:
+      label: "Emulation Test 2 Link"
+      placeholder: "https://..."
+
+  - type: textarea
+    id: emulation_results
+    attributes:
+      label: "Emulation Results / Screenshots"
+      description: "**Drop screenshots of emulation runs, detection outputs, or SIEM results into this box.**"
+      placeholder: "Drag-and-drop screenshots here, or link to recordings."
+
+  # ─────────────────────── 6. References ───────────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 6. References
+
+  - type: textarea
+    id: references
+    attributes:
+      label: "References"
+      description: "Markdown list of links to MITRE, CTI reports, blog posts, research papers, etc."
+      placeholder: |
+        - [MITRE ATT&CK T1053.005](https://attack.mitre.org/techniques/T1053/005/)
+        - [Atomic Red Team — T1053.005](https://atomicredteam.io/...)
+        - Internal runbook: RB-0099

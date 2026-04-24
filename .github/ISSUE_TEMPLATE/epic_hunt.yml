@@ -1,21 +1,34 @@
-name: Epic Hunt
-description: Track a multi-TTP threat-actor campaign without cluttering the board
-title: "Hunt: <ACTOR-CODE-NAME> – <Objective>"
+name: "Epic Hunt"
+description: "Track a multi-TTP threat-actor campaign without cluttering the board."
+title: "[Epic] <ACTOR CODENAME> — <Objective>"
 labels:
-  - type: epic
-  - status: planning
-projects: []          # add your GitHub Project ID(s) if you want auto-linking
+  - epic
+  - threat-hunt
 body:
+  # ─────────────────────────── Intro ───────────────────────────
   - type: markdown
     attributes:
       value: |
-        ## Goal  
-        Describe the bigger picture you’re after – e.g., “Uncover and mitigate all active Scattered Spider footholds.”
+        ## Epic Hunt
+
+        Use this for a **campaign-level investigation** spanning multiple techniques or actor TTPs — e.g., *"Uncover and mitigate all active Scattered Spider footholds."*
+
+        Each concrete hunt under this Epic should be filed as its own **Threat Hunt** issue and converted to a sub-issue, so progress rolls up automatically on the project board.
+
+        > **Tip:** Any textarea below accepts drag-and-drop screenshots, CTI PDFs, and attachments.
+
+  # ────────────────────── 1. Campaign ──────────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 1. Campaign
 
   - type: input
     id: actor
     attributes:
-      label: Threat actor or campaign name
+      label: "Threat Actor or Campaign Name"
+      description: "The named actor, cluster, or campaign driving this epic."
       placeholder: "Scattered Spider / UNC3944 / Oktapus"
     validations:
       required: true
@@ -23,68 +36,120 @@ body:
   - type: textarea
     id: background
     attributes:
-      label: Intelligence background
-      description: "Why are we hunting this actor now? Paste CTI summaries, CVEs, recent incidents, etc."
-      placeholder: |
-        * Last spotted abusing Okta support SAML tokens (July 2025)  
-        * New TTP: Live-streamed SIM-swap takeover of exec devices  
-        * Targeting Tradeweb sector peers
+      label: "Intelligence Background"
+      description: "Why are we hunting this actor now? Paste CTI summaries, CVEs, recent incidents. **Drop CTI PDFs or report screenshots into this box.**"
       render: markdown
+      placeholder: |
+        * Last spotted abusing Okta support SAML tokens (2026-02)
+        * New TTP: SIM-swap takeover of executive devices
+        * Peer-sector incidents in the last 90 days
+    validations:
+      required: true
+
+  # ─────────────────── 2. Scope & Objective ───────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 2. Scope & Objective
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: "Objective"
+      description: "What does success look like for this epic? Be concrete."
+      placeholder: "Confirm or rule out active footholds, identify TTP coverage gaps, and ship at least three new detections."
     validations:
       required: true
 
   - type: textarea
     id: scope
     attributes:
-      label: Scope & key data sources
-      placeholder: |
-        * Tenant:  corp.example.com  
-        * Data: CrowdStrike, Okta logs, Zscaler, ADX auth events
+      label: "Scope & Key Data Sources"
+      description: "Tenants, environments, and log sources in play."
       render: markdown
+      placeholder: |
+        * Tenant: corp.example.com
+        * Data: CrowdStrike, Okta logs, Zscaler, Entra sign-ins
+        * Business units: Corporate IT, Exec Support
     validations:
       required: true
+
+  # ─────────────────── 3. Sub-hunts ───────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 3. Sub-hunts
 
   - type: textarea
     id: sub_hunts
     attributes:
-      label: Sub-hunts (checklist = child issues)
+      label: "Sub-hunt Checklist"
       description: |
-        List each concrete hunt as a task.  
-        After opening the Epic, **convert each task to a sub-issue** so progress rolls up automatically.
-      placeholder: |
-        - [ ] Create #️⃣“Hunt – credential-phish lure detection”
-        - [ ] Create #️⃣“Hunt – SIM-swap anomaly”
-        - [ ] Create #️⃣“Hunt – Okta session hijack”
+        List each concrete hunt as a task. After opening this Epic, **convert each task to a sub-issue** so the project board rolls up progress automatically.
       render: markdown
+      placeholder: |
+        - [ ] Hunt — credential-phish lure detection (T1566.002)
+        - [ ] Hunt — SIM-swap anomaly (T1451)
+        - [ ] Hunt — Okta session hijack (T1550.004)
     validations:
       required: true
+
+  # ─────────────────── 4. Prioritization ───────────────────
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### 4. Prioritization
 
   - type: dropdown
     id: priority
     attributes:
-      label: Priority
+      label: "Priority"
+      description: "How urgently should this epic be worked?"
       options:
-        - 🟥 Critical
-        - 🟧 High
-        - 🟨 Medium
-        - 🟩 Low
+        - "Critical"
+        - "High"
+        - "Medium"
+        - "Low"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: "Status"
+      description: "Current epic state."
+      options:
+        - "Planning"
+        - "In Progress"
+        - "Blocked"
+        - "Complete"
     validations:
       required: true
 
   - type: textarea
     id: timeline
     attributes:
-      label: Target timeline / milestones
-      placeholder: |
-        * Planning complete by **2025-08-10**  
-        * All sub-hunts kicked off by **2025-08-17**  
-        * Initial findings review **2025-09-01**
+      label: "Target Timeline / Milestones"
+      description: "Key dates or checkpoints."
       render: markdown
+      placeholder: |
+        * Planning complete by **2026-05-10**
+        * All sub-hunts kicked off by **2026-05-17**
+        * Initial findings review **2026-06-01**
 
+  # ─────────────────── 5. Supporting Material ───────────────────
   - type: markdown
     attributes:
       value: |
         ---
-          **House-rules automation idea**  
-        If every sub-issue closes, auto-archive this Epic so it disappears from the board.  
-        (_Less kanban chaos = happier hunters._)
+        ### 5. Supporting Material
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "CTI, Screenshots, References"
+      description: "**Drop CTI briefings, diagrams, or any supporting files directly into this box.** Links to external reports are welcome too."
+      placeholder: "Drag-and-drop files here, or paste links."
