@@ -2,8 +2,11 @@ name: Build MITRE Matrix
 
 on:
   push:
-    branches: [ main ]          # run on every push
-  workflow_dispatch:            # allow manual runs
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   matrix:
@@ -11,8 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0        # get the whole tree
-          persist-credentials: false
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -20,17 +22,16 @@ jobs:
           python-version: '3.x'
 
       - name: Rebuild docs/index.html
-        run: |
-          python tools/build_matrix.py
+        run: python tools/build_matrix.py
 
       - name: Commit & push page
-        env:
-          PAT: ${{ secrets.PAT_TOKEN }}   # your read/write token
         run: |
-          git config user.name  "matrix-bot"
-          git config user.email "matrix-bot@users.noreply.github.com"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/index.html
-          git diff --cached --quiet && echo "No changes" && exit 0
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
           git commit -m "Auto-build matrix [skip ci]"
-          git remote set-url origin "https://x-access-token:${PAT}@github.com/${{ github.repository }}.git"
           git push
