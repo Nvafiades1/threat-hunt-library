@@ -83,22 +83,22 @@ h2{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:uppercas
 <section class="kpis">
   <div class="kpi orange">
     <div class="kpi-label">Total Hunts</div>
-    <div class="kpi-value">1</div>
+    <div class="kpi-value">2</div>
     <div class="kpi-sub">last hunt 2026-04-24</div>
   </div>
   <div class="kpi green">
     <div class="kpi-label">Techniques Covered</div>
-    <div class="kpi-value">1</div>
+    <div class="kpi-value">2</div>
     <div class="kpi-sub">of 216 mapped techniques</div>
   </div>
   <div class="kpi blue">
     <div class="kpi-label">Threat Actors Tracked</div>
-    <div class="kpi-value">0</div>
-    <div class="kpi-sub">none referenced yet</div>
+    <div class="kpi-value">1</div>
+    <div class="kpi-sub">unique, referenced in hunts</div>
   </div>
   <div class="kpi red">
     <div class="kpi-label">Coverage</div>
-    <div class="kpi-value">0%</div>
+    <div class="kpi-value">1%</div>
     <div class="kpi-sub">of MITRE ATT&amp;CK Enterprise</div>
   </div>
 </section>
@@ -157,7 +157,7 @@ h2{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:uppercas
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
-const DATA = {"totals": {"hunts": 1, "techniques": 1, "actors": 0, "coverage": 0, "universe": 216, "last_hunt": "2026-04-24"}, "timeline": {"labels": ["2026-04"], "monthly": [1], "cumulative": [1]}, "tactics": {"labels": ["Credential Access"], "hunts": [1], "covered": [1]}, "actors": {"labels": [], "values": []}, "severity": {"labels": ["Critical"], "values": [1]}, "confidence": {"labels": ["High"], "values": [1]}, "techniques": {"labels": ["T1003"], "values": [1]}, "platforms": {"labels": ["Splunk"], "values": [1]}};
+const DATA = {"totals": {"hunts": 2, "techniques": 2, "actors": 1, "coverage": 1, "universe": 216, "last_hunt": "2026-04-24"}, "timeline": {"labels": ["2026-04"], "monthly": [2], "cumulative": [2]}, "tactics": {"labels": ["Initial Access", "Credential Access"], "hunts": [1, 1], "covered": [1, 1]}, "actors": {"labels": ["TA505"], "values": [1]}, "severity": {"labels": ["Critical", "Low"], "values": [1, 1]}, "confidence": {"labels": ["High", "Medium"], "values": [1, 1]}, "techniques": {"labels": ["T1003", "T1566"], "values": [1, 1]}, "platforms": {"labels": ["Splunk", "CrowdStrike Falcon"], "values": [1, 1]}};
 
 function cssVar(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
