@@ -692,7 +692,7 @@ main {{ padding: 16px 20px 60px; max-width: 1400px; margin: 0 auto; }}
     }});
   }}
 
-  const GOV_LINK_RE = /\b(CISA|HHS|HC3|FBI|FDA|NIST|NSA|DHS|HSCC)\b/i;
+  const GOV_LINK_RE = /\\b(CISA|HHS|HC3|FBI|FDA|NIST|NSA|DHS|HSCC)\\b/i;
   function isGovLinked(it) {{
     if (it.source !== "Health-ISAC") return false;
     const hay = (it.title||"") + " " + (it.summary||"") + " " + ((it.tags||[]).join(" "));
