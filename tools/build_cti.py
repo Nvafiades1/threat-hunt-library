@@ -508,6 +508,10 @@ main {{ padding: 16px 20px 60px; max-width: 1400px; margin: 0 auto; }}
   font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 4px;
   background: var(--new); color: #fff;
 }}
+.gov-badge {{
+  font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 4px;
+  background: #f59e0b; color: #1f1500; letter-spacing: .5px;
+}}
 .card h3 {{
   margin: 0 0 4px; font-size: 14px; font-weight: 600; line-height: 1.35;
 }}
@@ -688,13 +692,22 @@ main {{ padding: 16px 20px 60px; max-width: 1400px; margin: 0 auto; }}
     }});
   }}
 
+  const GOV_LINK_RE = /\b(CISA|HHS|HC3|FBI|FDA|NIST|NSA|DHS|HSCC)\b/i;
+  function isGovLinked(it) {{
+    if (it.source !== "Health-ISAC") return false;
+    const hay = (it.title||"") + " " + (it.summary||"") + " " + ((it.tags||[]).join(" "));
+    return GOV_LINK_RE.test(hay);
+  }}
+
   function cardHtml(it) {{
     const isNew = newIds.has(it.id);
+    const govLinked = isGovLinked(it);
     const tags = (it.tags || []).slice(0, 5).map(t => `<span class="tag">${{escape(t)}}</span>`).join("");
     return `<article class="card">
       <div class="badge-col">
         <span class="cat-badge cat-${{escape(it.category)}}">${{escape(it.category)}}</span>
         ${{isNew ? '<span class="new-badge">NEW</span>' : ''}}
+        ${{govLinked ? '<span class="gov-badge">GOV-LINKED</span>' : ''}}
       </div>
       <div>
         <h3><a href="${{escape(it.url)}}" target="_blank" rel="noopener">${{escape(it.title)}}</a></h3>
