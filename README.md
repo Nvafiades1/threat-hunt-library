@@ -34,16 +34,20 @@ The **Threat Hunt Library** is a team-owned knowledge base of every threat hunt 
 ```mermaid
 flowchart LR
     A[Analyst opens<br/>Threat Hunt issue] --> B[Auto-added to<br/>Project Board]
+    A -.->|Threat Actor field| X[Threat-actor enrichment<br/>posted as comment]
+    X -.-> Y[Profile committed to<br/>threat-actor-profiles/]
     B --> C[In Progress<br/>analyst runs hunt]
     C --> D[Peer Review]
     D --> E[Status: Completed]
     E -->|automation| F[Issue closed]
     F -->|automation| G[Archived to<br/>techniques/T####/]
-    G -->|automation| H[Matrix rebuilt<br/>& published]
+    G -->|automation| H[Matrix + metrics<br/>rebuilt & published]
 
     style A fill:#17202c,stroke:#e87722,color:#fff
     style E fill:#17202c,stroke:#2fbf71,color:#fff
     style H fill:#17202c,stroke:#2fbf71,color:#fff
+    style X fill:#17202c,stroke:#3a9cd8,color:#fff
+    style Y fill:#17202c,stroke:#3a9cd8,color:#fff
 ```
 
 1. **Propose.** Analyst opens a *Threat Hunt* issue using the template. Fields: MITRE Technique ID, hypothesis, query, platform, severity, confidence, observed indicators.
@@ -105,23 +109,24 @@ threat-hunt-library/
     ├── ISSUE_TEMPLATE/           ← threat-hunt form template
     ├── scripts/
     │   ├── createMitreFolders.js ← keeps techniques/ in sync with ATT&CK
+    │   ├── enrichThreatActor.js  ← MITRE + MISP threat-actor lookup
     │   └── updateThreatHunt.js   ← archives completed hunts
-    └── workflows/                ← four automation pipelines (see below)
+    └── workflows/                ← five automation pipelines (see below)
 ```
 
 ---
 
 ## Automation
 
-Four workflows keep the library self-maintaining:
+Five workflows keep the library self-maintaining:
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| **Update MITRE Folders** | Weekly cron + pushes | Pulls the latest ATT&CK data and creates/updates a folder + README per technique. |
+| **Update MITRE Folders** | Weekly cron + manual | Pulls the current STIX bundle from `mitre-attack/attack-stix-data`, regenerates `techniques/T####/README.md` for every active + deprecated + revoked technique, and rewrites `mitre_ttp_mapping.json`. Deprecated/revoked techniques get a `STATUS:` callout in their README. |
 | **Save New Issue to Folder** | Issue opened | Stages the new issue as `test/issue-<N>.md` for audit trail. |
+| **Enrich Threat Actor** | Issue opened / edited | Looks up the named actor or campaign across **MITRE ATT&CK groups, MITRE ATT&CK campaigns, and the MISP threat-actor galaxy**. Commits a full profile to `threat-actor-profiles/` and posts (or updates in place) a summary comment with TTPs, tools, and a link to the profile. See [Threat Actor Enrichment](#threat-actor-enrichment) below. |
 | **Update Threat Hunt** | Issue closed | Reads the MITRE T# from the issue, writes the completed hunt into `techniques/T####/`. |
-| **Enrich Threat Actor** | Issue opened / edited | Looks up the named actor in MITRE ATT&CK STIX, commits a full profile to `threat-actor-profiles/`, and posts a summary comment with TTP counts and a link to the profile. |
-| **Build MITRE Matrix** | Push to main | Regenerates `docs/index.html` from the current `techniques/` tree; GitHub Pages redeploys automatically. |
+| **Build MITRE Matrix** | Push to main &middot; after hunt close &middot; after MITRE sync | Regenerates `docs/index.html` and `docs/metrics.html` from the current `techniques/` tree; GitHub Pages redeploys automatically. |
 
 All workflows authenticate via the built-in `GITHUB_TOKEN` with explicit `permissions:` blocks &mdash; no personal access tokens to manage.
 
@@ -143,6 +148,58 @@ The header shows a live coverage percentage. As hunts complete and land in `tech
 
 ---
 
+## Threat Actor Enrichment
+
+When you open or edit a Threat Hunt issue and fill in the **Threat Actor** field, the `Enrich Threat Actor` workflow looks the value up across three sources, builds a profile, and posts a summary comment back on the issue.
+
+### Resolution order
+
+```mermaid
+flowchart LR
+    Q[Threat Actor field] --> M{Match in<br/>MITRE intrusion-set?}
+    M -- yes --> A[Group profile<br/>+ TTPs + tools]
+    M -- no --> C{Match in<br/>MITRE campaign?}
+    C -- yes --> CP[Campaign profile<br/>+ TTPs + attribution]
+    C -- no --> P{Match in<br/>MISP galaxy?}
+    P -- MISP entry refs<br/>a MITRE group --> A
+    P -- MISP only --> MP[MISP profile<br/>country, sector, refs]
+    P -- no --> N["No match — post<br/>“did you mean…”"]
+
+    style A  fill:#17202c,stroke:#e87722,color:#fff
+    style CP fill:#17202c,stroke:#e87722,color:#fff
+    style MP fill:#17202c,stroke:#3a9cd8,color:#fff
+    style N  fill:#17202c,stroke:#a02020,color:#fff
+```
+
+### What gets recognised
+
+| Naming family | Example | Resolved how |
+|---|---|---|
+| MITRE primary | `APT29`, `FIN7`, `Lazarus Group` | MITRE group (G####) |
+| MITRE alias | `Cozy Bear`, `Midnight Blizzard`, `UNC2452` | MITRE group via alias list |
+| Microsoft codes (modern) | `Storm-0249`, `Mint Sandstorm` | MISP &rarr; MITRE if linked, else MISP-only profile |
+| Mandiant / CrowdStrike codes | `UNC4990`, `WIZARD SPIDER` | MISP coverage; resolves to MITRE when the MISP entry references one |
+| MITRE campaign | `SolarWinds Compromise`, `2015 Ukraine Electric Power Attack` | MITRE campaign (C####) with `attributed-to` actor link |
+
+### What lands where
+
+| Output | Content |
+|---|---|
+| `threat-actor-profiles/G####-{slug}.md` | Full MITRE group profile: aliases, description, all tools/malware with MITRE links, all TTPs grouped by tactic. |
+| `threat-actor-profiles/C####-{slug}.md` | Full MITRE campaign profile: aliases, attribution, first/last seen, tools, TTPs. |
+| `threat-actor-profiles/misp-{slug}-{name}.md` | MISP-only fallback profile: aliases, country, sponsor, target sectors, references. (No TTPs &mdash; MITRE doesn't track this actor.) |
+| Comment on issue | One section per match with aliases, description excerpt, headline counts (`66 TTPs · 12 tactics · 49 tools`), and a link to the full profile. Multiple comma-separated actors get one comment with multiple sections. |
+
+### Smart re-enrichment
+
+Each enrichment comment carries a hidden marker tagging the canonical IDs it covers (e.g. `<!-- threat-actor-enrichment:v2 ids=G0016,C0024 -->`). On a subsequent issue edit:
+
+- **Same actor list** &rarr; workflow exits without acting (no spam comments).
+- **Actor list changed** &rarr; the existing comment is **edited in place** to reflect the new resolution; new profile files are committed alongside the old ones (history is preserved &mdash; nothing is deleted).
+- **No-match retry** &rarr; if the analyst fixes a typo, the next edit picks up the corrected name and rewrites the comment accordingly.
+
+---
+
 ## Customizing
 
 ### Change the matrix look
@@ -155,7 +212,11 @@ The `TACTICS` list in `tools/build_matrix.py` drives column order. The `mitre_tt
 
 ### Tune the archive format
 
-The markdown written to `techniques/T####/` is formatted in `.github/scripts/updateThreatHunt.js` (see the `content = [...]` block in `run()`).
+The markdown written to `techniques/T####/` is built in `.github/scripts/updateThreatHunt.js` (see `buildArchive()`).
+
+### Tune the threat-actor enrichment
+
+The MISP and MITRE STIX URLs, the resolution priority, and the profile/comment markdown templates live in `.github/scripts/enrichThreatActor.js`. To extend coverage to additional sources (e.g., MITRE ATT&CK Mobile, MITRE ICS), add a new fetcher and a new branch in `resolveQuery()`.
 
 ---
 
