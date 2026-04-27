@@ -179,37 +179,44 @@
   }
 
   // ── relationship walking (MITRE) ───────────────────────────────────────
+  // Walks 'uses' relationships from a group or campaign, capturing the
+  // procedure-level description on each relationship so the profile can show
+  // *how* the actor uses each technique, not just that they do.
   function gatherUses(stix, mitreObj) {
     const usesRels = stix.objects.filter(o =>
       o.type === "relationship" &&
       o.relationship_type === "uses" &&
       o.source_ref === mitreObj.id
     );
-    const targetIds = new Set(usesRels.map(r => r.target_ref));
-    const ttps = stix.objects.filter(o =>
-      targetIds.has(o.id) &&
-      o.type === "attack-pattern" &&
-      !o.revoked && !o.x_mitre_deprecated
-    );
-    const tools = stix.objects.filter(o =>
-      targetIds.has(o.id) &&
-      (o.type === "malware" || o.type === "tool") &&
-      !o.revoked && !o.x_mitre_deprecated
-    );
+    const ttpRows = [];
+    const toolRows = [];
+    const ttpStixIds = new Set();
+    for (const rel of usesRels) {
+      const target = stix.objects.find(o => o.id === rel.target_ref);
+      if (!target || target.revoked || target.x_mitre_deprecated) continue;
+      const procedure = cleanDesc(rel.description || "");
+      const ext = (target.external_references || [])
+        .find(r => r.source_name === "mitre-attack");
+      const id = ext?.external_id;
+      if (!id) continue;
+      if (target.type === "attack-pattern") {
+        ttpRows.push({ obj: target, id, name: target.name, url: ext?.url, procedure });
+        ttpStixIds.add(target.id);
+      } else if (target.type === "malware" || target.type === "tool") {
+        toolRows.push({ obj: target, id, name: target.name, url: ext?.url, procedure, type: target.type });
+      }
+    }
     const byTactic = {};
     const tacticSet = new Set();
-    for (const t of ttps) {
-      const tid = (t.external_references || [])
-        .find(r => r.source_name === "mitre-attack")?.external_id;
-      if (!tid) continue;
-      const phases = (t.kill_chain_phases || [])
+    for (const t of ttpRows) {
+      const phases = (t.obj.kill_chain_phases || [])
         .filter(kc => kc.kill_chain_name === "mitre-attack");
       for (const p of phases) {
         tacticSet.add(p.phase_name);
-        (byTactic[p.phase_name] ||= []).push({ id: tid, name: t.name });
+        (byTactic[p.phase_name] ||= []).push(t);
       }
     }
-    return { ttps, tools, byTactic, tactics: tacticSet };
+    return { ttps: ttpRows, tools: toolRows, byTactic, tactics: tacticSet, ttpStixIds };
   }
 
   function attributedActor(stix, campaign) {
@@ -224,115 +231,274 @@
     );
   }
 
+  function attributedCampaigns(stix, actor) {
+    const rels = stix.objects.filter(o =>
+      o.type === "relationship" &&
+      o.relationship_type === "attributed-to" &&
+      o.target_ref === actor.id
+    );
+    const campaigns = [];
+    for (const r of rels) {
+      const c = stix.objects.find(o => o.id === r.source_ref && o.type === "campaign");
+      if (c && !c.revoked) campaigns.push(c);
+    }
+    campaigns.sort((a, b) =>
+      (b.last_seen  || "").localeCompare(a.last_seen  || "") ||
+      (b.first_seen || "").localeCompare(a.first_seen || "")
+    );
+    return campaigns;
+  }
+
+  // Find the MISP cluster that links to a given MITRE group / campaign ID via
+  // its meta.refs URLs. Lets us pull country / sectors / sponsor metadata
+  // even when the user typed the canonical MITRE name.
+  function findMISPByMitreId(misp, mitreId, kind) {
+    if (!misp || !mitreId) return null;
+    const needle = `/${kind}/${mitreId}`;
+    for (const cluster of (misp.values || [])) {
+      const refs = cluster.meta?.refs || [];
+      if (refs.some(r => r.includes(needle))) return cluster;
+    }
+    return null;
+  }
+
+  function mitigationsFor(stix, ttpStixIds) {
+    const rels = stix.objects.filter(o =>
+      o.type === "relationship" &&
+      o.relationship_type === "mitigates" &&
+      ttpStixIds.has(o.target_ref)
+    );
+    const coaIds = new Set(rels.map(r => r.source_ref));
+    const out = [];
+    const seen = new Set();
+    for (const coa of stix.objects) {
+      if (!coaIds.has(coa.id)) continue;
+      if (coa.type !== "course-of-action" || coa.revoked || coa.x_mitre_deprecated) continue;
+      const ext = (coa.external_references || []).find(r => r.source_name === "mitre-attack");
+      const id = ext?.external_id;
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      out.push({ id, name: coa.name, url: ext.url });
+    }
+    out.sort((a, b) => a.id.localeCompare(b.id));
+    return out;
+  }
+
+  function citationRefs(obj) {
+    return (obj.external_references || [])
+      .filter(r => r.source_name !== "mitre-attack" && r.url)
+      .map(r => ({ source: r.source_name || "Source", url: r.url }));
+  }
+
+  function mispMetaSnapshot(meta) {
+    const out = [];
+    if (meta.country) out.push({ k: "Country", v: `\`${meta.country}\`` });
+    if (meta["cfr-suspected-state-sponsor"]) out.push({ k: "Suspected sponsor", v: meta["cfr-suspected-state-sponsor"] });
+    const sectors = [].concat(meta["targeted-sector"] || meta["cfr-target-category"] || []);
+    if (sectors.length) out.push({ k: "Target sectors", v: sectors.join(", ") });
+    const victims = [].concat(meta["cfr-suspected-victims"] || []);
+    if (victims.length) out.push({ k: "Suspected victims", v: victims.slice(0, 8).join(", ") + (victims.length > 8 ? `, +${victims.length - 8} more` : "") });
+    if (meta.motive) out.push({ k: "Motive", v: [].concat(meta.motive).join(", ") });
+    return out;
+  }
+
   // ── markdown builders ───────────────────────────────────────────────────
-  function buildGroupProfile(stix, actor, version, viaMISP) {
+  function renderTechniqueSections(byTactic) {
+    const out = [];
+    for (const phase of TACTIC_ORDER) {
+      if (!byTactic[phase]) continue;
+      const items = [...byTactic[phase]].sort((a, b) => a.id.localeCompare(b.id));
+      out.push(`### ${tacticDisplay(phase)} (${items.length})`);
+      out.push("");
+      for (const it of items) {
+        const heading = it.url ? `[${it.name}](${it.url})` : it.name;
+        out.push(`- **\`${it.id}\`** — ${heading}`);
+        if (it.procedure) {
+          // Quote the procedure description as a hint to hunters
+          for (const line of it.procedure.split("\n")) out.push(`  > ${line}`);
+        }
+      }
+      out.push("");
+    }
+    return out;
+  }
+
+  function renderTools(tools) {
+    const out = [];
+    out.push(`## Tools & Software (${tools.length})`);
+    out.push("");
+    for (const t of [...tools].sort((a, b) => (a.name || "").localeCompare(b.name || ""))) {
+      const platforms = (t.obj.x_mitre_platforms || []).join(", ");
+      const label = t.url ? `[${t.name}](${t.url})` : t.name;
+      out.push(`- ${label}${t.id ? ` — \`${t.id}\`` : ""} _(${t.type}${platforms ? ` · ${platforms}` : ""})_`);
+    }
+    out.push("");
+    return out;
+  }
+
+  function renderMitigations(mitigations) {
+    const out = [];
+    out.push(`## Recommended Mitigations (${mitigations.length})`);
+    out.push("");
+    out.push("Per MITRE ATT&CK, these are the mitigations associated with the techniques above. Use them as a checklist when scoping a hunt and as starting points for any follow-on detection or hardening work:");
+    out.push("");
+    for (const m of mitigations) {
+      out.push(`- \`${m.id}\` — [${m.name}](${m.url})`);
+    }
+    out.push("");
+    return out;
+  }
+
+  function renderCitations(citations, label) {
+    const out = [];
+    out.push(`## ${label} (${citations.length})`);
+    out.push("");
+    out.push("MITRE ATT&CK does **not** track atomic IOCs (hashes, IPs, domains, file paths) directly. The reports below are the canonical primary sources cited by MITRE — start here when looking for indicators, sample artifacts, and campaign-specific evidence:");
+    out.push("");
+    for (const c of citations) out.push(`- [${c.source}](${c.url})`);
+    out.push("");
+    return out;
+  }
+
+  function buildGroupProfile(stix, misp, actor, version, viaMISP) {
     const ext = (actor.external_references || []).find(r => r.source_name === "mitre-attack");
     const mid = ext?.external_id || "—";
     const url = ext?.url;
     const aliases = (actor.aliases || []).filter(a => a !== actor.name);
-    const { ttps, tools, byTactic } = gatherUses(stix, actor);
+    const { ttps, tools, byTactic, ttpStixIds } = gatherUses(stix, actor);
+    const campaigns = attributedCampaigns(stix, actor);
+    const mitigations = mitigationsFor(stix, ttpStixIds);
+    const citations = citationRefs(actor);
+    const mispEntry = viaMISP || findMISPByMitreId(misp, mid, "groups");
+    const meta = mispEntry?.meta || {};
+    const recent = campaigns[0];
 
     const lines = [];
     lines.push(`# ${actor.name}`);
     lines.push("");
+    lines.push("## Snapshot");
+    lines.push("");
     lines.push(`**Type:** Threat Group  `);
     lines.push(`**MITRE ID:** \`${mid}\`  `);
     if (aliases.length) lines.push(`**Aliases:** ${aliases.map(a => `\`${a}\``).join(", ")}  `);
+    for (const m of mispMetaSnapshot(meta)) lines.push(`**${m.k}:** ${m.v}  `);
+    if (recent) {
+      const rExt = (recent.external_references || []).find(r => r.source_name === "mitre-attack");
+      const range =
+        recent.first_seen && recent.last_seen
+          ? `${recent.first_seen.slice(0, 7)} \u2192 ${recent.last_seen.slice(0, 7)}`
+          : recent.first_seen ? `from ${recent.first_seen.slice(0, 7)}`
+          : recent.last_seen  ? `through ${recent.last_seen.slice(0, 7)}`
+          : "dates unknown";
+      lines.push(`**Most recent campaign:** [${recent.name}](${rExt?.url || "#"}) (\`${rExt?.external_id || "—"}\`, ${range})  `);
+    }
+    lines.push(`**Coverage:** ${ttps.length} TTPs across ${Object.keys(byTactic).length} tactics \u00B7 ${tools.length} known tools/malware  `);
     if (url) lines.push(`**MITRE Reference:** [${url}](${url})  `);
-    if (viaMISP) lines.push(`**Matched via:** MISP threat-actor galaxy entry _${viaMISP.value}_`);
+    if (viaMISP) lines.push(`**Resolved via:** MISP threat-actor galaxy entry _${viaMISP.value}_`);
     lines.push("");
+
     lines.push("## Overview");
     lines.push("");
     lines.push(cleanDesc(actor.description) || "_No description available._");
     lines.push("");
 
-    if (tools.length) {
-      lines.push(`## Tools & Software (${tools.length})`);
+    if (campaigns.length) {
+      lines.push(`## Attributed Campaigns (${campaigns.length})`);
       lines.push("");
-      for (const t of [...tools].sort((a, b) => (a.name || "").localeCompare(b.name || ""))) {
-        const e = (t.external_references || []).find(r => r.source_name === "mitre-attack");
-        const label = e?.url ? `[${t.name}](${e.url})` : t.name;
-        lines.push(`- ${label}${e?.external_id ? ` — \`${e.external_id}\`` : ""} _(${t.type})_`);
+      lines.push("| MITRE ID | Campaign | First seen | Last seen |");
+      lines.push("|---|---|---|---|");
+      for (const c of campaigns) {
+        const cExt = (c.external_references || []).find(r => r.source_name === "mitre-attack");
+        const cid = cExt?.external_id || "—";
+        const link = cExt?.url ? `[${c.name}](${cExt.url})` : c.name;
+        const fs = c.first_seen ? c.first_seen.slice(0, 7) : "—";
+        const ls = c.last_seen  ? c.last_seen.slice(0, 7)  : "—";
+        lines.push(`| \`${cid}\` | ${link} | ${fs} | ${ls} |`);
       }
       lines.push("");
     }
 
+    if (tools.length) lines.push(...renderTools(tools));
+
     if (ttps.length) {
       lines.push(`## Techniques (${ttps.length} TTPs)`);
       lines.push("");
-      for (const phase of TACTIC_ORDER) {
-        if (!byTactic[phase]) continue;
-        lines.push(`### ${tacticDisplay(phase)}`);
-        lines.push("");
-        for (const it of [...byTactic[phase]].sort((a, b) => a.id.localeCompare(b.id))) {
-          lines.push(`- \`${it.id}\` — ${it.name}`);
-        }
-        lines.push("");
-      }
+      lines.push("Each entry below quotes the MITRE-curated **procedure description** for this actor — i.e., *how* they're observed using the technique. Useful as the starting prompt when scoping a hunt query.");
+      lines.push("");
+      lines.push(...renderTechniqueSections(byTactic));
+    }
+
+    if (mitigations.length) lines.push(...renderMitigations(mitigations));
+
+    if (citations.length) lines.push(...renderCitations(citations, "References & IOC Sources"));
+
+    if (mispEntry?.meta?.refs?.length) {
+      lines.push("## Additional MISP References");
+      lines.push("");
+      for (const ref of mispEntry.meta.refs) lines.push(`- ${ref}`);
+      lines.push("");
     }
 
     lines.push("---");
     lines.push("");
     lines.push(
-      `_Auto-generated from MITRE ATT&CK Enterprise v${version} on ` +
-      `${new Date().toISOString().slice(0, 10)}. ` +
-      `Regenerated when MITRE updates this group's data._`
+      `_Auto-generated from MITRE ATT&CK Enterprise v${version}` +
+      (mispEntry ? " and the MISP threat-actor galaxy" : "") +
+      ` on ${new Date().toISOString().slice(0, 10)}. ` +
+      `Regenerated when source data updates._`
     );
     lines.push("");
     return lines.join("\n");
   }
 
-  function buildCampaignProfile(stix, campaign, version) {
+  function buildCampaignProfile(stix, misp, campaign, version) {
     const ext = (campaign.external_references || []).find(r => r.source_name === "mitre-attack");
     const cid = ext?.external_id || "—";
     const url = ext?.url;
     const aliases = (campaign.aliases || []).filter(a => a !== campaign.name);
-    const { ttps, tools, byTactic } = gatherUses(stix, campaign);
+    const { ttps, tools, byTactic, ttpStixIds } = gatherUses(stix, campaign);
     const actor = attributedActor(stix, campaign);
+    const mitigations = mitigationsFor(stix, ttpStixIds);
+    const citations = citationRefs(campaign);
+    const mispEntry = findMISPByMitreId(misp, cid, "campaigns");
 
     const lines = [];
     lines.push(`# ${campaign.name}`);
     lines.push("");
+    lines.push("## Snapshot");
+    lines.push("");
     lines.push(`**Type:** Campaign  `);
     lines.push(`**MITRE ID:** \`${cid}\`  `);
     if (aliases.length) lines.push(`**Aliases:** ${aliases.map(a => `\`${a}\``).join(", ")}  `);
-    if (campaign.first_seen) lines.push(`**First seen:** ${campaign.first_seen}  `);
-    if (campaign.last_seen)  lines.push(`**Last seen:** ${campaign.last_seen}  `);
+    if (campaign.first_seen) lines.push(`**First seen:** ${campaign.first_seen.slice(0, 10)}  `);
+    if (campaign.last_seen)  lines.push(`**Last seen:** ${campaign.last_seen.slice(0, 10)}  `);
     if (actor) {
       const aExt = (actor.external_references || []).find(r => r.source_name === "mitre-attack");
       lines.push(`**Attributed to:** [${actor.name}](${aExt?.url || "#"}) (\`${aExt?.external_id || "—"}\`)  `);
     }
+    for (const m of mispMetaSnapshot(mispEntry?.meta || {})) lines.push(`**${m.k}:** ${m.v}  `);
+    lines.push(`**Coverage:** ${ttps.length} TTPs across ${Object.keys(byTactic).length} tactics \u00B7 ${tools.length} known tools/malware  `);
     if (url) lines.push(`**MITRE Reference:** [${url}](${url})`);
     lines.push("");
+
     lines.push("## Overview");
     lines.push("");
     lines.push(cleanDesc(campaign.description) || "_No description available._");
     lines.push("");
 
-    if (tools.length) {
-      lines.push(`## Tools & Software (${tools.length})`);
-      lines.push("");
-      for (const t of [...tools].sort((a, b) => (a.name || "").localeCompare(b.name || ""))) {
-        const e = (t.external_references || []).find(r => r.source_name === "mitre-attack");
-        const label = e?.url ? `[${t.name}](${e.url})` : t.name;
-        lines.push(`- ${label}${e?.external_id ? ` — \`${e.external_id}\`` : ""} _(${t.type})_`);
-      }
-      lines.push("");
-    }
+    if (tools.length) lines.push(...renderTools(tools));
 
     if (ttps.length) {
       lines.push(`## Techniques (${ttps.length} TTPs)`);
       lines.push("");
-      for (const phase of TACTIC_ORDER) {
-        if (!byTactic[phase]) continue;
-        lines.push(`### ${tacticDisplay(phase)}`);
-        lines.push("");
-        for (const it of [...byTactic[phase]].sort((a, b) => a.id.localeCompare(b.id))) {
-          lines.push(`- \`${it.id}\` — ${it.name}`);
-        }
-        lines.push("");
-      }
+      lines.push("Each entry quotes the MITRE-curated **procedure description** showing how this technique was used during the campaign.");
+      lines.push("");
+      lines.push(...renderTechniqueSections(byTactic));
     }
+
+    if (mitigations.length) lines.push(...renderMitigations(mitigations));
+
+    if (citations.length) lines.push(...renderCitations(citations, "References & IOC Sources"));
 
     lines.push("---");
     lines.push("");
@@ -350,23 +516,23 @@
     const lines = [];
     lines.push(`# ${cluster.value}`);
     lines.push("");
+    lines.push("## Snapshot");
+    lines.push("");
     lines.push(`**Type:** Threat Actor (MISP-only — not in MITRE ATT&CK)  `);
     lines.push(`**MISP UUID:** \`${cluster.uuid}\`  `);
     if (synonyms.length) lines.push(`**Aliases:** ${synonyms.map(a => `\`${a}\``).join(", ")}  `);
-    if (meta.country) lines.push(`**Country:** ${meta.country}  `);
-    if (meta["cfr-suspected-state-sponsor"]) lines.push(`**Suspected sponsor:** ${meta["cfr-suspected-state-sponsor"]}  `);
-    if (meta["cfr-target-category"]?.length) lines.push(`**Target sectors:** ${(meta["cfr-target-category"] || []).join(", ")}  `);
-    if (meta["cfr-suspected-victims"]?.length) lines.push(`**Suspected victims:** ${(meta["cfr-suspected-victims"] || []).join(", ")}  `);
-    if (meta["targeted-sector"]?.length) lines.push(`**Targeted sectors:** ${(meta["targeted-sector"] || []).join(", ")}  `);
-    if (meta["motive"]?.length) lines.push(`**Motive:** ${[].concat(meta["motive"]).join(", ")}  `);
+    for (const m of mispMetaSnapshot(meta)) lines.push(`**${m.k}:** ${m.v}  `);
     lines.push("");
+
     lines.push("## Overview");
     lines.push("");
     lines.push(cleanDesc(cluster.description) || "_No description provided in MISP._");
     lines.push("");
 
     if ((meta.refs || []).length) {
-      lines.push("## References");
+      lines.push(`## References & IOC Sources (${meta.refs.length})`);
+      lines.push("");
+      lines.push("This actor isn't tracked by MITRE ATT&CK, so no TTPs are available. The references below are the primary sources MISP cites — **start here for IOCs and TTP descriptions**:");
       lines.push("");
       for (const ref of meta.refs) lines.push(`- ${ref}`);
       lines.push("");
@@ -376,21 +542,20 @@
     lines.push("");
     lines.push(
       `_Auto-generated from the MISP threat-actor galaxy on ` +
-      `${new Date().toISOString().slice(0, 10)}. This actor isn't tracked by MITRE ATT&CK, ` +
-      `so no TTPs are available — investigate via the references above._`
+      `${new Date().toISOString().slice(0, 10)}._`
     );
     lines.push("");
     return lines.join("\n");
   }
 
-  function buildProfile(stix, resolution, version) {
-    if (resolution.kind === "mitre-group")    return buildGroupProfile(stix, resolution.actor, version, resolution.viaMISP);
-    if (resolution.kind === "mitre-campaign") return buildCampaignProfile(stix, resolution.actor, version);
+  function buildProfile(stix, misp, resolution, version) {
+    if (resolution.kind === "mitre-group")    return buildGroupProfile(stix, misp, resolution.actor, version, resolution.viaMISP);
+    if (resolution.kind === "mitre-campaign") return buildCampaignProfile(stix, misp, resolution.actor, version);
     if (resolution.kind === "misp-only")      return buildMISPOnlyProfile(resolution.cluster);
     throw new Error(`Unknown resolution kind: ${resolution.kind}`);
   }
 
-  function resolutionSummary(stix, resolution, profileUrl) {
+  function resolutionSummary(stix, misp, resolution, profileUrl) {
     const lines = [];
     if (resolution.kind === "mitre-group") {
       const a = resolution.actor;
@@ -398,23 +563,41 @@
       const mid = ext?.external_id;
       const aliases = (a.aliases || []).filter(x => x !== a.name);
       const { ttps, tools, tactics } = gatherUses(stix, a);
+      const campaigns = attributedCampaigns(stix, a);
+      const recent = campaigns[0];
+      const mispEntry = resolution.viaMISP || findMISPByMitreId(misp, mid, "groups");
+      const meta = mispEntry?.meta || {};
+
       lines.push(`### ${a.name}${mid ? ` (\`${mid}\`)` : ""} _(MITRE Group${resolution.viaMISP ? ` via MISP \`${resolution.viaMISP.value}\`` : ""})_`);
       lines.push("");
       if (aliases.length) {
         const shown = aliases.slice(0, 8).map(x => `\`${x}\``).join(", ");
         const extra = aliases.length > 8 ? ` _+${aliases.length - 8} more_` : "";
         lines.push(`**Aliases:** ${shown}${extra}`);
-        lines.push("");
       }
+      const facts = [];
+      if (meta.country) facts.push(`**Country** \`${meta.country}\``);
+      if (meta["cfr-suspected-state-sponsor"]) facts.push(`**Sponsor** ${meta["cfr-suspected-state-sponsor"]}`);
+      const sectors = [].concat(meta["targeted-sector"] || meta["cfr-target-category"] || []);
+      if (sectors.length) facts.push(`**Sectors** ${sectors.slice(0, 4).join(", ")}${sectors.length > 4 ? ", …" : ""}`);
+      if (facts.length) lines.push(facts.join(" \u00B7 "));
+      if (recent) {
+        const rExt = (recent.external_references || []).find(r => r.source_name === "mitre-attack");
+        const date = recent.last_seen ? recent.last_seen.slice(0, 7) :
+                     recent.first_seen ? `started ${recent.first_seen.slice(0, 7)}` : "";
+        lines.push(`**Most recent campaign:** [${recent.name}](${rExt?.url || "#"}) (\`${rExt?.external_id || "—"}\`${date ? `, ${date}` : ""})`);
+      }
+      lines.push("");
       const desc = cleanDesc(a.description).split("\n\n")[0];
       if (desc) {
-        const trunc = desc.length > 600 ? desc.slice(0, 600).trimEnd() + "…" : desc;
+        const trunc = desc.length > 500 ? desc.slice(0, 500).trimEnd() + "…" : desc;
         lines.push(trunc);
         lines.push("");
       }
       lines.push(
         `**${ttps.length} TTPs** across **${tactics.size} tactics** \u00B7 ` +
-        `**${tools.length} tools/malware**`
+        `**${tools.length} tools/malware** \u00B7 ` +
+        `**${campaigns.length} campaigns**`
       );
     } else if (resolution.kind === "mitre-campaign") {
       const c = resolution.actor;
@@ -426,14 +609,18 @@
       lines.push(`### ${c.name}${cid ? ` (\`${cid}\`)` : ""} _(MITRE Campaign)_`);
       lines.push("");
       if (aliases.length) lines.push(`**Aliases:** ${aliases.slice(0, 6).map(x => `\`${x}\``).join(", ")}`);
+      const datesParts = [];
+      if (c.first_seen) datesParts.push(`first seen ${c.first_seen.slice(0, 10)}`);
+      if (c.last_seen)  datesParts.push(`last seen ${c.last_seen.slice(0, 10)}`);
+      if (datesParts.length) lines.push(`**Active:** ${datesParts.join(" \u00B7 ")}`);
       if (a) {
         const aExt = (a.external_references || []).find(r => r.source_name === "mitre-attack");
-        lines.push(`**Attributed to:** \`${aExt?.external_id || a.name}\` ${a.name}`);
+        lines.push(`**Attributed to:** [${a.name}](${aExt?.url || "#"}) (\`${aExt?.external_id || "—"}\`)`);
       }
       lines.push("");
       const desc = cleanDesc(c.description).split("\n\n")[0];
       if (desc) {
-        const trunc = desc.length > 600 ? desc.slice(0, 600).trimEnd() + "…" : desc;
+        const trunc = desc.length > 500 ? desc.slice(0, 500).trimEnd() + "…" : desc;
         lines.push(trunc);
         lines.push("");
       }
@@ -448,19 +635,21 @@
         const shown = synonyms.slice(0, 8).map(x => `\`${x}\``).join(", ");
         const extra = synonyms.length > 8 ? ` _+${synonyms.length - 8} more_` : "";
         lines.push(`**Aliases:** ${shown}${extra}`);
-        lines.push("");
       }
       const facts = [];
-      if (meta.country) facts.push(`**Country:** ${meta.country}`);
-      if (meta["cfr-suspected-state-sponsor"]) facts.push(`**Sponsor:** ${meta["cfr-suspected-state-sponsor"]}`);
-      if (facts.length) { lines.push(facts.join(" \u00B7 ")); lines.push(""); }
+      if (meta.country) facts.push(`**Country** \`${meta.country}\``);
+      if (meta["cfr-suspected-state-sponsor"]) facts.push(`**Sponsor** ${meta["cfr-suspected-state-sponsor"]}`);
+      const sectors = [].concat(meta["targeted-sector"] || meta["cfr-target-category"] || []);
+      if (sectors.length) facts.push(`**Sectors** ${sectors.slice(0, 4).join(", ")}${sectors.length > 4 ? ", …" : ""}`);
+      if (facts.length) lines.push(facts.join(" \u00B7 "));
+      lines.push("");
       const desc = cleanDesc(c.description);
       if (desc) {
-        const trunc = desc.length > 600 ? desc.slice(0, 600).trimEnd() + "…" : desc;
+        const trunc = desc.length > 500 ? desc.slice(0, 500).trimEnd() + "…" : desc;
         lines.push(trunc);
         lines.push("");
       }
-      lines.push(`_No TTP data — actor isn't tracked by MITRE ATT&CK._`);
+      lines.push(`_No TTP data — actor isn't tracked by MITRE ATT&CK. See the profile's References for IOC sources._`);
     }
     if (profileUrl) {
       lines.push("");
@@ -469,7 +658,7 @@
     return lines.join("\n");
   }
 
-  function buildComment(stix, matches, unmatched, profileLinks, canonicalIds, version, repoSlug) {
+  function buildComment(stix, misp, matches, unmatched, profileLinks, canonicalIds, version, repoSlug) {
     const idTag = canonicalIds.length ? ` ids=${canonicalIds.join(",")}` : "";
     const marker = `<!-- threat-actor-enrichment:v2${idTag} -->`;
     const out = [marker];
@@ -502,7 +691,7 @@
     for (let i = 0; i < matches.length; i++) {
       const link = profileLinks.find(p => p.canonicalId === canonicalIds[i]);
       const url = link ? `https://github.com/${repoSlug}/blob/main/${link.filepath}` : null;
-      out.push(resolutionSummary(stix, matches[i], url));
+      out.push(resolutionSummary(stix, misp, matches[i], url));
       out.push("");
     }
 
@@ -618,14 +807,14 @@
     const m = matches[i];
     const filename = profileFilenameFor(m);
     const filepath = `${PROFILE_DIR}/${filename}`;
-    const content = buildProfile(stix, m, version);
+    const content = buildProfile(stix, misp, m, version);
     const niceName = m.kind === "misp-only" ? m.cluster.value : m.actor.name;
     await commitProfile(octokit, owner, repo, filepath, content,
       `${m.kind === "mitre-campaign" ? "campaign" : "threat actor"} ${niceName} from ATT&CK v${version}`);
     profileLinks.push({ canonicalId: canonicalIds[i], filepath });
   }
 
-  const body = buildComment(stix, matches, unmatched, profileLinks, canonicalIds, version, `${owner}/${repo}`);
+  const body = buildComment(stix, misp, matches, unmatched, profileLinks, canonicalIds, version, `${owner}/${repo}`);
 
   if (existingComment) {
     await octokit.issues.updateComment({ owner, repo, comment_id: existingComment.id, body });
