@@ -107,7 +107,7 @@ body.light .report-btn{color:#fff}
 </head><body>
 <header>
   <div class="brand">Threat Hunt <span class="accent">Metrics</span></div>
-  <span class="meta">Generated 2026-04-27 14:37 UTC</span>
+  <span class="meta">Generated 2026-04-27 14:40 UTC</span>
   <button id="reportBtn" class="report-btn" title="Download a Markdown report covering every chart">Generate Report &darr;</button>
   <a class="nav-link" href="./index.html">Matrix &rarr;</a>
   <button id="modeToggle" title="Toggle light/dark">☼</button>
@@ -117,17 +117,17 @@ body.light .report-btn{color:#fff}
 <section class="kpis">
   <div class="kpi orange">
     <div class="kpi-label">Total Hunts</div>
-    <div class="kpi-value">3</div>
+    <div class="kpi-value">4</div>
     <div class="kpi-sub">last hunt 2026-04-27</div>
   </div>
   <div class="kpi green">
     <div class="kpi-label">Techniques Covered</div>
-    <div class="kpi-value">3</div>
+    <div class="kpi-value">4</div>
     <div class="kpi-sub">of 356 mapped techniques</div>
   </div>
   <div class="kpi blue">
     <div class="kpi-label">Threat Actors Tracked</div>
-    <div class="kpi-value">3</div>
+    <div class="kpi-value">4</div>
     <div class="kpi-sub">unique, referenced in hunts</div>
   </div>
   <div class="kpi red">
@@ -137,23 +137,23 @@ body.light .report-btn{color:#fff}
   </div>
   <div class="kpi orange">
     <div class="kpi-label">Avg Hunt Duration</div>
-    <div class="kpi-value">4.3 d</div>
-    <div class="kpi-sub">median 5d · n=3/3</div>
+    <div class="kpi-value">3.8 d</div>
+    <div class="kpi-sub">median 3.5d · n=4/4</div>
   </div>
   <div class="kpi blue">
     <div class="kpi-label">Throughput &middot; 30 days</div>
-    <div class="kpi-value">3</div>
+    <div class="kpi-value">4</div>
     <div class="kpi-sub"><span class="kpi-trend trend-flat">first 30-day window</span></div>
   </div>
   <div class="kpi blue">
     <div class="kpi-label">Throughput &middot; 90 days</div>
-    <div class="kpi-value">3</div>
+    <div class="kpi-value">4</div>
     <div class="kpi-sub">hunts completed in last 90 days</div>
   </div>
   <div class="kpi green">
     <div class="kpi-label">New Coverage &middot; this month</div>
-    <div class="kpi-value">+3</div>
-    <div class="kpi-sub"><span class="kpi-trend trend-up">+3 vs prior month</span></div>
+    <div class="kpi-value">+4</div>
+    <div class="kpi-sub"><span class="kpi-trend trend-up">+4 vs prior month</span></div>
   </div>
 </section>
 
@@ -270,7 +270,7 @@ body.light .report-btn{color:#fff}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
-const DATA = {"totals": {"hunts": 3, "techniques": 3, "actors": 3, "coverage": 1, "universe": 356, "last_hunt": "2026-04-27", "tactic_gap_count": 11}, "duration": {"avg_days": 4.3, "median_days": 5, "measured": 3, "total": 3}, "throughput": {"last_30": 3, "last_90": 3, "prev_30": 0}, "growth": {"labels": ["2026-04"], "new_techniques": [3], "this_month": 3, "prev_month": 0}, "timeline": {"labels": ["2026-04"], "monthly": [3], "cumulative": [3]}, "tactics": {"labels": ["Initial Access", "Execution", "Privilege Escalation"], "hunts": [1, 1, 1], "covered": [1, 1, 1]}, "outcomes": {"labels": ["Completed", "Inconclusive"], "values": [2, 1]}, "actors": {"labels": ["APT29", "UNC5221", "Lazarus Group"], "values": [1, 1, 1]}, "severity": {"labels": ["High", "Medium"], "values": [2, 1]}, "confidence": {"labels": ["High"], "values": [3]}, "techniques": {"labels": ["T1059", "T1078", "T1566"], "values": [1, 1, 1]}, "platforms": {"labels": ["Splunk"], "values": [3]}, "gaps": {"tactics": ["Reconnaissance", "Resource Development", "Persistence", "Defense Evasion", "Credential Access", "Discovery", "Lateral Movement", "Collection", "Command And Control", "Exfiltration", "Impact"], "total_tactics": 14}};
+const DATA = {"totals": {"hunts": 4, "techniques": 4, "actors": 4, "coverage": 1, "universe": 356, "last_hunt": "2026-04-27", "tactic_gap_count": 10}, "duration": {"avg_days": 3.8, "median_days": 3.5, "measured": 4, "total": 4}, "throughput": {"last_30": 4, "last_90": 4, "prev_30": 0}, "growth": {"labels": ["2026-04"], "new_techniques": [4], "this_month": 4, "prev_month": 0}, "timeline": {"labels": ["2026-04"], "monthly": [4], "cumulative": [4]}, "tactics": {"labels": ["Initial Access", "Execution", "Privilege Escalation", "Credential Access"], "hunts": [1, 1, 1, 1], "covered": [1, 1, 1, 1]}, "outcomes": {"labels": ["False Positive", "Completed", "Inconclusive"], "values": [1, 2, 1]}, "actors": {"labels": ["FIN7", "APT29", "UNC5221", "Lazarus Group"], "values": [1, 1, 1, 1]}, "severity": {"labels": ["Critical", "High", "Medium"], "values": [1, 2, 1]}, "confidence": {"labels": ["High"], "values": [4]}, "techniques": {"labels": ["T1003", "T1059", "T1078", "T1566"], "values": [1, 1, 1, 1]}, "platforms": {"labels": ["Splunk"], "values": [4]}, "gaps": {"tactics": ["Reconnaissance", "Resource Development", "Persistence", "Defense Evasion", "Discovery", "Lateral Movement", "Collection", "Command And Control", "Exfiltration", "Impact"], "total_tactics": 14}};
 
 function cssVar(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
