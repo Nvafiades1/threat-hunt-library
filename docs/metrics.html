@@ -107,7 +107,7 @@ body.light .report-btn{color:#fff}
 </head><body>
 <header>
   <div class="brand">Threat Hunt <span class="accent">Metrics</span></div>
-  <span class="meta">Generated 2026-04-27 14:40 UTC</span>
+  <span class="meta">Generated 2026-04-27 14:42 UTC</span>
   <button id="reportBtn" class="report-btn" title="Download a Markdown report covering every chart">Generate Report &darr;</button>
   <a class="nav-link" href="./index.html">Matrix &rarr;</a>
   <button id="modeToggle" title="Toggle light/dark">☼</button>
@@ -117,49 +117,54 @@ body.light .report-btn{color:#fff}
 <section class="kpis">
   <div class="kpi orange">
     <div class="kpi-label">Total Hunts</div>
-    <div class="kpi-value">4</div>
-    <div class="kpi-sub">last hunt 2026-04-27</div>
+    <div class="kpi-value">0</div>
+    <div class="kpi-sub">awaiting first hunt</div>
   </div>
   <div class="kpi green">
     <div class="kpi-label">Techniques Covered</div>
-    <div class="kpi-value">4</div>
+    <div class="kpi-value">0</div>
     <div class="kpi-sub">of 356 mapped techniques</div>
   </div>
   <div class="kpi blue">
     <div class="kpi-label">Threat Actors Tracked</div>
-    <div class="kpi-value">4</div>
-    <div class="kpi-sub">unique, referenced in hunts</div>
+    <div class="kpi-value">0</div>
+    <div class="kpi-sub">none referenced yet</div>
   </div>
   <div class="kpi red">
     <div class="kpi-label">Coverage</div>
-    <div class="kpi-value">1%</div>
+    <div class="kpi-value">0%</div>
     <div class="kpi-sub">of MITRE ATT&amp;CK Enterprise</div>
   </div>
   <div class="kpi orange">
     <div class="kpi-label">Avg Hunt Duration</div>
-    <div class="kpi-value">3.8 d</div>
-    <div class="kpi-sub">median 3.5d · n=4/4</div>
+    <div class="kpi-value">&mdash;</div>
+    <div class="kpi-sub">needs Created field on hunts</div>
   </div>
   <div class="kpi blue">
     <div class="kpi-label">Throughput &middot; 30 days</div>
-    <div class="kpi-value">4</div>
-    <div class="kpi-sub"><span class="kpi-trend trend-flat">first 30-day window</span></div>
+    <div class="kpi-value">0</div>
+    <div class="kpi-sub"><span class="kpi-trend trend-flat">no recent activity</span></div>
   </div>
   <div class="kpi blue">
     <div class="kpi-label">Throughput &middot; 90 days</div>
-    <div class="kpi-value">4</div>
-    <div class="kpi-sub">hunts completed in last 90 days</div>
+    <div class="kpi-value">0</div>
+    <div class="kpi-sub">no completions in last 90 days</div>
   </div>
   <div class="kpi green">
     <div class="kpi-label">New Coverage &middot; this month</div>
-    <div class="kpi-value">+4</div>
-    <div class="kpi-sub"><span class="kpi-trend trend-up">+4 vs prior month</span></div>
+    <div class="kpi-value">+0</div>
+    <div class="kpi-sub"><span class="kpi-trend trend-flat">awaiting first additions</span></div>
   </div>
 </section>
 
 
+<div class="empty" style="margin-top:2rem">
+  <div class="empty-title">No hunts archived yet.</div>
+  <div>Open a Threat Hunt issue, move it to <b>Completed</b> on the project board, and this dashboard will populate automatically.</div>
+</div>
 
-<div id="charts" style="">
+
+<div id="charts" style="display:none">
 <h2>Activity</h2>
 <div class="grid">
   <div class="card span-8" data-chart="timeline">
@@ -270,7 +275,7 @@ body.light .report-btn{color:#fff}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
-const DATA = {"totals": {"hunts": 4, "techniques": 4, "actors": 4, "coverage": 1, "universe": 356, "last_hunt": "2026-04-27", "tactic_gap_count": 10}, "duration": {"avg_days": 3.8, "median_days": 3.5, "measured": 4, "total": 4}, "throughput": {"last_30": 4, "last_90": 4, "prev_30": 0}, "growth": {"labels": ["2026-04"], "new_techniques": [4], "this_month": 4, "prev_month": 0}, "timeline": {"labels": ["2026-04"], "monthly": [4], "cumulative": [4]}, "tactics": {"labels": ["Initial Access", "Execution", "Privilege Escalation", "Credential Access"], "hunts": [1, 1, 1, 1], "covered": [1, 1, 1, 1]}, "outcomes": {"labels": ["False Positive", "Completed", "Inconclusive"], "values": [1, 2, 1]}, "actors": {"labels": ["FIN7", "APT29", "UNC5221", "Lazarus Group"], "values": [1, 1, 1, 1]}, "severity": {"labels": ["Critical", "High", "Medium"], "values": [1, 2, 1]}, "confidence": {"labels": ["High"], "values": [4]}, "techniques": {"labels": ["T1003", "T1059", "T1078", "T1566"], "values": [1, 1, 1, 1]}, "platforms": {"labels": ["Splunk"], "values": [4]}, "gaps": {"tactics": ["Reconnaissance", "Resource Development", "Persistence", "Defense Evasion", "Discovery", "Lateral Movement", "Collection", "Command And Control", "Exfiltration", "Impact"], "total_tactics": 14}};
+const DATA = {"totals": {"hunts": 0, "techniques": 0, "actors": 0, "coverage": 0, "universe": 356, "last_hunt": null, "tactic_gap_count": 14}, "duration": {"avg_days": null, "median_days": null, "measured": 0, "total": 0}, "throughput": {"last_30": 0, "last_90": 0, "prev_30": 0}, "growth": {"labels": [], "new_techniques": [], "this_month": 0, "prev_month": 0}, "timeline": {"labels": [], "monthly": [], "cumulative": []}, "tactics": {"labels": [], "hunts": [], "covered": []}, "outcomes": {"labels": [], "values": []}, "actors": {"labels": [], "values": []}, "severity": {"labels": [], "values": []}, "confidence": {"labels": [], "values": []}, "techniques": {"labels": [], "values": []}, "platforms": {"labels": [], "values": []}, "gaps": {"tactics": ["Reconnaissance", "Resource Development", "Initial Access", "Execution", "Persistence", "Privilege Escalation", "Defense Evasion", "Credential Access", "Discovery", "Lateral Movement", "Collection", "Command And Control", "Exfiltration", "Impact"], "total_tactics": 14}};
 
 function cssVar(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
