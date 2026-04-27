@@ -477,6 +477,12 @@ h2{{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:upperca
 }}
 .report-btn:hover{{filter:brightness(1.1)}}
 body.light .report-btn{{color:#fff}}
+.report-btn-secondary{{
+  font-size:.78rem;background:transparent;color:var(--text-dim);
+  border:1px solid var(--border);border-radius:4px;
+  padding:.4rem .65rem;cursor:pointer;font-family:inherit;
+}}
+.report-btn-secondary:hover{{color:var(--accent);border-color:var(--accent)}}
 
 /* ── tactic-gaps panel ───────────────────────────────────────────────── */
 .gaps-list{{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem}}
@@ -510,7 +516,8 @@ body.light .report-btn{{color:#fff}}
 <header>
   <div class="brand">Threat Hunt <span class="accent">Metrics</span></div>
   <span class="meta">Generated {html.escape(generated_at)}</span>
-  <button id="reportBtn" class="report-btn" title="Download a Markdown report covering every chart">Generate Report &darr;</button>
+  <button id="reportWordBtn" class="report-btn" title="Download a Word document of every chart and KPI — opens directly in Microsoft Word">Generate Report (Word) &darr;</button>
+  <button id="reportMdBtn" class="report-btn-secondary" title="Download the same report as plain Markdown">MD</button>
   <a class="nav-link" href="./index.html">Matrix &rarr;</a>
   <button id="modeToggle" title="Toggle light/dark">\u263C</button>
 </header>
@@ -1071,14 +1078,41 @@ function describeMix(key, label) {{
   return `${{total}} hunts rated for ${{label}}; most common: ${{top}} (${{topVal}}, ${{pct(topVal, total)}}).`;
 }}
 
-function generateReport() {{
-  const today = new Date().toISOString().slice(0, 10);
+function buildReportSections() {{
   const t = DATA.totals;
   const dur = DATA.duration;
   const thru = DATA.throughput;
   const grw = DATA.growth;
+  const today = new Date().toISOString().slice(0, 10);
+  const snapshot = [
+    ['Total Hunts',                    String(t.hunts)],
+    ['Techniques Covered',             `${{t.techniques}} of ${{t.universe}} (${{t.coverage}}%)`],
+    ['Threat Actors Tracked',          String(t.actors)],
+    ['Avg Hunt Duration',              dur.avg_days != null ? `${{dur.avg_days}} days (median ${{dur.median_days}})` : '\u2014'],
+    ['Throughput \u00B7 last 30 days', `${{thru.last_30}} hunts (${{pct(thru.last_30, thru.prev_30)}} vs prior 30)`],
+    ['Throughput \u00B7 last 90 days', `${{thru.last_90}} hunts`],
+    ['New Coverage \u00B7 this month', `+${{grw.this_month}} techniques (vs +${{grw.prev_month}} prior)`],
+    ['Tactic Gaps',                    `${{DATA.gaps.tactics.length}} of ${{DATA.gaps.total_tactics}} tactics uncovered`],
+  ];
+  const charts = [
+    ['Hunts Over Time',     'timeline'],
+    ['Coverage Growth',     'growth'],
+    ['Outcome Mix',         'outcomes'],
+    ['Severity',            'severity'],
+    ['Confidence',          'confidence'],
+    ['Coverage by Tactic',  'tactics'],
+    ['Tactic Gaps',         'gaps'],
+    ['Top Threat Actors',   'actors'],
+    ['Top Techniques',      'techniques'],
+    ['Hunt Platforms',      'platforms'],
+  ];
+  return {{ today, snapshot, charts }};
+}}
+
+function generateReportMarkdown() {{
+  const {{ today, snapshot, charts }} = buildReportSections();
   const lines = [
-    `# Threat Hunt Library — Monthly Report`,
+    `# Threat Hunt Library \u2014 Monthly Report`,
     ``,
     `_Generated ${{today}}_`,
     ``,
@@ -1086,29 +1120,10 @@ function generateReport() {{
     ``,
     `| KPI | Value |`,
     `|---|---|`,
-    `| Total Hunts | ${{t.hunts}} |`,
-    `| Techniques Covered | ${{t.techniques}} of ${{t.universe}} (${{t.coverage}}%) |`,
-    `| Threat Actors Tracked | ${{t.actors}} |`,
-    `| Avg Hunt Duration | ${{dur.avg_days != null ? dur.avg_days + ' days (median ' + dur.median_days + ')' : '—'}} |`,
-    `| Throughput &middot; last 30 days | ${{thru.last_30}} hunts (${{pct(thru.last_30, thru.prev_30)}} vs prior 30) |`,
-    `| Throughput &middot; last 90 days | ${{thru.last_90}} hunts |`,
-    `| New Coverage &middot; this month | +${{grw.this_month}} techniques (vs +${{grw.prev_month}} prior) |`,
-    `| Tactic Gaps | ${{DATA.gaps.tactics.length}} of ${{DATA.gaps.total_tactics}} tactics uncovered |`,
+    ...snapshot.map(([k, v]) => `| ${{k}} | ${{v}} |`),
     ``,
   ];
-  const sections = [
-    ['Hunts Over Time', 'timeline'],
-    ['Coverage Growth', 'growth'],
-    ['Outcome Mix', 'outcomes'],
-    ['Severity', 'severity'],
-    ['Confidence', 'confidence'],
-    ['Coverage by Tactic', 'tactics'],
-    ['Tactic Gaps', 'gaps'],
-    ['Top Threat Actors', 'actors'],
-    ['Top Techniques', 'techniques'],
-    ['Hunt Platforms', 'platforms'],
-  ];
-  for (const [title, id] of sections) {{
+  for (const [title, id] of charts) {{
     lines.push(`## ${{title}}`);
     lines.push('');
     lines.push(chartMD(id));
@@ -1121,11 +1136,87 @@ function generateReport() {{
   }}
   lines.push('---');
   lines.push('');
-  lines.push(`_Source: Threat Hunt Library &middot; https://github.com/{OWNER}/{REPO}_`);
+  lines.push(`_Source: Threat Hunt Library \u00B7 https://github.com/{OWNER}/{REPO}_`);
   downloadFile(lines.join('\\n'), `threat-hunt-report-${{today}}.md`, 'text/markdown');
 }}
 
-document.getElementById('reportBtn')?.addEventListener('click', generateReport);
+function escHtml(s) {{
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}}
+
+function chartHTMLTable(id) {{
+  const ex = CHART_EXPORTERS[id]?.(); if (!ex) return '';
+  const head = `<tr>${{ex.headers.map(h => `<th>${{escHtml(h)}}</th>`).join('')}}</tr>`;
+  const body = ex.rows.map(r =>
+    `<tr>${{r.map(c => `<td>${{escHtml(c)}}</td>`).join('')}}</tr>`
+  ).join('');
+  return `<table>${{head}}${{body}}</table>`;
+}}
+
+function generateReportWord() {{
+  const {{ today, snapshot, charts }} = buildReportSections();
+  let body = '';
+  body += `<h1>Threat Hunt Library &mdash; Monthly Report</h1>`;
+  body += `<p class="meta">Generated ${{escHtml(today)}}</p>`;
+  body += `<h2>Snapshot</h2>`;
+  body += `<table><tr><th>KPI</th><th>Value</th></tr>`;
+  for (const [k, v] of snapshot) {{
+    body += `<tr><td><b>${{escHtml(k)}}</b></td><td>${{escHtml(v)}}</td></tr>`;
+  }}
+  body += `</table>`;
+  for (const [title, id] of charts) {{
+    body += `<h2>${{escHtml(title)}}</h2>`;
+    body += chartHTMLTable(id);
+    const narrative = NARRATIVES[id] && NARRATIVES[id]();
+    if (narrative) {{
+      body += `<p><b>Insight.</b> ${{escHtml(narrative)}}</p>`;
+    }}
+  }}
+  body += `<p class="footer"><i>Source: Threat Hunt Library &middot; https://github.com/{OWNER}/{REPO}</i></p>`;
+
+  const html =
+`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>Threat Hunt Library Monthly Report</title>
+<!--[if gte mso 9]>
+<xml>
+<w:WordDocument>
+<w:View>Print</w:View>
+<w:Zoom>100</w:Zoom>
+<w:DoNotOptimizeForBrowser/>
+</w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+@page Section1 {{ size: 8.5in 11in; margin: 0.75in; }}
+div.Section1 {{ page: Section1; }}
+body {{ font-family: Calibri, "Segoe UI", Arial, sans-serif; font-size: 11pt; color: #23394a; }}
+h1 {{ color: #23394a; border-bottom: 3px solid #e87722; padding-bottom: 6px; font-size: 22pt; margin-bottom: 4pt; }}
+h2 {{ color: #23394a; margin-top: 22pt; margin-bottom: 6pt; font-size: 14pt; border-bottom: 1px solid #ccc; padding-bottom: 3px; }}
+p {{ margin: 6pt 0; }}
+p.meta {{ color: #5b6a7a; font-style: italic; margin-top: 0; }}
+p.footer {{ color: #5b6a7a; font-size: 9pt; margin-top: 24pt; border-top: 1px solid #ccc; padding-top: 6pt; }}
+table {{ border-collapse: collapse; margin: 8pt 0 14pt; width: 100%; }}
+th {{ background-color: #23394a; color: #ffffff; font-weight: bold; padding: 5pt 8pt; text-align: left; border: 1px solid #1b2736; }}
+td {{ padding: 5pt 8pt; border: 1px solid #ccc; vertical-align: top; }}
+tr:nth-child(even) td {{ background-color: #f4f6f8; }}
+b {{ font-weight: 600; }}
+</style>
+</head>
+<body>
+<div class="Section1">
+${{body}}
+</div>
+</body>
+</html>`;
+  downloadFile(html, `threat-hunt-report-${{today}}.doc`, 'application/msword');
+}}
+
+document.getElementById('reportWordBtn')?.addEventListener('click', generateReportWord);
+document.getElementById('reportMdBtn')?.addEventListener('click', generateReportMarkdown);
 
 renderAll();
 </script>
