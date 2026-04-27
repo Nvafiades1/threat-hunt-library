@@ -45,4 +45,9 @@ jobs:
             exit 0
           fi
           git commit -m "Auto-build CTI hub [skip ci]"
-          git push
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            sleep 3
+          done
+          echo "Push failed after retries" >&2
+          exit 1
