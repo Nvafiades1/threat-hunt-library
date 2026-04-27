@@ -94,6 +94,9 @@ threat-hunt-library/
 │   │   └── T1003-*.md            ← individual hunts (one per issue)
 │   ├── T1059/                    ← Command and Scripting Interpreter
 │   └── ... (836 technique folders, full enterprise coverage)
+├── threat-actor-profiles/
+│   ├── G0016-apt29.md            ← MITRE ATT&CK group profiles
+│   └── ...                       ← auto-generated when an issue names an actor
 ├── mitre_ttp_mapping.json        ← technique → tactic mapping
 ├── tools/
 │   ├── build_matrix.py           ← generates docs/index.html
@@ -117,6 +120,7 @@ Four workflows keep the library self-maintaining:
 | **Update MITRE Folders** | Weekly cron + pushes | Pulls the latest ATT&CK data and creates/updates a folder + README per technique. |
 | **Save New Issue to Folder** | Issue opened | Stages the new issue as `test/issue-<N>.md` for audit trail. |
 | **Update Threat Hunt** | Issue closed | Reads the MITRE T# from the issue, writes the completed hunt into `techniques/T####/`. |
+| **Enrich Threat Actor** | Issue opened / edited | Looks up the named actor in MITRE ATT&CK STIX, commits a full profile to `threat-actor-profiles/`, and posts a summary comment with TTP counts and a link to the profile. |
 | **Build MITRE Matrix** | Push to main | Regenerates `docs/index.html` from the current `techniques/` tree; GitHub Pages redeploys automatically. |
 
 All workflows authenticate via the built-in `GITHUB_TOKEN` with explicit `permissions:` blocks &mdash; no personal access tokens to manage.
