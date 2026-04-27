@@ -185,10 +185,10 @@ flowchart LR
 
 | Output | Content |
 |---|---|
-| `threat-actor-profiles/G####-{slug}.md` | Full MITRE group profile: aliases, description, all tools/malware with MITRE links, all TTPs grouped by tactic. |
-| `threat-actor-profiles/C####-{slug}.md` | Full MITRE campaign profile: aliases, attribution, first/last seen, tools, TTPs. |
-| `threat-actor-profiles/misp-{slug}-{name}.md` | MISP-only fallback profile: aliases, country, sponsor, target sectors, references. (No TTPs &mdash; MITRE doesn't track this actor.) |
-| Comment on issue | One section per match with aliases, description excerpt, headline counts (`66 TTPs · 12 tactics · 49 tools`), and a link to the full profile. Multiple comma-separated actors get one comment with multiple sections. |
+| `threat-actor-profiles/G####-{slug}.md` | Full MITRE group profile: snapshot block (country, suspected sponsor, target sectors, suspected victims, most-recent campaign, coverage stats), overview, **Attributed Campaigns table** with first/last seen dates, tools/malware with platforms, **per-TTP procedure descriptions** (the "how" — quoted from MITRE for hunters to use as query starting points), **Recommended Mitigations** as a hardening checklist, and a **References & IOC Sources** section listing every primary research report MITRE cites (Volexity, Mandiant, FireEye, CrowdStrike, Microsoft, NCSC, etc.). |
+| `threat-actor-profiles/C####-{slug}.md` | Full MITRE campaign profile: snapshot, attributed-to actor link, dates, tools, per-TTP procedure descriptions, mitigations, references. |
+| `threat-actor-profiles/misp-{slug}.md` | MISP-only fallback profile: aliases, country, sponsor, target sectors, suspected victims, motive, MISP-cited IOC source URLs. (No TTPs &mdash; MITRE doesn't track this actor.) |
+| Comment on issue | One section per match with aliases, country/sponsor/sectors line, most-recent-campaign line, description excerpt, headline counts (`66 TTPs · 12 tactics · 49 tools · 2 campaigns`), and a link to the full profile. Multiple comma-separated actors get one comment with multiple sections. |
 
 ### Smart re-enrichment
 
