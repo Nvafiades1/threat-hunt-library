@@ -66,6 +66,13 @@ SOURCES = [
 
     # Government / advisories
     ("CISA Advisories",         "gov",    "rss",  "https://www.cisa.gov/cybersecurity-advisories/all.xml"),
+    ("CISA News",               "gov",    "rss",  "https://www.cisa.gov/news.xml"),
+    ("CISA Alerts (US-CERT)",   "gov",    "rss",  "https://www.cisa.gov/uscert/ncas/alerts.xml"),
+    ("CISA Current Activity",   "gov",    "rss",  "https://www.cisa.gov/uscert/ncas/current-activity.xml"),
+    ("CISA Analysis Reports",   "gov",    "rss",  "https://www.cisa.gov/uscert/ncas/analysis-reports.xml"),
+    ("CISA ICS Advisories",     "gov",    "rss",  "https://www.cisa.gov/uscert/ics/advisories/advisories.xml"),
+    ("MS-ISAC Advisories",      "gov",    "rss",  "https://www.cisecurity.org/feed/advisories"),
+    ("Health-ISAC",             "gov",    "rss",  "https://h-isac.org/feed/"),
     ("NCSC-UK",                 "gov",    "rss",  "https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml"),
 
     # Vulnerabilities (JSON)
