@@ -2,7 +2,7 @@ name: Build CTI Hub
 
 on:
   schedule:
-    - cron: '15 * * * *'   # hourly at :15
+    - cron: '*/15 * * * *'   # every 15 minutes
   workflow_dispatch:
   push:
     branches: [ main ]
