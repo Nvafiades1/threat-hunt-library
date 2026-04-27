@@ -519,6 +519,7 @@ body.light .report-btn{{color:#fff}}
   <button id="reportWordBtn" class="report-btn" title="Download a Word document of every chart and KPI — opens directly in Microsoft Word">Generate Report (Word) &darr;</button>
   <button id="reportMdBtn" class="report-btn-secondary" title="Download the same report as plain Markdown">MD</button>
   <a class="nav-link" href="./index.html">Matrix &rarr;</a>
+  <a class="nav-link" href="./cti.html">CTI Hub &rarr;</a>
   <button id="modeToggle" title="Toggle light/dark">\u263C</button>
 </header>
 
