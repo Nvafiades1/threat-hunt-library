@@ -168,14 +168,14 @@
   }
 
   function profileFilenameFor(resolution) {
-    const cid = canonicalIdFor(resolution);
-    let name;
-    if (resolution.kind === "mitre-group" || resolution.kind === "mitre-campaign") {
-      name = resolution.actor.name;
-    } else {
-      name = resolution.cluster.value;
+    if (resolution.kind === "misp-only") {
+      return `misp-${slug(resolution.cluster.value)}.md`;
     }
-    return `${cid.replace(/[^A-Za-z0-9_-]/g, "-")}-${slug(name)}.md`;
+    const ext = (resolution.actor.external_references || [])
+      .find(r => r.source_name === "mitre-attack");
+    const id = ext?.external_id;
+    if (id) return `${id}-${slug(resolution.actor.name)}.md`;
+    return `${slug(resolution.actor.name)}.md`;
   }
 
   // ── relationship walking (MITRE) ───────────────────────────────────────
@@ -390,7 +390,7 @@
     throw new Error(`Unknown resolution kind: ${resolution.kind}`);
   }
 
-  function resolutionSummary(stix, resolution, profileLink) {
+  function resolutionSummary(stix, resolution, profileUrl) {
     const lines = [];
     if (resolution.kind === "mitre-group") {
       const a = resolution.actor;
@@ -462,14 +462,14 @@
       }
       lines.push(`_No TTP data — actor isn't tracked by MITRE ATT&CK._`);
     }
-    if (profileLink) {
+    if (profileUrl) {
       lines.push("");
-      lines.push(`📄 **[Full profile in repo →](../../blob/main/${profileLink})**`);
+      lines.push(`📄 **[Full profile in repo →](${profileUrl})**`);
     }
     return lines.join("\n");
   }
 
-  function buildComment(stix, matches, unmatched, profileLinks, canonicalIds, version) {
+  function buildComment(stix, matches, unmatched, profileLinks, canonicalIds, version, repoSlug) {
     const idTag = canonicalIds.length ? ` ids=${canonicalIds.join(",")}` : "";
     const marker = `<!-- threat-actor-enrichment:v2${idTag} -->`;
     const out = [marker];
@@ -501,7 +501,8 @@
     out.push("");
     for (let i = 0; i < matches.length; i++) {
       const link = profileLinks.find(p => p.canonicalId === canonicalIds[i]);
-      out.push(resolutionSummary(stix, matches[i], link?.filepath));
+      const url = link ? `https://github.com/${repoSlug}/blob/main/${link.filepath}` : null;
+      out.push(resolutionSummary(stix, matches[i], url));
       out.push("");
     }
 
@@ -624,7 +625,7 @@
     profileLinks.push({ canonicalId: canonicalIds[i], filepath });
   }
 
-  const body = buildComment(stix, matches, unmatched, profileLinks, canonicalIds, version);
+  const body = buildComment(stix, matches, unmatched, profileLinks, canonicalIds, version, `${owner}/${repo}`);
 
   if (existingComment) {
     await octokit.issues.updateComment({ owner, repo, comment_id: existingComment.id, body });
