@@ -8,8 +8,9 @@
 [![Built with GitHub Actions](https://img.shields.io/badge/automation-GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)](.github/workflows)
 [![Live Matrix](https://img.shields.io/badge/view-Live_Matrix-2fbf71?style=flat-square)](https://nvafiades1.github.io/threat-hunt-library/)
 [![Metrics](https://img.shields.io/badge/view-Metrics-3a9cd8?style=flat-square)](https://nvafiades1.github.io/threat-hunt-library/metrics.html)
+[![CTI Hub](https://img.shields.io/badge/view-CTI_Hub-a371f7?style=flat-square)](https://nvafiades1.github.io/threat-hunt-library/cti.html)
 
-**[View the Live Threat Hunt Matrix &rarr;](https://nvafiades1.github.io/threat-hunt-library/)** &middot; **[Executive Metrics Dashboard &rarr;](https://nvafiades1.github.io/threat-hunt-library/metrics.html)**
+**[Live Threat Hunt Matrix &rarr;](https://nvafiades1.github.io/threat-hunt-library/)** &middot; **[Executive Metrics Dashboard &rarr;](https://nvafiades1.github.io/threat-hunt-library/metrics.html)** &middot; **[CTI Hub &rarr;](https://nvafiades1.github.io/threat-hunt-library/cti.html)**
 
 </div>
 
@@ -91,7 +92,8 @@ threat-hunt-library/
 ├── README.md                     ← you are here
 ├── docs/
 │   ├── index.html                ← the live matrix (auto-generated)
-│   └── metrics.html              ← executive metrics dashboard (auto-generated)
+│   ├── metrics.html              ← executive metrics dashboard (auto-generated)
+│   └── cti.html                  ← CTI hub: aggregated open-source threat intel (auto-generated, hourly)
 ├── techniques/
 │   ├── T1003/                    ← OS Credential Dumping
 │   │   ├── README.md             ← MITRE description (auto-updated)
@@ -104,7 +106,9 @@ threat-hunt-library/
 ├── mitre_ttp_mapping.json        ← technique → tactic mapping
 ├── tools/
 │   ├── build_matrix.py           ← generates docs/index.html
-│   └── build_metrics.py          ← generates docs/metrics.html
+│   ├── build_metrics.py          ← generates docs/metrics.html
+│   ├── build_cti.py              ← generates docs/cti.html (open-source CTI aggregator)
+│   └── cti_state.json            ← rolling 30-day CTI item state (auto-maintained)
 └── .github/
     ├── ISSUE_TEMPLATE/           ← threat-hunt form template
     ├── scripts/
@@ -118,7 +122,7 @@ threat-hunt-library/
 
 ## Automation
 
-Five workflows keep the library self-maintaining:
+Six workflows keep the library self-maintaining:
 
 | Workflow | Trigger | What it does |
 |---|---|---|
@@ -127,6 +131,7 @@ Five workflows keep the library self-maintaining:
 | **Enrich Threat Actor** | Issue opened / edited | Looks up the named actor or campaign across **MITRE ATT&CK groups, MITRE ATT&CK campaigns, and the MISP threat-actor galaxy**. Commits a full profile to `threat-actor-profiles/` and posts (or updates in place) a summary comment with TTPs, tools, and a link to the profile. See [Threat Actor Enrichment](#threat-actor-enrichment) below. |
 | **Update Threat Hunt** | Issue closed | Reads the MITRE T# from the issue, writes the completed hunt into `techniques/T####/`. |
 | **Build MITRE Matrix** | Push to main &middot; after hunt close &middot; after MITRE sync | Regenerates `docs/index.html` and `docs/metrics.html` from the current `techniques/` tree; GitHub Pages redeploys automatically. |
+| **Build CTI Hub** | Hourly cron + manual | Fetches 20 open-source threat-intel feeds (RSS / JSON / CSV), normalizes them, merges into a rolling 30-day window, and rebuilds `docs/cti.html`. See [The CTI Hub](#the-cti-hub) below. |
 
 All workflows authenticate via the built-in `GITHUB_TOKEN` with explicit `permissions:` blocks &mdash; no personal access tokens to manage.
 
@@ -145,6 +150,35 @@ The matrix at **https://nvafiades1.github.io/threat-hunt-library/** mirrors the 
 - **Alt+D** toggles light/dark theme.
 
 The header shows a live coverage percentage. As hunts complete and land in `techniques/`, this number climbs automatically on the next push.
+
+---
+
+## The CTI Hub
+
+The hub at **https://nvafiades1.github.io/threat-hunt-library/cti.html** aggregates 20 open-source threat-intelligence feeds into a single searchable dashboard, refreshed hourly by GitHub Actions. No API keys are required &mdash; every source is a public RSS, JSON, or CSV feed.
+
+### Sources
+
+| Category | Sources |
+|---|---|
+| **Vendor research** | CrowdStrike, Microsoft Security Blog, Cisco Talos, Unit 42 (Palo Alto), SentinelOne Labs, Trend Micro Research, Securelist (Kaspersky), ESET WeLiveSecurity |
+| **News & industry** | BleepingComputer, The Record, Krebs on Security, The Hacker News, Dark Reading, SecurityWeek |
+| **Government** | CISA Advisories, NCSC-UK |
+| **Vulnerabilities** | CISA Known Exploited Vulnerabilities (KEV) catalog |
+| **IOCs** | abuse.ch URLhaus, abuse.ch MalwareBazaar, abuse.ch ThreatFox |
+
+### Page features
+
+- **Stats header** &mdash; total items, last 24h, last 7d, new this build, sources online.
+- **Category tabs** &mdash; All / Vendor research / News / Government / Vulnerabilities / IOCs.
+- **Filters** &mdash; per-source dropdown, time range (24h / 7d / 30d), free-text search across title, summary, and tags.
+- **NEW badges** &mdash; items first seen in the most recent build are flagged.
+- **Link-out only** &mdash; the hub never re-hosts source content; titles link directly to the publisher.
+- **Dark / light theme** with persistence.
+
+### How it works
+
+Every hour at `:15`, `tools/build_cti.py` fetches all 20 sources in parallel (10 worker threads, ~25s timeout per source), normalizes everything to a common schema, and merges new items into a rolling 30-day window kept in `tools/cti_state.json`. The merged set is rendered into a single self-contained `docs/cti.html` file (no external assets, no JS frameworks). Any individual source failure is logged and skipped &mdash; the build succeeds as long as at least one source returns data.
 
 ---
 
@@ -217,6 +251,10 @@ The markdown written to `techniques/T####/` is built in `.github/scripts/updateT
 ### Tune the threat-actor enrichment
 
 The MISP and MITRE STIX URLs, the resolution priority, and the profile/comment markdown templates live in `.github/scripts/enrichThreatActor.js`. To extend coverage to additional sources (e.g., MITRE ATT&CK Mobile, MITRE ICS), add a new fetcher and a new branch in `resolveQuery()`.
+
+### Tune the CTI feed sources
+
+The full source list, fetcher dispatch table, and HTML/CSS template all live in `tools/build_cti.py`. To add a feed, append a tuple to `SOURCES` (`(display_name, category, fetcher_key, url)`) &mdash; for an RSS source the existing `fetch_rss` handler is enough. For a non-RSS format (JSON / CSV), add a new fetcher function and register it in `FETCHERS`. Refresh cadence is set in `.github/workflows/build_cti.yml` (default: hourly at `:15`).
 
 ---
 
