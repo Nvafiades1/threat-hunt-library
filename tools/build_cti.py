@@ -34,7 +34,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 STATE_PATH = ROOT / "tools" / "cti_state.json"
 OUT_PATH = ROOT / "docs" / "cti.html"
 
-ROLLING_DAYS = 30
+ROLLING_DAYS = 90
 HTTP_TIMEOUT = 25
 MAX_WORKERS = 10
 USER_AGENT = (
@@ -555,6 +555,7 @@ main {{ padding: 16px 20px 60px; max-width: 1400px; margin: 0 auto; }}
     <option value="1">Last 24h</option>
     <option value="7" selected>Last 7d</option>
     <option value="30">Last 30d</option>
+    <option value="90">Last 90d</option>
   </select>
   <select id="source-filter"><option value="">All sources</option></select>
   <input type="search" id="search" placeholder="Search title, summary, tags…">
