@@ -1,0 +1,48 @@
+name: Build CTI Hub
+
+on:
+  schedule:
+    - cron: '15 * * * *'   # hourly at :15
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'tools/build_cti.py'
+      - '.github/workflows/build_cti.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-cti
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install feedparser requests
+
+      - name: Build CTI hub
+        run: python tools/build_cti.py
+
+      - name: Commit & push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/cti.html tools/cti_state.json
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "Auto-build CTI hub [skip ci]"
+          git push

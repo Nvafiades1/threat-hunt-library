@@ -407,6 +407,7 @@ details:not([open]) > summary .sub-count::before{{content:"\u25B8 "; color:var(-
   <div class="brand">Threat Hunt <span class="accent">Matrix</span></div>
   <div class="stats"><b>{total_filled}</b> / {total_parents} techniques covered &middot; <b>{pct}%</b></div>
   <a class="nav-link" href="./metrics.html">Metrics &rarr;</a>
+  <a class="nav-link" href="./cti.html">CTI Hub &rarr;</a>
   <input id="search" type="search" placeholder="Search techniques&hellip;" autocomplete="off">
   <button id="modeToggle" title="Toggle light/dark (Alt+D)" aria-label="Toggle theme">\u263C</button>
 </header>
