@@ -51,6 +51,39 @@ h2{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:uppercas
 .kpi-value{font-size:2.25rem;font-weight:700;line-height:1.1;margin-top:.35rem;
            font-variant-numeric:tabular-nums}
 .kpi-sub{font-size:.75rem;color:var(--text-dim);margin-top:.2rem}
+.kpi-trend{font-size:.7rem;font-weight:600;margin-left:.3rem;font-variant-numeric:tabular-nums}
+.trend-up{color:var(--coverage)}
+.trend-down{color:var(--danger)}
+.trend-flat{color:var(--text-dim)}
+
+/* ── chart action footer ─────────────────────────────────────────────── */
+.chart-actions{
+  display:flex;gap:.5rem;justify-content:flex-end;margin-top:.6rem;
+  padding-top:.5rem;border-top:1px dashed var(--border);
+}
+.chart-action{
+  font-size:.72rem;color:var(--text-dim);text-decoration:none;cursor:pointer;
+  background:none;border:none;padding:.15rem .35rem;border-radius:3px;font-family:inherit;
+}
+.chart-action:hover{color:var(--accent);background:var(--surface-2)}
+.chart-action.flash{color:var(--coverage)}
+
+/* ── master report button ────────────────────────────────────────────── */
+.report-btn{
+  font-size:.82rem;background:var(--accent);color:#fff;border:none;border-radius:4px;
+  padding:.4rem .75rem;cursor:pointer;font-family:inherit;font-weight:500;
+}
+.report-btn:hover{filter:brightness(1.1)}
+body.light .report-btn{color:#fff}
+
+/* ── tactic-gaps panel ───────────────────────────────────────────────── */
+.gaps-list{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem}
+.gaps-chip{
+  background:var(--chip-bg);color:var(--chip-fg);
+  padding:.25rem .55rem;border-radius:12px;font-size:.78rem;
+  border:1px dashed var(--border);
+}
+.gaps-empty{color:var(--coverage);font-size:.85rem;font-weight:500;margin-top:.5rem}
 
 /* ── chart cards ───────────────────────────────────────────────────────── */
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem}
@@ -74,7 +107,8 @@ h2{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:uppercas
 </head><body>
 <header>
   <div class="brand">Threat Hunt <span class="accent">Metrics</span></div>
-  <span class="meta">Generated 2026-04-27 14:20 UTC</span>
+  <span class="meta">Generated 2026-04-27 14:30 UTC</span>
+  <button id="reportBtn" class="report-btn" title="Download a Markdown report covering every chart">Generate Report &darr;</button>
   <a class="nav-link" href="./index.html">Matrix &rarr;</a>
   <button id="modeToggle" title="Toggle light/dark">☼</button>
 </header>
@@ -101,6 +135,26 @@ h2{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:uppercas
     <div class="kpi-value">0%</div>
     <div class="kpi-sub">of MITRE ATT&amp;CK Enterprise</div>
   </div>
+  <div class="kpi orange">
+    <div class="kpi-label">Avg Hunt Duration</div>
+    <div class="kpi-value">&mdash;</div>
+    <div class="kpi-sub">needs Created field on hunts</div>
+  </div>
+  <div class="kpi blue">
+    <div class="kpi-label">Throughput &middot; 30 days</div>
+    <div class="kpi-value">0</div>
+    <div class="kpi-sub"><span class="kpi-trend trend-flat">no recent activity</span></div>
+  </div>
+  <div class="kpi blue">
+    <div class="kpi-label">Throughput &middot; 90 days</div>
+    <div class="kpi-value">0</div>
+    <div class="kpi-sub">no completions in last 90 days</div>
+  </div>
+  <div class="kpi green">
+    <div class="kpi-label">New Coverage &middot; this month</div>
+    <div class="kpi-value">+0</div>
+    <div class="kpi-sub"><span class="kpi-trend trend-flat">awaiting first additions</span></div>
+  </div>
 </section>
 
 
@@ -113,48 +167,107 @@ h2{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:uppercas
 <div id="charts" style="display:none">
 <h2>Activity</h2>
 <div class="grid">
-  <div class="card span-8">
+  <div class="card span-8" data-chart="timeline">
     <h3>Hunts Over Time</h3>
     <div class="sub-label">Monthly volume (bars) and cumulative total (line)</div>
     <canvas id="chart-timeline" height="110"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="timeline" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="timeline" data-format="md">Copy MD</button>
+    </div>
   </div>
-  <div class="card span-4">
+  <div class="card span-4" data-chart="severity">
     <h3>Severity</h3>
     <div class="sub-label">Distribution of completed hunts</div>
     <canvas id="chart-severity" height="180"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="severity" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="severity" data-format="md">Copy MD</button>
+    </div>
+  </div>
+</div>
+
+<h2>Outcomes</h2>
+<div class="grid">
+  <div class="card span-4" data-chart="outcomes">
+    <h3>Outcome Mix</h3>
+    <div class="sub-label">Status field across all hunts</div>
+    <canvas id="chart-outcomes" height="180"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="outcomes" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="outcomes" data-format="md">Copy MD</button>
+    </div>
+  </div>
+  <div class="card span-4" data-chart="confidence">
+    <h3>Confidence</h3>
+    <div class="sub-label">Hunter confidence in findings</div>
+    <canvas id="chart-confidence" height="180"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="confidence" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="confidence" data-format="md">Copy MD</button>
+    </div>
+  </div>
+  <div class="card span-4" data-chart="growth">
+    <h3>Coverage Growth</h3>
+    <div class="sub-label">New techniques covered each month</div>
+    <canvas id="chart-growth" height="180"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="growth" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="growth" data-format="md">Copy MD</button>
+    </div>
   </div>
 </div>
 
 <h2>Coverage</h2>
 <div class="grid">
-  <div class="card span-8">
+  <div class="card span-8" data-chart="tactics">
     <h3>Coverage by Tactic</h3>
     <div class="sub-label">Unique techniques covered (dark) and total hunts (light) per MITRE tactic</div>
     <canvas id="chart-tactics" height="220"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="tactics" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="tactics" data-format="md">Copy MD</button>
+    </div>
   </div>
-  <div class="card span-4">
-    <h3>Confidence</h3>
-    <div class="sub-label">Hunter confidence in findings</div>
-    <canvas id="chart-confidence" height="180"></canvas>
+  <div class="card span-4" data-chart="gaps">
+    <h3>Tactic Gaps</h3>
+    <div class="sub-label">MITRE tactics with no completed hunts yet &mdash; potential next investments.</div>
+    <div id="gaps-content"></div>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="gaps" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="gaps" data-format="md">Copy MD</button>
+    </div>
   </div>
 </div>
 
 <h2>Top Lists</h2>
 <div class="grid">
-  <div class="card span-6">
+  <div class="card span-6" data-chart="actors">
     <h3>Top Threat Actors</h3>
     <div class="sub-label">Most-referenced in completed hunts</div>
     <canvas id="chart-actors" height="200"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="actors" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="actors" data-format="md">Copy MD</button>
+    </div>
   </div>
-  <div class="card span-6">
+  <div class="card span-6" data-chart="techniques">
     <h3>Top Techniques</h3>
     <div class="sub-label">Most-hunted MITRE techniques</div>
     <canvas id="chart-techniques" height="200"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="techniques" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="techniques" data-format="md">Copy MD</button>
+    </div>
   </div>
-  <div class="card span-12">
+  <div class="card span-12" data-chart="platforms">
     <h3>Hunt Platforms</h3>
     <div class="sub-label">Tools used across hunts</div>
     <canvas id="chart-platforms" height="100"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="platforms" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="platforms" data-format="md">Copy MD</button>
+    </div>
   </div>
 </div>
 </div>
@@ -162,7 +275,7 @@ h2{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:uppercas
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
-const DATA = {"totals": {"hunts": 0, "techniques": 0, "actors": 0, "coverage": 0, "universe": 356, "last_hunt": null}, "timeline": {"labels": [], "monthly": [], "cumulative": []}, "tactics": {"labels": [], "hunts": [], "covered": []}, "actors": {"labels": [], "values": []}, "severity": {"labels": [], "values": []}, "confidence": {"labels": [], "values": []}, "techniques": {"labels": [], "values": []}, "platforms": {"labels": [], "values": []}};
+const DATA = {"totals": {"hunts": 0, "techniques": 0, "actors": 0, "coverage": 0, "universe": 356, "last_hunt": null, "tactic_gap_count": 14}, "duration": {"avg_days": null, "median_days": null, "measured": 0, "total": 0}, "throughput": {"last_30": 0, "last_90": 0, "prev_30": 0}, "growth": {"labels": [], "new_techniques": [], "this_month": 0, "prev_month": 0}, "timeline": {"labels": [], "monthly": [], "cumulative": []}, "tactics": {"labels": [], "hunts": [], "covered": []}, "outcomes": {"labels": [], "values": []}, "actors": {"labels": [], "values": []}, "severity": {"labels": [], "values": []}, "confidence": {"labels": [], "values": []}, "techniques": {"labels": [], "values": []}, "platforms": {"labels": [], "values": []}, "gaps": {"tactics": ["Reconnaissance", "Resource Development", "Initial Access", "Execution", "Persistence", "Privilege Escalation", "Defense Evasion", "Credential Access", "Discovery", "Lateral Movement", "Collection", "Command And Control", "Exfiltration", "Impact"], "total_tactics": 14}};
 
 function cssVar(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
@@ -341,7 +454,276 @@ function renderAll() {
       },
     },
   });
+
+  // ── Outcome mix donut ─────────────────────────────────────────────────
+  const outcomeColor = l =>
+    l === 'Completed'      ? p.coverage :
+    l === 'False Positive' ? p.danger   :
+    l === 'In Progress'    ? p.info     :
+    l === 'Inconclusive'   ? p.accent   : p.dim;
+  charts.outcomes = new Chart(document.getElementById('chart-outcomes'), {
+    type:'doughnut',
+    data: {
+      labels: DATA.outcomes.labels,
+      datasets: [{
+        data: DATA.outcomes.values,
+        backgroundColor: DATA.outcomes.labels.map(outcomeColor),
+        borderWidth: 2, borderColor: cssVar('--surface'),
+      }],
+    },
+    options: { ...baseOpts(p), cutout:'62%' },
+  });
+
+  // ── Coverage growth line ──────────────────────────────────────────────
+  charts.growth = new Chart(document.getElementById('chart-growth'), {
+    type:'bar',
+    data: {
+      labels: DATA.growth.labels,
+      datasets: [{
+        label:'New techniques',
+        data: DATA.growth.new_techniques,
+        backgroundColor: p.coverage,
+      }],
+    },
+    options: {
+      ...baseOpts(p),
+      plugins:{ ...baseOpts(p).plugins, legend:{display:false} },
+      scales:{
+        x:{ ticks:{color:p.dim}, grid:{color:p.grid} },
+        y:{ beginAtZero:true, ticks:{color:p.dim, precision:0}, grid:{color:p.grid} },
+      },
+    },
+  });
+
+  // ── Tactic gaps panel (HTML, not Chart.js) ────────────────────────────
+  const gapsEl = document.getElementById('gaps-content');
+  if (gapsEl) {
+    if (DATA.gaps.tactics.length === 0) {
+      gapsEl.innerHTML = '<div class="gaps-empty">No tactic gaps &mdash; every ATT&amp;CK tactic has at least one hunt.</div>';
+    } else {
+      gapsEl.innerHTML = '<div class="gaps-list">' +
+        DATA.gaps.tactics.map(t => `<span class="gaps-chip">${t}</span>`).join('') +
+        `</div><div class="kpi-sub" style="margin-top:.6rem">${DATA.gaps.tactics.length} of ${DATA.gaps.total_tactics} tactics still uncovered.</div>`;
+    }
+  }
 }
+
+// ── per-chart export helpers ───────────────────────────────────────────
+function csvEscape(v) {
+  const s = String(v ?? '');
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+const CHART_EXPORTERS = {
+  timeline: () => ({
+    headers: ['Month','Hunts','Cumulative'],
+    rows: DATA.timeline.labels.map((l,i) => [l, DATA.timeline.monthly[i], DATA.timeline.cumulative[i]]),
+  }),
+  growth: () => ({
+    headers: ['Month','New techniques'],
+    rows: DATA.growth.labels.map((l,i) => [l, DATA.growth.new_techniques[i]]),
+  }),
+  tactics: () => ({
+    headers: ['Tactic','Techniques covered','Total hunts'],
+    rows: DATA.tactics.labels.map((l,i) => [l, DATA.tactics.covered[i], DATA.tactics.hunts[i]]),
+  }),
+  gaps: () => ({
+    headers: ['Tactic','Status'],
+    rows: DATA.gaps.tactics.length
+      ? DATA.gaps.tactics.map(t => [t, 'No coverage'])
+      : [['(all tactics covered)', '—']],
+  }),
+  severity:   () => simplePair('severity'),
+  confidence: () => simplePair('confidence'),
+  outcomes:   () => simplePair('outcomes'),
+  actors:     () => simplePair('actors'),
+  techniques: () => simplePair('techniques'),
+  platforms:  () => simplePair('platforms'),
+};
+
+function simplePair(id) {
+  const d = DATA[id];
+  return {
+    headers: ['Label','Count'],
+    rows: d.labels.map((l,i) => [l, d.values[i]]),
+  };
+}
+
+function chartCSV(id) {
+  const ex = CHART_EXPORTERS[id]?.(); if (!ex) return '';
+  const lines = [ex.headers.map(csvEscape).join(',')];
+  for (const r of ex.rows) lines.push(r.map(csvEscape).join(','));
+  return lines.join('\n') + '\n';
+}
+
+function chartMD(id) {
+  const ex = CHART_EXPORTERS[id]?.(); if (!ex) return '';
+  const lines = ['| ' + ex.headers.join(' | ') + ' |'];
+  lines.push('|' + ex.headers.map(() => '---').join('|') + '|');
+  for (const r of ex.rows) lines.push('| ' + r.join(' | ') + ' |');
+  return lines.join('\n');
+}
+
+function downloadFile(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+}
+
+async function copyToClipboard(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (_) { return false; }
+}
+
+function flashButton(btn, text, ms = 1200) {
+  const orig = btn.textContent;
+  btn.textContent = text;
+  btn.classList.add('flash');
+  setTimeout(() => { btn.textContent = orig; btn.classList.remove('flash'); }, ms);
+}
+
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[data-export]');
+  if (!btn) return;
+  const id = btn.dataset.export;
+  const fmt = btn.dataset.format;
+  if (fmt === 'csv') {
+    downloadFile(chartCSV(id), `${id}.csv`, 'text/csv');
+    flashButton(btn, 'Saved');
+  } else if (fmt === 'md') {
+    copyToClipboard(chartMD(id)).then(ok => flashButton(btn, ok ? 'Copied' : 'Copy failed'));
+  }
+});
+
+// ── master monthly report ──────────────────────────────────────────────
+function pct(curr, prev) {
+  if (prev === 0) return curr === 0 ? '0%' : 'new';
+  const d = ((curr - prev) / prev) * 100;
+  const sign = d > 0 ? '+' : '';
+  return `${sign}${Math.round(d)}%`;
+}
+
+const NARRATIVES = {
+  timeline: () => {
+    const t = DATA.timeline;
+    if (!t.labels.length) return 'No hunts archived yet.';
+    const last = t.monthly.at(-1) ?? 0;
+    const prev = t.monthly.at(-2) ?? 0;
+    const total = t.cumulative.at(-1) ?? 0;
+    return `${total} hunts archived to date across ${t.labels.length} month(s). Most recent month (${t.labels.at(-1)}) saw ${last} hunt(s) — ${pct(last, prev)} vs prior month.`;
+  },
+  severity: () => describeMix('severity', 'severity'),
+  confidence: () => describeMix('confidence', 'confidence rating'),
+  outcomes: () => {
+    const d = DATA.outcomes;
+    if (!d.labels.length) return 'No status field has been populated.';
+    const total = d.values.reduce((a,b) => a+b, 0);
+    const completed = d.labels.indexOf('Completed') >= 0 ? d.values[d.labels.indexOf('Completed')] : 0;
+    return `${total} hunts categorised by outcome; ${completed} (${pct(completed, total)}) marked Completed.`;
+  },
+  growth: () => {
+    const g = DATA.growth;
+    if (!g.labels.length) return 'No coverage growth data yet.';
+    const last = g.new_techniques.at(-1) ?? 0;
+    const prev = g.new_techniques.at(-2) ?? 0;
+    return `Added ${last} new technique(s) this month vs ${prev} the prior month (${pct(last, prev)}). Cumulative coverage: ${DATA.totals.techniques} of ${DATA.totals.universe}.`;
+  },
+  tactics: () => {
+    const t = DATA.tactics;
+    if (!t.labels.length) return 'No tactic coverage yet.';
+    const top = t.labels[0];
+    const topHunts = t.hunts[0];
+    return `Most-hunted tactic: ${top} (${topHunts} hunts). ${DATA.gaps.tactics.length} of ${DATA.gaps.total_tactics} tactics have zero coverage.`;
+  },
+  gaps: () => {
+    if (DATA.gaps.tactics.length === 0) return 'Every MITRE tactic has at least one completed hunt.';
+    return `Uncovered tactics: ${DATA.gaps.tactics.join(', ')}. Consider scheduling at least one hunt per tactic.`;
+  },
+  actors: () => {
+    const a = DATA.actors;
+    if (!a.labels.length) return 'No threat actors named in hunts yet.';
+    return `${a.labels.length} unique actor(s) referenced. Most-referenced: ${a.labels[0]} (${a.values[0]} hunt${a.values[0] === 1 ? '' : 's'}).`;
+  },
+  techniques: () => {
+    const t = DATA.techniques;
+    if (!t.labels.length) return 'No techniques hunted yet.';
+    return `Most-hunted technique: ${t.labels[0]} (${t.values[0]} hunt${t.values[0] === 1 ? '' : 's'}).`;
+  },
+  platforms: () => {
+    const p = DATA.platforms;
+    if (!p.labels.length) return 'Hunt platform field is empty across all hunts.';
+    return `${p.labels.length} platform(s) in use. Primary: ${p.labels[0]} (${p.values[0]} hunts).`;
+  },
+};
+
+function describeMix(key, label) {
+  const d = DATA[key];
+  if (!d.labels.length) return `No ${label} data populated.`;
+  const total = d.values.reduce((a,b) => a+b, 0);
+  const top = d.labels[0];
+  const topVal = d.values[0];
+  return `${total} hunts rated for ${label}; most common: ${top} (${topVal}, ${pct(topVal, total)}).`;
+}
+
+function generateReport() {
+  const today = new Date().toISOString().slice(0, 10);
+  const t = DATA.totals;
+  const dur = DATA.duration;
+  const thru = DATA.throughput;
+  const grw = DATA.growth;
+  const lines = [
+    `# Threat Hunt Library — Monthly Report`,
+    ``,
+    `_Generated ${today}_`,
+    ``,
+    `## Snapshot`,
+    ``,
+    `| KPI | Value |`,
+    `|---|---|`,
+    `| Total Hunts | ${t.hunts} |`,
+    `| Techniques Covered | ${t.techniques} of ${t.universe} (${t.coverage}%) |`,
+    `| Threat Actors Tracked | ${t.actors} |`,
+    `| Avg Hunt Duration | ${dur.avg_days != null ? dur.avg_days + ' days (median ' + dur.median_days + ')' : '—'} |`,
+    `| Throughput &middot; last 30 days | ${thru.last_30} hunts (${pct(thru.last_30, thru.prev_30)} vs prior 30) |`,
+    `| Throughput &middot; last 90 days | ${thru.last_90} hunts |`,
+    `| New Coverage &middot; this month | +${grw.this_month} techniques (vs +${grw.prev_month} prior) |`,
+    `| Tactic Gaps | ${DATA.gaps.tactics.length} of ${DATA.gaps.total_tactics} tactics uncovered |`,
+    ``,
+  ];
+  const sections = [
+    ['Hunts Over Time', 'timeline'],
+    ['Coverage Growth', 'growth'],
+    ['Outcome Mix', 'outcomes'],
+    ['Severity', 'severity'],
+    ['Confidence', 'confidence'],
+    ['Coverage by Tactic', 'tactics'],
+    ['Tactic Gaps', 'gaps'],
+    ['Top Threat Actors', 'actors'],
+    ['Top Techniques', 'techniques'],
+    ['Hunt Platforms', 'platforms'],
+  ];
+  for (const [title, id] of sections) {
+    lines.push(`## ${title}`);
+    lines.push('');
+    lines.push(chartMD(id));
+    lines.push('');
+    const narrative = NARRATIVES[id] && NARRATIVES[id]();
+    if (narrative) {
+      lines.push(`**Insight.** ${narrative}`);
+      lines.push('');
+    }
+  }
+  lines.push('---');
+  lines.push('');
+  lines.push(`_Source: Threat Hunt Library &middot; https://github.com/Nvafiades1/threat-hunt-library_`);
+  downloadFile(lines.join('\n'), `threat-hunt-report-${today}.md`, 'text/markdown');
+}
+
+document.getElementById('reportBtn')?.addEventListener('click', generateReport);
 
 renderAll();
 </script>

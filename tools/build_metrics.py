@@ -124,6 +124,25 @@ def normalize_level(val: str) -> str | None:
             return canon.title()
     return None
 
+_STATUS_BUCKETS = ("completed", "false positive", "inconclusive", "in progress")
+
+def normalize_status(val: str) -> str | None:
+    if not val:
+        return None
+    v = val.strip().lower()
+    for canon in _STATUS_BUCKETS:
+        if canon in v:
+            return "False Positive" if canon == "false positive" else canon.title()
+    return val.strip()
+
+def parse_iso_dt(s: str) -> datetime | None:
+    if not s:
+        return None
+    try:
+        return datetime.fromisoformat(s.strip().replace("Z", "+00:00"))
+    except Exception:
+        return None
+
 def extract_techniques_from_text(t: str) -> list[str]:
     return [m.group(0).upper() for m in re.finditer(r"\bT\d{4}(?:\.\d{3})?\b", t or "", re.I)]
 
@@ -199,9 +218,18 @@ for path in hunt_files:
     severity   = normalize_level(fields.get("Severity", ""))
     confidence = normalize_level(fields.get("Confidence", ""))
     fidelity   = normalize_level(fields.get("Query Fidelity", ""))
+    status     = normalize_status(fields.get("Status", ""))
     platform   = fields.get("Hunt Platform", "").strip() or None
     actor_raw  = fields.get("Threat Actor", "").strip()
     actors     = [a.strip() for a in re.split(r"[,;/]", actor_raw) if a.strip()]
+
+    # Hunt duration: Created field → file added date in the repo.
+    created_dt = parse_iso_dt(fields.get("Created", ""))
+    duration_days = None
+    if created_dt:
+        delta = (dt.date() - created_dt.date()).days
+        if delta >= 0:
+            duration_days = delta
 
     records.append({
         "path":      str(path.relative_to(ROOT)),
@@ -214,8 +242,10 @@ for path in hunt_files:
         "severity":  severity,
         "confidence": confidence,
         "fidelity":  fidelity,
+        "status":    status,
         "platform":  platform,
         "actors":    actors,
+        "duration_days": duration_days,
     })
 
 # ── aggregate metrics ────────────────────────────────────────────────────────
@@ -262,6 +292,44 @@ plat_counts = Counter(r["platform"] for r in records if r["platform"]).most_comm
 # Freshest hunt date (for "last updated" in header)
 last_hunt_date = max((r["date"] for r in records), default=None)
 
+# ── new KPIs ────────────────────────────────────────────────────────────────
+# Hunt duration: avg + median (days)
+import datetime as _dt
+durations = [r["duration_days"] for r in records if r["duration_days"] is not None]
+if durations:
+    avg_duration = round(sum(durations) / len(durations), 1)
+    sd = sorted(durations)
+    median_duration = sd[len(sd) // 2] if len(sd) % 2 else round((sd[len(sd) // 2 - 1] + sd[len(sd) // 2]) / 2, 1)
+else:
+    avg_duration = None
+    median_duration = None
+
+# Throughput rolling windows (anchored to today at build-time)
+today = _dt.date.today()
+def days_old(rec): return (today - _dt.date.fromisoformat(rec["date"])).days
+throughput_30 = sum(1 for r in records if days_old(r) <= 30)
+throughput_90 = sum(1 for r in records if days_old(r) <= 90)
+throughput_30_prev = sum(1 for r in records if 31 <= days_old(r) <= 60)
+
+# Coverage growth: new techniques per month
+techs_seen: set = set()
+new_techs_per_month: list[int] = []
+for m in months:
+    delta = 0
+    for r in records:
+        if r["month"] == m and r["parent"] not in techs_seen:
+            techs_seen.add(r["parent"])
+            delta += 1
+    new_techs_per_month.append(delta)
+new_this_month = new_techs_per_month[-1] if new_techs_per_month else 0
+new_prev_month = new_techs_per_month[-2] if len(new_techs_per_month) > 1 else 0
+
+# Outcome / Status mix
+outcome_counts = Counter(r["status"] for r in records if r["status"])
+
+# Tactic gaps (zero-coverage tactics, excluding 'Unmapped' which is historical)
+tactic_gaps = [t for t in TACTICS if tactic_hunt_counts.get(t, 0) == 0]
+
 payload = {
     "totals": {
         "hunts":      total_hunts,
@@ -270,6 +338,24 @@ payload = {
         "coverage":   coverage_pct,
         "universe":   total_parent_universe,
         "last_hunt":  last_hunt_date,
+        "tactic_gap_count": len(tactic_gaps),
+    },
+    "duration": {
+        "avg_days":    avg_duration,
+        "median_days": median_duration,
+        "measured":    len(durations),
+        "total":       total_hunts,
+    },
+    "throughput": {
+        "last_30":  throughput_30,
+        "last_90":  throughput_90,
+        "prev_30":  throughput_30_prev,
+    },
+    "growth": {
+        "labels":          months,
+        "new_techniques":  new_techs_per_month,
+        "this_month":      new_this_month,
+        "prev_month":      new_prev_month,
     },
     "timeline": {
         "labels":     months,
@@ -281,14 +367,37 @@ payload = {
         "hunts":  [tactic_hunt_counts.get(t, 0) for t in tactics_ordered],
         "covered":[len(tactic_hunted_parents.get(t, set())) for t in tactics_ordered],
     },
+    "outcomes":   {"labels":list(outcome_counts.keys()), "values":list(outcome_counts.values())},
     "actors":     {"labels":[a for a,_ in actor_counts], "values":[n for _,n in actor_counts]},
     "severity":   {"labels":list(sev_counts.keys()),  "values":list(sev_counts.values())},
     "confidence": {"labels":list(conf_counts.keys()), "values":list(conf_counts.values())},
     "techniques": {"labels":[t for t,_ in tech_counts], "values":[n for _,n in tech_counts]},
     "platforms":  {"labels":[p for p,_ in plat_counts], "values":[n for _,n in plat_counts]},
+    "gaps":       {"tactics": tactic_gaps, "total_tactics": len(TACTICS)},
 }
 
 generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+# KPI sub-line strings (precomputed for f-string clarity)
+def _trend_pair(curr: int, prev: int):
+    if curr == 0 and prev == 0:
+        return "no recent activity", "trend-flat"
+    if prev == 0:
+        return "first 30-day window", "trend-flat"
+    delta = curr - prev
+    sign = "+" if delta > 0 else ""
+    return f"{sign}{delta} vs prior 30d", ("trend-up" if delta > 0 else "trend-down" if delta < 0 else "trend-flat")
+
+throughput_sub, throughput_cls = _trend_pair(throughput_30, throughput_30_prev)
+growth_sub = (
+    f"{'+' if new_this_month - new_prev_month >= 0 else ''}{new_this_month - new_prev_month} vs prior month"
+    if (new_this_month or new_prev_month) else "awaiting first additions"
+)
+growth_cls = ("trend-up" if new_this_month > new_prev_month else "trend-down" if new_this_month < new_prev_month else "trend-flat")
+duration_sub = (
+    f"median {median_duration}d \u00B7 n={len(durations)}/{total_hunts}"
+    if avg_duration is not None else "needs Created field on hunts"
+)
 
 # ── HTML ─────────────────────────────────────────────────────────────────────
 HTML = f"""<!DOCTYPE html>
@@ -344,6 +453,39 @@ h2{{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:upperca
 .kpi-value{{font-size:2.25rem;font-weight:700;line-height:1.1;margin-top:.35rem;
            font-variant-numeric:tabular-nums}}
 .kpi-sub{{font-size:.75rem;color:var(--text-dim);margin-top:.2rem}}
+.kpi-trend{{font-size:.7rem;font-weight:600;margin-left:.3rem;font-variant-numeric:tabular-nums}}
+.trend-up{{color:var(--coverage)}}
+.trend-down{{color:var(--danger)}}
+.trend-flat{{color:var(--text-dim)}}
+
+/* ── chart action footer ─────────────────────────────────────────────── */
+.chart-actions{{
+  display:flex;gap:.5rem;justify-content:flex-end;margin-top:.6rem;
+  padding-top:.5rem;border-top:1px dashed var(--border);
+}}
+.chart-action{{
+  font-size:.72rem;color:var(--text-dim);text-decoration:none;cursor:pointer;
+  background:none;border:none;padding:.15rem .35rem;border-radius:3px;font-family:inherit;
+}}
+.chart-action:hover{{color:var(--accent);background:var(--surface-2)}}
+.chart-action.flash{{color:var(--coverage)}}
+
+/* ── master report button ────────────────────────────────────────────── */
+.report-btn{{
+  font-size:.82rem;background:var(--accent);color:#fff;border:none;border-radius:4px;
+  padding:.4rem .75rem;cursor:pointer;font-family:inherit;font-weight:500;
+}}
+.report-btn:hover{{filter:brightness(1.1)}}
+body.light .report-btn{{color:#fff}}
+
+/* ── tactic-gaps panel ───────────────────────────────────────────────── */
+.gaps-list{{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem}}
+.gaps-chip{{
+  background:var(--chip-bg);color:var(--chip-fg);
+  padding:.25rem .55rem;border-radius:12px;font-size:.78rem;
+  border:1px dashed var(--border);
+}}
+.gaps-empty{{color:var(--coverage);font-size:.85rem;font-weight:500;margin-top:.5rem}}
 
 /* ── chart cards ───────────────────────────────────────────────────────── */
 .grid{{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem}}
@@ -368,6 +510,7 @@ h2{{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:upperca
 <header>
   <div class="brand">Threat Hunt <span class="accent">Metrics</span></div>
   <span class="meta">Generated {html.escape(generated_at)}</span>
+  <button id="reportBtn" class="report-btn" title="Download a Markdown report covering every chart">Generate Report &darr;</button>
   <a class="nav-link" href="./index.html">Matrix &rarr;</a>
   <button id="modeToggle" title="Toggle light/dark">\u263C</button>
 </header>
@@ -394,6 +537,26 @@ h2{{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:upperca
     <div class="kpi-value">{coverage_pct}%</div>
     <div class="kpi-sub">of MITRE ATT&amp;CK Enterprise</div>
   </div>
+  <div class="kpi orange">
+    <div class="kpi-label">Avg Hunt Duration</div>
+    <div class="kpi-value">{f"{avg_duration} d" if avg_duration is not None else "&mdash;"}</div>
+    <div class="kpi-sub">{html.escape(duration_sub)}</div>
+  </div>
+  <div class="kpi blue">
+    <div class="kpi-label">Throughput &middot; 30 days</div>
+    <div class="kpi-value">{throughput_30:,}</div>
+    <div class="kpi-sub"><span class="kpi-trend {throughput_cls}">{html.escape(throughput_sub)}</span></div>
+  </div>
+  <div class="kpi blue">
+    <div class="kpi-label">Throughput &middot; 90 days</div>
+    <div class="kpi-value">{throughput_90:,}</div>
+    <div class="kpi-sub">{"hunts completed in last 90 days" if throughput_90 else "no completions in last 90 days"}</div>
+  </div>
+  <div class="kpi green">
+    <div class="kpi-label">New Coverage &middot; this month</div>
+    <div class="kpi-value">+{new_this_month}</div>
+    <div class="kpi-sub"><span class="kpi-trend {growth_cls}">{html.escape(growth_sub)}</span></div>
+  </div>
 </section>
 
 {"" if total_hunts else '''
@@ -406,48 +569,107 @@ h2{{font-size:.95rem;font-weight:600;letter-spacing:.04em;text-transform:upperca
 <div id="charts" style="{'display:none' if not total_hunts else ''}">
 <h2>Activity</h2>
 <div class="grid">
-  <div class="card span-8">
+  <div class="card span-8" data-chart="timeline">
     <h3>Hunts Over Time</h3>
     <div class="sub-label">Monthly volume (bars) and cumulative total (line)</div>
     <canvas id="chart-timeline" height="110"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="timeline" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="timeline" data-format="md">Copy MD</button>
+    </div>
   </div>
-  <div class="card span-4">
+  <div class="card span-4" data-chart="severity">
     <h3>Severity</h3>
     <div class="sub-label">Distribution of completed hunts</div>
     <canvas id="chart-severity" height="180"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="severity" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="severity" data-format="md">Copy MD</button>
+    </div>
+  </div>
+</div>
+
+<h2>Outcomes</h2>
+<div class="grid">
+  <div class="card span-4" data-chart="outcomes">
+    <h3>Outcome Mix</h3>
+    <div class="sub-label">Status field across all hunts</div>
+    <canvas id="chart-outcomes" height="180"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="outcomes" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="outcomes" data-format="md">Copy MD</button>
+    </div>
+  </div>
+  <div class="card span-4" data-chart="confidence">
+    <h3>Confidence</h3>
+    <div class="sub-label">Hunter confidence in findings</div>
+    <canvas id="chart-confidence" height="180"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="confidence" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="confidence" data-format="md">Copy MD</button>
+    </div>
+  </div>
+  <div class="card span-4" data-chart="growth">
+    <h3>Coverage Growth</h3>
+    <div class="sub-label">New techniques covered each month</div>
+    <canvas id="chart-growth" height="180"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="growth" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="growth" data-format="md">Copy MD</button>
+    </div>
   </div>
 </div>
 
 <h2>Coverage</h2>
 <div class="grid">
-  <div class="card span-8">
+  <div class="card span-8" data-chart="tactics">
     <h3>Coverage by Tactic</h3>
     <div class="sub-label">Unique techniques covered (dark) and total hunts (light) per MITRE tactic</div>
     <canvas id="chart-tactics" height="220"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="tactics" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="tactics" data-format="md">Copy MD</button>
+    </div>
   </div>
-  <div class="card span-4">
-    <h3>Confidence</h3>
-    <div class="sub-label">Hunter confidence in findings</div>
-    <canvas id="chart-confidence" height="180"></canvas>
+  <div class="card span-4" data-chart="gaps">
+    <h3>Tactic Gaps</h3>
+    <div class="sub-label">MITRE tactics with no completed hunts yet &mdash; potential next investments.</div>
+    <div id="gaps-content"></div>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="gaps" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="gaps" data-format="md">Copy MD</button>
+    </div>
   </div>
 </div>
 
 <h2>Top Lists</h2>
 <div class="grid">
-  <div class="card span-6">
+  <div class="card span-6" data-chart="actors">
     <h3>Top Threat Actors</h3>
     <div class="sub-label">Most-referenced in completed hunts</div>
     <canvas id="chart-actors" height="200"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="actors" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="actors" data-format="md">Copy MD</button>
+    </div>
   </div>
-  <div class="card span-6">
+  <div class="card span-6" data-chart="techniques">
     <h3>Top Techniques</h3>
     <div class="sub-label">Most-hunted MITRE techniques</div>
     <canvas id="chart-techniques" height="200"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="techniques" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="techniques" data-format="md">Copy MD</button>
+    </div>
   </div>
-  <div class="card span-12">
+  <div class="card span-12" data-chart="platforms">
     <h3>Hunt Platforms</h3>
     <div class="sub-label">Tools used across hunts</div>
     <canvas id="chart-platforms" height="100"></canvas>
+    <div class="chart-actions">
+      <button class="chart-action" data-export="platforms" data-format="csv">CSV &darr;</button>
+      <button class="chart-action" data-export="platforms" data-format="md">Copy MD</button>
+    </div>
   </div>
 </div>
 </div>
@@ -634,7 +856,276 @@ function renderAll() {{
       }},
     }},
   }});
+
+  // ── Outcome mix donut ─────────────────────────────────────────────────
+  const outcomeColor = l =>
+    l === 'Completed'      ? p.coverage :
+    l === 'False Positive' ? p.danger   :
+    l === 'In Progress'    ? p.info     :
+    l === 'Inconclusive'   ? p.accent   : p.dim;
+  charts.outcomes = new Chart(document.getElementById('chart-outcomes'), {{
+    type:'doughnut',
+    data: {{
+      labels: DATA.outcomes.labels,
+      datasets: [{{
+        data: DATA.outcomes.values,
+        backgroundColor: DATA.outcomes.labels.map(outcomeColor),
+        borderWidth: 2, borderColor: cssVar('--surface'),
+      }}],
+    }},
+    options: {{ ...baseOpts(p), cutout:'62%' }},
+  }});
+
+  // ── Coverage growth line ──────────────────────────────────────────────
+  charts.growth = new Chart(document.getElementById('chart-growth'), {{
+    type:'bar',
+    data: {{
+      labels: DATA.growth.labels,
+      datasets: [{{
+        label:'New techniques',
+        data: DATA.growth.new_techniques,
+        backgroundColor: p.coverage,
+      }}],
+    }},
+    options: {{
+      ...baseOpts(p),
+      plugins:{{ ...baseOpts(p).plugins, legend:{{display:false}} }},
+      scales:{{
+        x:{{ ticks:{{color:p.dim}}, grid:{{color:p.grid}} }},
+        y:{{ beginAtZero:true, ticks:{{color:p.dim, precision:0}}, grid:{{color:p.grid}} }},
+      }},
+    }},
+  }});
+
+  // ── Tactic gaps panel (HTML, not Chart.js) ────────────────────────────
+  const gapsEl = document.getElementById('gaps-content');
+  if (gapsEl) {{
+    if (DATA.gaps.tactics.length === 0) {{
+      gapsEl.innerHTML = '<div class="gaps-empty">No tactic gaps &mdash; every ATT&amp;CK tactic has at least one hunt.</div>';
+    }} else {{
+      gapsEl.innerHTML = '<div class="gaps-list">' +
+        DATA.gaps.tactics.map(t => `<span class="gaps-chip">${{t}}</span>`).join('') +
+        `</div><div class="kpi-sub" style="margin-top:.6rem">${{DATA.gaps.tactics.length}} of ${{DATA.gaps.total_tactics}} tactics still uncovered.</div>`;
+    }}
+  }}
 }}
+
+// ── per-chart export helpers ───────────────────────────────────────────
+function csvEscape(v) {{
+  const s = String(v ?? '');
+  return /[",\\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}}
+
+const CHART_EXPORTERS = {{
+  timeline: () => ({{
+    headers: ['Month','Hunts','Cumulative'],
+    rows: DATA.timeline.labels.map((l,i) => [l, DATA.timeline.monthly[i], DATA.timeline.cumulative[i]]),
+  }}),
+  growth: () => ({{
+    headers: ['Month','New techniques'],
+    rows: DATA.growth.labels.map((l,i) => [l, DATA.growth.new_techniques[i]]),
+  }}),
+  tactics: () => ({{
+    headers: ['Tactic','Techniques covered','Total hunts'],
+    rows: DATA.tactics.labels.map((l,i) => [l, DATA.tactics.covered[i], DATA.tactics.hunts[i]]),
+  }}),
+  gaps: () => ({{
+    headers: ['Tactic','Status'],
+    rows: DATA.gaps.tactics.length
+      ? DATA.gaps.tactics.map(t => [t, 'No coverage'])
+      : [['(all tactics covered)', '—']],
+  }}),
+  severity:   () => simplePair('severity'),
+  confidence: () => simplePair('confidence'),
+  outcomes:   () => simplePair('outcomes'),
+  actors:     () => simplePair('actors'),
+  techniques: () => simplePair('techniques'),
+  platforms:  () => simplePair('platforms'),
+}};
+
+function simplePair(id) {{
+  const d = DATA[id];
+  return {{
+    headers: ['Label','Count'],
+    rows: d.labels.map((l,i) => [l, d.values[i]]),
+  }};
+}}
+
+function chartCSV(id) {{
+  const ex = CHART_EXPORTERS[id]?.(); if (!ex) return '';
+  const lines = [ex.headers.map(csvEscape).join(',')];
+  for (const r of ex.rows) lines.push(r.map(csvEscape).join(','));
+  return lines.join('\\n') + '\\n';
+}}
+
+function chartMD(id) {{
+  const ex = CHART_EXPORTERS[id]?.(); if (!ex) return '';
+  const lines = ['| ' + ex.headers.join(' | ') + ' |'];
+  lines.push('|' + ex.headers.map(() => '---').join('|') + '|');
+  for (const r of ex.rows) lines.push('| ' + r.join(' | ') + ' |');
+  return lines.join('\\n');
+}}
+
+function downloadFile(content, filename, mime) {{
+  const blob = new Blob([content], {{ type: mime }});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {{ document.body.removeChild(a); URL.revokeObjectURL(a.href); }}, 100);
+}}
+
+async function copyToClipboard(text) {{
+  try {{ await navigator.clipboard.writeText(text); return true; }}
+  catch (_) {{ return false; }}
+}}
+
+function flashButton(btn, text, ms = 1200) {{
+  const orig = btn.textContent;
+  btn.textContent = text;
+  btn.classList.add('flash');
+  setTimeout(() => {{ btn.textContent = orig; btn.classList.remove('flash'); }}, ms);
+}}
+
+document.addEventListener('click', e => {{
+  const btn = e.target.closest('[data-export]');
+  if (!btn) return;
+  const id = btn.dataset.export;
+  const fmt = btn.dataset.format;
+  if (fmt === 'csv') {{
+    downloadFile(chartCSV(id), `${{id}}.csv`, 'text/csv');
+    flashButton(btn, 'Saved');
+  }} else if (fmt === 'md') {{
+    copyToClipboard(chartMD(id)).then(ok => flashButton(btn, ok ? 'Copied' : 'Copy failed'));
+  }}
+}});
+
+// ── master monthly report ──────────────────────────────────────────────
+function pct(curr, prev) {{
+  if (prev === 0) return curr === 0 ? '0%' : 'new';
+  const d = ((curr - prev) / prev) * 100;
+  const sign = d > 0 ? '+' : '';
+  return `${{sign}}${{Math.round(d)}}%`;
+}}
+
+const NARRATIVES = {{
+  timeline: () => {{
+    const t = DATA.timeline;
+    if (!t.labels.length) return 'No hunts archived yet.';
+    const last = t.monthly.at(-1) ?? 0;
+    const prev = t.monthly.at(-2) ?? 0;
+    const total = t.cumulative.at(-1) ?? 0;
+    return `${{total}} hunts archived to date across ${{t.labels.length}} month(s). Most recent month (${{t.labels.at(-1)}}) saw ${{last}} hunt(s) — ${{pct(last, prev)}} vs prior month.`;
+  }},
+  severity: () => describeMix('severity', 'severity'),
+  confidence: () => describeMix('confidence', 'confidence rating'),
+  outcomes: () => {{
+    const d = DATA.outcomes;
+    if (!d.labels.length) return 'No status field has been populated.';
+    const total = d.values.reduce((a,b) => a+b, 0);
+    const completed = d.labels.indexOf('Completed') >= 0 ? d.values[d.labels.indexOf('Completed')] : 0;
+    return `${{total}} hunts categorised by outcome; ${{completed}} (${{pct(completed, total)}}) marked Completed.`;
+  }},
+  growth: () => {{
+    const g = DATA.growth;
+    if (!g.labels.length) return 'No coverage growth data yet.';
+    const last = g.new_techniques.at(-1) ?? 0;
+    const prev = g.new_techniques.at(-2) ?? 0;
+    return `Added ${{last}} new technique(s) this month vs ${{prev}} the prior month (${{pct(last, prev)}}). Cumulative coverage: ${{DATA.totals.techniques}} of ${{DATA.totals.universe}}.`;
+  }},
+  tactics: () => {{
+    const t = DATA.tactics;
+    if (!t.labels.length) return 'No tactic coverage yet.';
+    const top = t.labels[0];
+    const topHunts = t.hunts[0];
+    return `Most-hunted tactic: ${{top}} (${{topHunts}} hunts). ${{DATA.gaps.tactics.length}} of ${{DATA.gaps.total_tactics}} tactics have zero coverage.`;
+  }},
+  gaps: () => {{
+    if (DATA.gaps.tactics.length === 0) return 'Every MITRE tactic has at least one completed hunt.';
+    return `Uncovered tactics: ${{DATA.gaps.tactics.join(', ')}}. Consider scheduling at least one hunt per tactic.`;
+  }},
+  actors: () => {{
+    const a = DATA.actors;
+    if (!a.labels.length) return 'No threat actors named in hunts yet.';
+    return `${{a.labels.length}} unique actor(s) referenced. Most-referenced: ${{a.labels[0]}} (${{a.values[0]}} hunt${{a.values[0] === 1 ? '' : 's'}}).`;
+  }},
+  techniques: () => {{
+    const t = DATA.techniques;
+    if (!t.labels.length) return 'No techniques hunted yet.';
+    return `Most-hunted technique: ${{t.labels[0]}} (${{t.values[0]}} hunt${{t.values[0] === 1 ? '' : 's'}}).`;
+  }},
+  platforms: () => {{
+    const p = DATA.platforms;
+    if (!p.labels.length) return 'Hunt platform field is empty across all hunts.';
+    return `${{p.labels.length}} platform(s) in use. Primary: ${{p.labels[0]}} (${{p.values[0]}} hunts).`;
+  }},
+}};
+
+function describeMix(key, label) {{
+  const d = DATA[key];
+  if (!d.labels.length) return `No ${{label}} data populated.`;
+  const total = d.values.reduce((a,b) => a+b, 0);
+  const top = d.labels[0];
+  const topVal = d.values[0];
+  return `${{total}} hunts rated for ${{label}}; most common: ${{top}} (${{topVal}}, ${{pct(topVal, total)}}).`;
+}}
+
+function generateReport() {{
+  const today = new Date().toISOString().slice(0, 10);
+  const t = DATA.totals;
+  const dur = DATA.duration;
+  const thru = DATA.throughput;
+  const grw = DATA.growth;
+  const lines = [
+    `# Threat Hunt Library — Monthly Report`,
+    ``,
+    `_Generated ${{today}}_`,
+    ``,
+    `## Snapshot`,
+    ``,
+    `| KPI | Value |`,
+    `|---|---|`,
+    `| Total Hunts | ${{t.hunts}} |`,
+    `| Techniques Covered | ${{t.techniques}} of ${{t.universe}} (${{t.coverage}}%) |`,
+    `| Threat Actors Tracked | ${{t.actors}} |`,
+    `| Avg Hunt Duration | ${{dur.avg_days != null ? dur.avg_days + ' days (median ' + dur.median_days + ')' : '—'}} |`,
+    `| Throughput &middot; last 30 days | ${{thru.last_30}} hunts (${{pct(thru.last_30, thru.prev_30)}} vs prior 30) |`,
+    `| Throughput &middot; last 90 days | ${{thru.last_90}} hunts |`,
+    `| New Coverage &middot; this month | +${{grw.this_month}} techniques (vs +${{grw.prev_month}} prior) |`,
+    `| Tactic Gaps | ${{DATA.gaps.tactics.length}} of ${{DATA.gaps.total_tactics}} tactics uncovered |`,
+    ``,
+  ];
+  const sections = [
+    ['Hunts Over Time', 'timeline'],
+    ['Coverage Growth', 'growth'],
+    ['Outcome Mix', 'outcomes'],
+    ['Severity', 'severity'],
+    ['Confidence', 'confidence'],
+    ['Coverage by Tactic', 'tactics'],
+    ['Tactic Gaps', 'gaps'],
+    ['Top Threat Actors', 'actors'],
+    ['Top Techniques', 'techniques'],
+    ['Hunt Platforms', 'platforms'],
+  ];
+  for (const [title, id] of sections) {{
+    lines.push(`## ${{title}}`);
+    lines.push('');
+    lines.push(chartMD(id));
+    lines.push('');
+    const narrative = NARRATIVES[id] && NARRATIVES[id]();
+    if (narrative) {{
+      lines.push(`**Insight.** ${{narrative}}`);
+      lines.push('');
+    }}
+  }}
+  lines.push('---');
+  lines.push('');
+  lines.push(`_Source: Threat Hunt Library &middot; https://github.com/{OWNER}/{REPO}_`);
+  downloadFile(lines.join('\\n'), `threat-hunt-report-${{today}}.md`, 'text/markdown');
+}}
+
+document.getElementById('reportBtn')?.addEventListener('click', generateReport);
 
 renderAll();
 </script>
