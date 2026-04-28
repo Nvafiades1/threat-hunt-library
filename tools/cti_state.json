@@ -2071,6 +2071,7 @@
     "954fb77401db58c6": "2026-04-27T18:08:21Z",
     "95589083feb18baa": "2026-04-28T10:26:39Z",
     "95742cf9314489b3": "2026-04-28T06:35:20Z",
+    "95a525e92d08b69d": "2026-04-28T23:40:43Z",
     "96021d45209d5b31": "2026-04-27T23:24:02Z",
     "960b0cfb0f0ffdd8": "2026-04-27T18:08:21Z",
     "962cf8527e116910": "2026-04-28T01:53:26Z",
@@ -2861,6 +2862,7 @@
     "cfda1bf449c755f5": "2026-04-27T18:08:21Z",
     "cfef8551186c9e5b": "2026-04-27T18:08:21Z",
     "d0146865eaf40725": "2026-04-28T17:50:44Z",
+    "d019e83fbee2dc89": "2026-04-28T23:40:43Z",
     "d02461095dadda69": "2026-04-27T18:08:21Z",
     "d02752fc9474377b": "2026-04-27T18:08:21Z",
     "d035231572735d4a": "2026-04-28T19:01:53Z",
@@ -3533,6 +3535,35 @@
   "items": [
     {
       "category": "ioc",
+      "first_seen": "2026-04-28T23:40:43Z",
+      "id": "95a525e92d08b69d",
+      "published": "2026-04-28T23:34:26Z",
+      "source": "abuse.ch ThreatFox",
+      "summary": "Malware: ClearFake. IOC type: domain.",
+      "tags": [
+        "ClearFake",
+        "domain",
+        "None"
+      ],
+      "title": "domain: flow9pathgate.silicapathsys.garden (ClearFake)",
+      "url": "https://threatfox.abuse.ch/ioc/1801867/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:40:43Z",
+      "id": "d019e83fbee2dc89",
+      "published": "2026-04-28T23:27:12Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: anonymous.",
+      "tags": [
+        "malware_download",
+        "ClearFake"
+      ],
+      "title": "Malicious URL: https://sifthostunit.silicapathsys.garden/cdk-msdn-3457325-null/load-file0dsdf567.chk",
+      "url": "https://urlhaus.abuse.ch/url/3834139/"
+    },
+    {
+      "category": "ioc",
       "first_seen": "2026-04-28T23:29:14Z",
       "id": "ecd5394326c178aa",
       "published": "2026-04-28T23:24:20Z",
@@ -3612,6 +3643,24 @@
       "category": "ioc",
       "first_seen": "2026-04-28T23:18:26Z",
       "id": "8eec25516b8a5445",
+      "links": [
+        {
+          "label": "VirusTotal",
+          "url": "https://www.virustotal.com/gui/domain/cancergov.com"
+        },
+        {
+          "label": "urlscan.io",
+          "url": "https://urlscan.io/domain/cancergov.com"
+        },
+        {
+          "label": "crt.sh",
+          "url": "https://crt.sh/?q=cancergov.com"
+        },
+        {
+          "label": "WHOIS",
+          "url": "https://whois.domaintools.com/cancergov.com"
+        }
+      ],
       "published": "2026-04-28T23:17:27Z",
       "source": "NIH Typosquat Watch",
       "summary": "Lookalike domain 'cancergov.com' detected against seed 'cancer.gov'. Evidence: DNS active (13.248.169.48); TLS cert 2019-03-18. Sources: crt.sh, dnstwist.",
@@ -3622,12 +3671,30 @@
         "dnstwist"
       ],
       "title": "Typosquat candidate: cancergov.com \u2014 squat of cancer.gov",
-      "url": "https://crt.sh/?q=cancergov.com"
+      "url": "https://www.virustotal.com/gui/domain/cancergov.com"
     },
     {
       "category": "ioc",
       "first_seen": "2026-04-28T23:18:26Z",
       "id": "fe4aed7cc407c319",
+      "links": [
+        {
+          "label": "VirusTotal",
+          "url": "https://www.virustotal.com/gui/domain/cc.nihgov.com"
+        },
+        {
+          "label": "urlscan.io",
+          "url": "https://urlscan.io/domain/cc.nihgov.com"
+        },
+        {
+          "label": "crt.sh",
+          "url": "https://crt.sh/?q=cc.nihgov.com"
+        },
+        {
+          "label": "WHOIS",
+          "url": "https://whois.domaintools.com/cc.nihgov.com"
+        }
+      ],
       "published": "2026-04-28T23:17:27Z",
       "source": "NIH Typosquat Watch",
       "summary": "Lookalike domain 'cc.nihgov.com' detected against seed 'cc.nih.gov'. Evidence: DNS active (13.248.169.48). Sources: dnstwist.",
@@ -3637,7 +3704,7 @@
         "dnstwist"
       ],
       "title": "Typosquat candidate: cc.nihgov.com \u2014 squat of cc.nih.gov",
-      "url": "https://crt.sh/?q=cc.nihgov.com"
+      "url": "https://www.virustotal.com/gui/domain/cc.nihgov.com"
     },
     {
       "category": "ioc",
@@ -3675,6 +3742,24 @@
       "category": "ioc",
       "first_seen": "2026-04-28T23:18:26Z",
       "id": "66921f9b34776dd7",
+      "links": [
+        {
+          "label": "VirusTotal",
+          "url": "https://www.virustotal.com/gui/domain/niaid.nihgov.com"
+        },
+        {
+          "label": "urlscan.io",
+          "url": "https://urlscan.io/domain/niaid.nihgov.com"
+        },
+        {
+          "label": "crt.sh",
+          "url": "https://crt.sh/?q=niaid.nihgov.com"
+        },
+        {
+          "label": "WHOIS",
+          "url": "https://whois.domaintools.com/niaid.nihgov.com"
+        }
+      ],
       "published": "2026-04-28T23:17:27Z",
       "source": "NIH Typosquat Watch",
       "summary": "Lookalike domain 'niaid.nihgov.com' detected against seed 'niaid.nih.gov'. Evidence: DNS active (76.223.54.146). Sources: dnstwist.",
@@ -3684,12 +3769,30 @@
         "dnstwist"
       ],
       "title": "Typosquat candidate: niaid.nihgov.com \u2014 squat of niaid.nih.gov",
-      "url": "https://crt.sh/?q=niaid.nihgov.com"
+      "url": "https://www.virustotal.com/gui/domain/niaid.nihgov.com"
     },
     {
       "category": "ioc",
       "first_seen": "2026-04-28T23:18:26Z",
       "id": "7c2d8e5427f06869",
+      "links": [
+        {
+          "label": "VirusTotal",
+          "url": "https://www.virustotal.com/gui/domain/nihgov.com"
+        },
+        {
+          "label": "urlscan.io",
+          "url": "https://urlscan.io/domain/nihgov.com"
+        },
+        {
+          "label": "crt.sh",
+          "url": "https://crt.sh/?q=nihgov.com"
+        },
+        {
+          "label": "WHOIS",
+          "url": "https://whois.domaintools.com/nihgov.com"
+        }
+      ],
       "published": "2026-04-28T23:17:27Z",
       "source": "NIH Typosquat Watch",
       "summary": "Lookalike domain 'nihgov.com' detected against seed 'nih.gov'. Evidence: DNS active (76.223.54.146); TLS cert 2023-07-22. Sources: crt.sh, dnstwist.",
@@ -3700,7 +3803,7 @@
         "dnstwist"
       ],
       "title": "Typosquat candidate: nihgov.com \u2014 squat of nih.gov",
-      "url": "https://crt.sh/?q=nihgov.com"
+      "url": "https://www.virustotal.com/gui/domain/nihgov.com"
     },
     {
       "category": "ioc",
@@ -3722,6 +3825,24 @@
       "category": "ioc",
       "first_seen": "2026-04-28T23:18:26Z",
       "id": "fffec5fc64f83c03",
+      "links": [
+        {
+          "label": "VirusTotal",
+          "url": "https://www.virustotal.com/gui/domain/nlm.nihgov.com"
+        },
+        {
+          "label": "urlscan.io",
+          "url": "https://urlscan.io/domain/nlm.nihgov.com"
+        },
+        {
+          "label": "crt.sh",
+          "url": "https://crt.sh/?q=nlm.nihgov.com"
+        },
+        {
+          "label": "WHOIS",
+          "url": "https://whois.domaintools.com/nlm.nihgov.com"
+        }
+      ],
       "published": "2026-04-28T23:17:27Z",
       "source": "NIH Typosquat Watch",
       "summary": "Lookalike domain 'nlm.nihgov.com' detected against seed 'nlm.nih.gov'. Evidence: DNS active (13.248.169.48). Sources: dnstwist.",
@@ -3731,7 +3852,7 @@
         "dnstwist"
       ],
       "title": "Typosquat candidate: nlm.nihgov.com \u2014 squat of nlm.nih.gov",
-      "url": "https://crt.sh/?q=nlm.nihgov.com"
+      "url": "https://www.virustotal.com/gui/domain/nlm.nihgov.com"
     },
     {
       "category": "ioc",
