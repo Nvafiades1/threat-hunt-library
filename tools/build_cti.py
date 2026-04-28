@@ -334,10 +334,16 @@ def fetch_typosquat(name: str, category: str, url: str) -> list[dict]:
             "source": name,
             "category": category,
             "title": title,
-            "url": f"https://crt.sh/?q={domain}",
+            "url": f"https://www.virustotal.com/gui/domain/{domain}",
             "published": first_seen,
             "summary": summary,
             "tags": tags,
+            "links": [
+                {"label": "VirusTotal", "url": f"https://www.virustotal.com/gui/domain/{domain}"},
+                {"label": "urlscan.io", "url": f"https://urlscan.io/domain/{domain}"},
+                {"label": "crt.sh",     "url": f"https://crt.sh/?q={domain}"},
+                {"label": "WHOIS",      "url": f"https://whois.domaintools.com/{domain}"},
+            ],
         })
     return items
 
@@ -572,6 +578,9 @@ main {{ padding: 16px 20px 60px; max-width: 1400px; margin: 0 auto; }}
   font-size: 11px; padding: 2px 7px; border-radius: 4px;
   background: var(--panel-2); border: 1px solid var(--border); color: var(--fg-dim);
 }}
+.ext-links {{ margin-top: 6px; font-size: 12px; color: var(--fg-dim); }}
+.ext-links a {{ color: var(--news); margin-right: 10px; text-decoration: none; }}
+.ext-links a:hover {{ text-decoration: underline; }}
 .empty {{ padding: 40px 20px; text-align: center; color: var(--fg-dim); }}
 .source-status {{ font-size: 11px; color: var(--fg-dim); padding: 6px 20px; }}
 .source-status .err {{ color: var(--vuln); }}
@@ -763,6 +772,7 @@ main {{ padding: 16px 20px 60px; max-width: 1400px; margin: 0 auto; }}
         <h3><a href="${{escape(it.url)}}" target="_blank" rel="noopener">${{escape(it.title)}}</a></h3>
         <div class="meta">${{escape(it.source)}} · ${{escape(fmtTime(it.published || it.first_seen))}}</div>
         ${{it.summary ? `<div class="summary">${{escape(it.summary)}}</div>` : ''}}
+        ${{(it.links && it.links.length) ? `<div class="ext-links">${{it.links.map(l => `<a href="${{escape(l.url)}}" target="_blank" rel="noopener">${{escape(l.label)}}</a>`).join("")}}</div>` : ''}}
         ${{tags ? `<div class="tags">${{tags}}</div>` : ''}}
       </div>
     </article>`;
