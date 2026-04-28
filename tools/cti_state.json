@@ -247,6 +247,7 @@
     "10d61e9d943b1854": "2026-04-28T11:12:11Z",
     "10e3a33d3f1d0fee": "2026-04-28T02:58:46Z",
     "11054d5971c9f772": "2026-04-28T02:58:46Z",
+    "1106236b50063315": "2026-04-28T23:29:14Z",
     "1114d94c19aa0aaa": "2026-04-28T21:20:31Z",
     "1117fa79dc6b693e": "2026-04-27T18:08:21Z",
     "115df38486ba457c": "2026-04-28T01:07:37Z",
@@ -1419,6 +1420,7 @@
     "66921f9b34776dd7": "2026-04-28T23:18:26Z",
     "66abcc22c68852f4": "2026-04-27T23:24:02Z",
     "66d5d81959e49a6a": "2026-04-28T21:46:31Z",
+    "66e280825777b43e": "2026-04-28T23:29:14Z",
     "66f2efbf447b422a": "2026-04-27T23:24:02Z",
     "66f4e8d17bf516b7": "2026-04-28T19:50:36Z",
     "66f9ef7506c9944a": "2026-04-28T02:58:46Z",
@@ -1654,6 +1656,7 @@
     "7700ad3ea8ddb450": "2026-04-28T04:21:37Z",
     "77077328903d51df": "2026-04-27T18:08:21Z",
     "771dd4202eda1684": "2026-04-27T23:39:50Z",
+    "772966ef57e97c9a": "2026-04-28T23:29:14Z",
     "77319b31ed237cdf": "2026-04-28T15:44:33Z",
     "77330d3d55e13ac2": "2026-04-27T23:32:37Z",
     "7736ca330a8d8712": "2026-04-27T23:32:37Z",
@@ -1954,6 +1957,7 @@
     "8d31cdae201201c7": "2026-04-27T18:08:21Z",
     "8d3546e12c3e803d": "2026-04-27T23:24:02Z",
     "8d42b68829d146fd": "2026-04-27T23:24:02Z",
+    "8d469864fb751089": "2026-04-28T23:29:14Z",
     "8d58daa8ce53468e": "2026-04-27T23:24:02Z",
     "8d61c3eca1dbe88d": "2026-04-28T17:50:44Z",
     "8da888ce7e53394b": "2026-04-28T01:07:37Z",
@@ -2559,6 +2563,7 @@
     "ba29124a390a5a36": "2026-04-28T15:44:33Z",
     "ba40dc77aa1658d7": "2026-04-28T06:35:20Z",
     "ba4439033000c970": "2026-04-28T02:58:46Z",
+    "ba5d71f5b24b214a": "2026-04-28T23:29:14Z",
     "ba8742e13c5f9fdb": "2026-04-28T19:50:36Z",
     "ba8f733ba32a7b75": "2026-04-28T10:26:39Z",
     "ba96fbf61fdcc67f": "2026-04-27T23:39:50Z",
@@ -2908,6 +2913,7 @@
     "d3eeee03351347cf": "2026-04-27T18:08:21Z",
     "d3f89299eaf258b6": "2026-04-27T18:08:21Z",
     "d4497cbf4f7837cb": "2026-04-28T15:44:33Z",
+    "d45ba13429eeac28": "2026-04-28T23:29:14Z",
     "d46362846b98fdb1": "2026-04-27T18:08:21Z",
     "d46f211b48915303": "2026-04-27T18:08:21Z",
     "d4742336b59139c5": "2026-04-28T17:03:39Z",
@@ -3254,6 +3260,7 @@
     "eccbca1c5c87ad29": "2026-04-27T23:24:02Z",
     "ecd0979c6dec66d1": "2026-04-28T20:25:11Z",
     "ecd3e262a0532bc1": "2026-04-27T23:39:50Z",
+    "ecd5394326c178aa": "2026-04-28T23:29:14Z",
     "ed036a52b7946fe6": "2026-04-28T02:58:46Z",
     "ed110bf57fda32c8": "2026-04-27T23:39:50Z",
     "ed4538643c2049e1": "2026-04-28T11:12:11Z",
@@ -3283,6 +3290,7 @@
     "ef788a57fdb8bb5f": "2026-04-28T11:52:55Z",
     "ef7b8b3892c0f997": "2026-04-28T06:35:20Z",
     "ef92eb165c92c506": "2026-04-27T18:08:21Z",
+    "ef988a8119d8d47d": "2026-04-28T23:29:14Z",
     "ef9c491cb9fd3ddf": "2026-04-28T11:12:11Z",
     "efac36a6ca5ff4d7": "2026-04-27T18:08:21Z",
     "efb8ec7e680ff497": "2026-04-27T23:32:37Z",
@@ -3525,11 +3533,88 @@
   "items": [
     {
       "category": "ioc",
+      "first_seen": "2026-04-28T23:29:14Z",
+      "id": "ecd5394326c178aa",
+      "published": "2026-04-28T23:24:20Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: geenensp.",
+      "tags": [
+        "malware_download",
+        "32-bit",
+        "elf",
+        "mips"
+      ],
+      "title": "Malicious URL: http://112.249.118.46:40071/bin.sh",
+      "url": "https://urlhaus.abuse.ch/url/3834138/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:29:14Z",
+      "id": "ba5d71f5b24b214a",
+      "published": "2026-04-28T23:22:09Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: anonymous.",
+      "tags": [
+        "malware_download",
+        "ClearFake"
+      ],
+      "title": "Malicious URL: https://sand6taskhub.silicapathsys.garden/cdk-msdn-3457325-null/load-file0dsdf567.chk",
+      "url": "https://urlhaus.abuse.ch/url/3834137/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:29:14Z",
+      "id": "66e280825777b43e",
+      "published": "2026-04-28T23:20:23Z",
+      "source": "abuse.ch ThreatFox",
+      "summary": "Malware: ClearFake. IOC type: domain.",
+      "tags": [
+        "ClearFake",
+        "domain",
+        "None"
+      ],
+      "title": "domain: sand6taskhub.silicapathsys.garden (ClearFake)",
+      "url": "https://threatfox.abuse.ch/ioc/1801865/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:29:14Z",
+      "id": "ef988a8119d8d47d",
+      "published": "2026-04-28T23:18:25Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: geenensp.",
+      "tags": [
+        "malware_download",
+        "32-bit",
+        "elf",
+        "mips"
+      ],
+      "title": "Malicious URL: http://222.142.210.237:53990/i",
+      "url": "https://urlhaus.abuse.ch/url/3834135/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:29:14Z",
+      "id": "1106236b50063315",
+      "published": "2026-04-28T23:18:25Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: geenensp.",
+      "tags": [
+        "malware_download",
+        "32-bit",
+        "elf",
+        "mips"
+      ],
+      "title": "Malicious URL: http://222.136.103.220:58454/bin.sh",
+      "url": "https://urlhaus.abuse.ch/url/3834136/"
+    },
+    {
+      "category": "ioc",
       "first_seen": "2026-04-28T23:18:26Z",
       "id": "8eec25516b8a5445",
       "published": "2026-04-28T23:17:27Z",
       "source": "NIH Typosquat Watch",
-      "summary": "Lookalike domain 'cancergov.com' detected against seed 'cancer.gov'. Evidence: DNS active (76.223.54.146); TLS cert 2019-03-18. Sources: crt.sh, dnstwist.",
+      "summary": "Lookalike domain 'cancergov.com' detected against seed 'cancer.gov'. Evidence: DNS active (13.248.169.48); TLS cert 2019-03-18. Sources: crt.sh, dnstwist.",
       "tags": [
         "typosquat",
         "cancer.gov",
@@ -3545,7 +3630,7 @@
       "id": "fe4aed7cc407c319",
       "published": "2026-04-28T23:17:27Z",
       "source": "NIH Typosquat Watch",
-      "summary": "Lookalike domain 'cc.nihgov.com' detected against seed 'cc.nih.gov'. Evidence: DNS active (76.223.54.146). Sources: dnstwist.",
+      "summary": "Lookalike domain 'cc.nihgov.com' detected against seed 'cc.nih.gov'. Evidence: DNS active (13.248.169.48). Sources: dnstwist.",
       "tags": [
         "typosquat",
         "cc.nih.gov",
@@ -3592,7 +3677,7 @@
       "id": "66921f9b34776dd7",
       "published": "2026-04-28T23:17:27Z",
       "source": "NIH Typosquat Watch",
-      "summary": "Lookalike domain 'niaid.nihgov.com' detected against seed 'niaid.nih.gov'. Evidence: DNS active (13.248.169.48). Sources: dnstwist.",
+      "summary": "Lookalike domain 'niaid.nihgov.com' detected against seed 'niaid.nih.gov'. Evidence: DNS active (76.223.54.146). Sources: dnstwist.",
       "tags": [
         "typosquat",
         "niaid.nih.gov",
@@ -3650,6 +3735,20 @@
     },
     {
       "category": "ioc",
+      "first_seen": "2026-04-28T23:29:14Z",
+      "id": "772966ef57e97c9a",
+      "published": "2026-04-28T23:17:06Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: GAYINT_DOT_ORG.",
+      "tags": [
+        "malware_download",
+        "Mozi"
+      ],
+      "title": "Malicious URL: http://37.55.197.12:38936/i",
+      "url": "https://urlhaus.abuse.ch/url/3834134/"
+    },
+    {
+      "category": "ioc",
       "first_seen": "2026-04-28T23:18:26Z",
       "id": "ed45cf7d13201f7f",
       "published": "2026-04-28T23:15:15Z",
@@ -3661,6 +3760,36 @@
       ],
       "title": "Malicious URL: https://grainmeshnode.silicapathsys.garden/cdk-msdn-3457325-null/load-file0dsdf567.chk",
       "url": "https://urlhaus.abuse.ch/url/3834133/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:29:14Z",
+      "id": "8d469864fb751089",
+      "published": "2026-04-28T23:15:03Z",
+      "source": "abuse.ch ThreatFox",
+      "summary": "Malware: Vidar. IOC type: url.",
+      "tags": [
+        "Vidar",
+        "url",
+        "None"
+      ],
+      "title": "url: https://ixnova.com.ar/ (Vidar)",
+      "url": "https://threatfox.abuse.ch/ioc/1801864/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:29:14Z",
+      "id": "d45ba13429eeac28",
+      "published": "2026-04-28T23:14:44Z",
+      "source": "abuse.ch ThreatFox",
+      "summary": "Malware: ClearFake. IOC type: domain.",
+      "tags": [
+        "ClearFake",
+        "domain",
+        "None"
+      ],
+      "title": "domain: grainmeshnode.silicapathsys.garden (ClearFake)",
+      "url": "https://threatfox.abuse.ch/ioc/1801863/"
     },
     {
       "category": "ioc",
