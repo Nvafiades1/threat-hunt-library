@@ -82,6 +82,9 @@ SOURCES = [
     ("abuse.ch URLhaus",        "ioc",    "urlhaus",       "https://urlhaus.abuse.ch/downloads/csv_recent/"),
     ("abuse.ch MalwareBazaar",  "ioc",    "malwarebazaar", "https://bazaar.abuse.ch/export/csv/recent/"),
     ("abuse.ch ThreatFox",      "ioc",    "threatfox",     "https://threatfox.abuse.ch/export/csv/recent/"),
+
+    # Typosquat detection (state file produced by tools/typosquat_check.py via separate workflow)
+    ("NIH Typosquat Watch",     "ioc",    "typosquat",     "tools/typosquat_state.json"),
 ]
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -292,12 +295,59 @@ def fetch_threatfox(name: str, category: str, url: str) -> list[dict]:
         })
     return items
 
+def fetch_typosquat(name: str, category: str, url: str) -> list[dict]:
+    """Read tools/typosquat_state.json (produced by typosquat_check.py) and emit items."""
+    state_path = pathlib.Path(url) if url else pathlib.Path("tools/typosquat_state.json")
+    if not state_path.exists():
+        return []
+    try:
+        state = json.loads(state_path.read_text())
+    except json.JSONDecodeError:
+        return []
+    items = []
+    for entry in state.get("items", {}).values():
+        domain = entry.get("domain")
+        if not domain:
+            continue
+        seed = entry.get("seed", "")
+        sources = entry.get("sources", [])
+        first_seen = entry.get("first_seen")
+        dns = entry.get("dns") or {}
+        ct = entry.get("ct") or {}
+        nrd = entry.get("nrd", False)
+        bits = []
+        if "dnstwist" in sources and dns.get("a"):
+            bits.append(f"DNS active ({', '.join(dns['a'][:2])})")
+        if "nrd" in sources or nrd:
+            bits.append("recently registered")
+        if "crt.sh" in sources and ct.get("first_issued"):
+            bits.append(f"TLS cert {ct['first_issued'][:10]}")
+        evidence = "; ".join(bits) if bits else "candidate (no live signal)"
+        title = f"Typosquat candidate: {domain} — squat of {seed}"
+        summary = (
+            f"Lookalike domain '{domain}' detected against seed '{seed}'. "
+            f"Evidence: {evidence}. Sources: {', '.join(sources) or 'none'}."
+        )
+        tags = ["typosquat", seed] + sources
+        items.append({
+            "id": make_id(name, domain),
+            "source": name,
+            "category": category,
+            "title": title,
+            "url": f"https://crt.sh/?q={domain}",
+            "published": first_seen,
+            "summary": summary,
+            "tags": tags,
+        })
+    return items
+
 FETCHERS = {
     "rss":            fetch_rss,
     "kev":            fetch_kev,
     "urlhaus":        fetch_urlhaus,
     "malwarebazaar":  fetch_malwarebazaar,
     "threatfox":      fetch_threatfox,
+    "typosquat":      fetch_typosquat,
 }
 
 # ── orchestration ────────────────────────────────────────────────────────────
