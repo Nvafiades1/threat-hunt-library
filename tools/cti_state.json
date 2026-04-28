@@ -3104,6 +3104,7 @@
     "e02873624ee7e845": "2026-04-27T18:08:21Z",
     "e03a8ed516e9f9ab": "2026-04-27T18:08:21Z",
     "e0571ef71a5184e3": "2026-04-27T23:24:02Z",
+    "e05fc8433e6d0f2e": "2026-04-28T23:45:25Z",
     "e0983cc5f8f73734": "2026-04-27T23:24:02Z",
     "e0a5049c16c2e51d": "2026-04-28T01:07:37Z",
     "e0c9eb7786defdef": "2026-04-28T20:25:11Z",
@@ -3546,6 +3547,21 @@
       ],
       "title": "Malicious URL: https://flow9pathgate.silicapathsys.garden/cdk-msdn-3457325-null/load-file0dsdf567.chk",
       "url": "https://urlhaus.abuse.ch/url/3834142/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:45:25Z",
+      "id": "e05fc8433e6d0f2e",
+      "published": "2026-04-28T23:40:08Z",
+      "source": "abuse.ch ThreatFox",
+      "summary": "Malware: ClearFake. IOC type: domain.",
+      "tags": [
+        "ClearFake",
+        "domain",
+        "None"
+      ],
+      "title": "domain: heat5siteview.silicapathsys.garden (ClearFake)",
+      "url": "https://threatfox.abuse.ch/ioc/1801868/"
     },
     {
       "category": "ioc",
