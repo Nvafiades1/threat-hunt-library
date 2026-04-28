@@ -1574,6 +1574,7 @@
     "7064f0def8dac086": "2026-04-27T18:08:21Z",
     "706c8367c3a6da31": "2026-04-28T17:50:44Z",
     "708dfff39ad9efdb": "2026-04-27T18:08:21Z",
+    "70a5533856e63bfd": "2026-04-28T23:43:25Z",
     "70d0b0685e2226af": "2026-04-27T18:08:21Z",
     "70dfb5c0943288a7": "2026-04-28T17:03:39Z",
     "70e06108d33ff40d": "2026-04-28T16:25:04Z",
@@ -2183,6 +2184,7 @@
     "9d6baf424dfd56cb": "2026-04-28T15:44:33Z",
     "9d8d3498e582c861": "2026-04-27T18:08:21Z",
     "9d9952e89d9e8fcf": "2026-04-27T18:08:21Z",
+    "9de10b32fedc747c": "2026-04-28T23:43:25Z",
     "9de7fdd7a8046845": "2026-04-27T18:08:21Z",
     "9dfd5a8edcffe5e1": "2026-04-28T06:35:20Z",
     "9e03e82e115d27c1": "2026-04-28T22:45:47Z",
@@ -2615,6 +2617,7 @@
     "be68753ab821357f": "2026-04-28T04:21:37Z",
     "be7beb4521071ccc": "2026-04-28T09:32:06Z",
     "be808f7f0a556cc8": "2026-04-28T02:58:46Z",
+    "be90b1f5d014365c": "2026-04-28T23:43:25Z",
     "be921706cd0e7447": "2026-04-27T18:08:21Z",
     "bea56ad78fcfb1c5": "2026-04-28T15:44:33Z",
     "bede24c455701fe7": "2026-04-28T06:35:20Z",
@@ -3530,6 +3533,52 @@
     "fffec5fc64f83c03": "2026-04-28T23:18:26Z"
   },
   "items": [
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:43:25Z",
+      "id": "70a5533856e63bfd",
+      "published": "2026-04-28T23:40:16Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: anonymous.",
+      "tags": [
+        "malware_download",
+        "ClearFake"
+      ],
+      "title": "Malicious URL: https://flow9pathgate.silicapathsys.garden/cdk-msdn-3457325-null/load-file0dsdf567.chk",
+      "url": "https://urlhaus.abuse.ch/url/3834142/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:43:25Z",
+      "id": "9de10b32fedc747c",
+      "published": "2026-04-28T23:38:26Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: geenensp.",
+      "tags": [
+        "malware_download",
+        "32-bit",
+        "elf",
+        "mips"
+      ],
+      "title": "Malicious URL: http://61.137.253.199:46557/bin.sh",
+      "url": "https://urlhaus.abuse.ch/url/3834141/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:43:25Z",
+      "id": "be90b1f5d014365c",
+      "published": "2026-04-28T23:38:08Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: geenensp.",
+      "tags": [
+        "malware_download",
+        "32-bit",
+        "elf",
+        "mips"
+      ],
+      "title": "Malicious URL: http://42.238.248.180:47827/bin.sh",
+      "url": "https://urlhaus.abuse.ch/url/3834140/"
+    },
     {
       "category": "ioc",
       "first_seen": "2026-04-28T23:40:43Z",
