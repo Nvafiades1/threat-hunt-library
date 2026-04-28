@@ -32,10 +32,26 @@ STATE_PATH = Path("tools/typosquat_state.json")
 USER_AGENT = "threat-hunt-library-bot/1.0 (+https://github.com/Nvafiades1/threat-hunt-library)"
 
 DNSTWIST_THREADS = 30
-DNSTWIST_TIMEOUT = 240
+DNSTWIST_TIMEOUT = 600
 CRT_TIMEOUT = 45
 CRT_RATE_DELAY = 0.4
 RETENTION_DAYS = 60
+
+# Known-legitimate US government / sibling domains that share letters with NIH-family
+# seeds and consistently surface as false positives. Anything matching is dropped
+# from candidate output AND retroactively pruned from existing state.
+ALLOWLIST = {
+    "neh.gov",        # National Endowment for the Humanities
+    "nh.gov",         # State of New Hampshire
+    "nij.gov",        # National Institute of Justice
+    "nsf.gov",        # National Science Foundation
+    "noaa.gov",       # NOAA
+    "nara.gov",       # National Archives
+    "nasa.gov",       # NASA
+    "usa.gov",        # USA.gov
+    "dol.gov",        # Department of Labor
+    "doi.gov",        # Department of the Interior
+}
 
 
 def now_iso() -> str:
@@ -123,6 +139,13 @@ def main():
     state = load_state()
     items: dict[str, dict] = state.get("items", {})
 
+    # Retroactively drop any allowlisted false positives that landed in state
+    # before the allowlist existed.
+    pre_allow = len(items)
+    items = {p: it for p, it in items.items() if p not in ALLOWLIST}
+    if len(items) < pre_allow:
+        print(f"  removed {pre_allow - len(items)} allowlisted entries from existing state")
+
     # 1. Run dnstwist for each seed (generates perms + DNS resolves)
     all_perms: dict[str, str] = {}        # permutation -> originating seed
     dns_results: dict[str, dict] = {}     # permutation -> {a, mx}
@@ -131,7 +154,7 @@ def main():
         rows = run_dnstwist(seed)
         for row in rows:
             d = (row.get("domain") or "").lower().strip()
-            if not d or d == seed.lower():
+            if not d or d == seed.lower() or d in ALLOWLIST:
                 continue
             if d not in all_perms:
                 all_perms[d] = seed
