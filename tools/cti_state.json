@@ -831,6 +831,7 @@
     "3b6cba5139432d97": "2026-04-27T23:32:37Z",
     "3b6e19f14ca025ff": "2026-04-27T18:08:21Z",
     "3b7206712288d040": "2026-04-27T18:08:21Z",
+    "3b86a1703051371c": "2026-04-28T23:18:26Z",
     "3b87f9a6e05e20fa": "2026-04-27T23:24:02Z",
     "3b98d1a54b344540": "2026-04-28T09:32:06Z",
     "3b9be8861be7e993": "2026-04-27T23:39:50Z",
@@ -1415,6 +1416,7 @@
     "662e32d9250e66ea": "2026-04-28T19:50:36Z",
     "6670cb4f5bf0d493": "2026-04-27T18:08:21Z",
     "66806097cd04d723": "2026-04-28T06:35:20Z",
+    "66921f9b34776dd7": "2026-04-28T23:18:26Z",
     "66abcc22c68852f4": "2026-04-27T23:24:02Z",
     "66d5d81959e49a6a": "2026-04-28T21:46:31Z",
     "66f2efbf447b422a": "2026-04-27T23:24:02Z",
@@ -1725,6 +1727,7 @@
     "7bcd5b5b6d9cbd59": "2026-04-28T08:35:18Z",
     "7c075fa20afbca78": "2026-04-28T19:50:36Z",
     "7c199e3150e991ce": "2026-04-27T18:08:21Z",
+    "7c2d8e5427f06869": "2026-04-28T23:18:26Z",
     "7c5f3fda07a69afc": "2026-04-28T04:21:37Z",
     "7cb127e33b7547fc": "2026-04-27T18:08:21Z",
     "7cc4a5d92fc28526": "2026-04-28T09:32:06Z",
@@ -1972,6 +1975,7 @@
     "8ec2af1d33adc6bf": "2026-04-28T04:21:37Z",
     "8ed7acd845719247": "2026-04-28T00:06:08Z",
     "8edf72cb51026e97": "2026-04-27T18:08:21Z",
+    "8eec25516b8a5445": "2026-04-28T23:18:26Z",
     "8ef09eeb84cf498e": "2026-04-28T09:32:06Z",
     "8efeda12fbd33001": "2026-04-28T18:26:13Z",
     "8eff731b8ed5f491": "2026-04-27T18:08:21Z",
@@ -2672,6 +2676,7 @@
     "c291a9301637c14d": "2026-04-28T02:58:46Z",
     "c2ae3c0e74f782bb": "2026-04-27T23:24:02Z",
     "c2b198be5adafc6a": "2026-04-27T23:24:02Z",
+    "c2bcadf62eb86a22": "2026-04-28T23:18:26Z",
     "c2e737d8a708b72f": "2026-04-27T18:08:21Z",
     "c2eaae6e6e26eb6b": "2026-04-28T15:44:33Z",
     "c30a6ee3ee5a3ae0": "2026-04-27T18:08:21Z",
@@ -2695,6 +2700,7 @@
     "c432c399d9a19239": "2026-04-27T18:08:21Z",
     "c43575313db45111": "2026-04-28T15:44:33Z",
     "c44d49ef7ed56445": "2026-04-28T21:46:31Z",
+    "c46f5206c923f0db": "2026-04-28T23:18:26Z",
     "c4738946ff484503": "2026-04-28T13:04:49Z",
     "c47a6be7356face4": "2026-04-28T15:44:33Z",
     "c47ea63f95e7c58e": "2026-04-27T23:24:02Z",
@@ -3251,6 +3257,7 @@
     "ed036a52b7946fe6": "2026-04-28T02:58:46Z",
     "ed110bf57fda32c8": "2026-04-27T23:39:50Z",
     "ed4538643c2049e1": "2026-04-28T11:12:11Z",
+    "ed45cf7d13201f7f": "2026-04-28T23:18:26Z",
     "ed7b62a5a819e84c": "2026-04-27T23:32:37Z",
     "ed90ec87241c1f91": "2026-04-28T08:35:18Z",
     "edb84d68a4d6f0d2": "2026-04-28T09:32:06Z",
@@ -3489,6 +3496,7 @@
     "fe2e3c259b80b041": "2026-04-27T18:08:21Z",
     "fe2ff51e8ed55054": "2026-04-27T18:08:21Z",
     "fe47fe9b838e4a74": "2026-04-27T23:24:02Z",
+    "fe4aed7cc407c319": "2026-04-28T23:18:26Z",
     "fe68576b6ca587b7": "2026-04-27T18:08:21Z",
     "fe78fb536df4eac5": "2026-04-28T02:58:46Z",
     "fe9a8fc3d48b72b2": "2026-04-27T18:08:21Z",
@@ -3511,9 +3519,149 @@
     "ffd99eefa8440c19": "2026-04-27T18:08:21Z",
     "ffe3581ebd8bcc66": "2026-04-28T07:35:04Z",
     "ffedb2e041a01011": "2026-04-28T19:50:36Z",
-    "fff222742838694a": "2026-04-28T07:35:04Z"
+    "fff222742838694a": "2026-04-28T07:35:04Z",
+    "fffec5fc64f83c03": "2026-04-28T23:18:26Z"
   },
   "items": [
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:18:26Z",
+      "id": "8eec25516b8a5445",
+      "published": "2026-04-28T23:17:27Z",
+      "source": "NIH Typosquat Watch",
+      "summary": "Lookalike domain 'cancergov.com' detected against seed 'cancer.gov'. Evidence: DNS active (76.223.54.146); TLS cert 2019-03-18. Sources: crt.sh, dnstwist.",
+      "tags": [
+        "typosquat",
+        "cancer.gov",
+        "crt.sh",
+        "dnstwist"
+      ],
+      "title": "Typosquat candidate: cancergov.com \u2014 squat of cancer.gov",
+      "url": "https://crt.sh/?q=cancergov.com"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:18:26Z",
+      "id": "fe4aed7cc407c319",
+      "published": "2026-04-28T23:17:27Z",
+      "source": "NIH Typosquat Watch",
+      "summary": "Lookalike domain 'cc.nihgov.com' detected against seed 'cc.nih.gov'. Evidence: DNS active (76.223.54.146). Sources: dnstwist.",
+      "tags": [
+        "typosquat",
+        "cc.nih.gov",
+        "dnstwist"
+      ],
+      "title": "Typosquat candidate: cc.nihgov.com \u2014 squat of cc.nih.gov",
+      "url": "https://crt.sh/?q=cc.nihgov.com"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:18:26Z",
+      "id": "c46f5206c923f0db",
+      "published": "2026-04-28T23:17:27Z",
+      "source": "NIH Typosquat Watch",
+      "summary": "Lookalike domain 'neh.gov' detected against seed 'nih.gov'. Evidence: DNS active (23.21.228.79); TLS cert 2009-08-18. Sources: crt.sh, dnstwist.",
+      "tags": [
+        "typosquat",
+        "nih.gov",
+        "crt.sh",
+        "dnstwist"
+      ],
+      "title": "Typosquat candidate: neh.gov \u2014 squat of nih.gov",
+      "url": "https://crt.sh/?q=neh.gov"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:18:26Z",
+      "id": "c2bcadf62eb86a22",
+      "published": "2026-04-28T23:17:27Z",
+      "source": "NIH Typosquat Watch",
+      "summary": "Lookalike domain 'nh.gov' detected against seed 'nih.gov'. Evidence: DNS active (199.192.8.2); TLS cert 2005-12-01. Sources: crt.sh, dnstwist.",
+      "tags": [
+        "typosquat",
+        "nih.gov",
+        "crt.sh",
+        "dnstwist"
+      ],
+      "title": "Typosquat candidate: nh.gov \u2014 squat of nih.gov",
+      "url": "https://crt.sh/?q=nh.gov"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:18:26Z",
+      "id": "66921f9b34776dd7",
+      "published": "2026-04-28T23:17:27Z",
+      "source": "NIH Typosquat Watch",
+      "summary": "Lookalike domain 'niaid.nihgov.com' detected against seed 'niaid.nih.gov'. Evidence: DNS active (13.248.169.48). Sources: dnstwist.",
+      "tags": [
+        "typosquat",
+        "niaid.nih.gov",
+        "dnstwist"
+      ],
+      "title": "Typosquat candidate: niaid.nihgov.com \u2014 squat of niaid.nih.gov",
+      "url": "https://crt.sh/?q=niaid.nihgov.com"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:18:26Z",
+      "id": "7c2d8e5427f06869",
+      "published": "2026-04-28T23:17:27Z",
+      "source": "NIH Typosquat Watch",
+      "summary": "Lookalike domain 'nihgov.com' detected against seed 'nih.gov'. Evidence: DNS active (76.223.54.146); TLS cert 2023-07-22. Sources: crt.sh, dnstwist.",
+      "tags": [
+        "typosquat",
+        "nih.gov",
+        "crt.sh",
+        "dnstwist"
+      ],
+      "title": "Typosquat candidate: nihgov.com \u2014 squat of nih.gov",
+      "url": "https://crt.sh/?q=nihgov.com"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:18:26Z",
+      "id": "3b86a1703051371c",
+      "published": "2026-04-28T23:17:27Z",
+      "source": "NIH Typosquat Watch",
+      "summary": "Lookalike domain 'nij.gov' detected against seed 'nih.gov'. Evidence: DNS active (149.101.127.80); TLS cert 2013-08-07. Sources: crt.sh, dnstwist.",
+      "tags": [
+        "typosquat",
+        "nih.gov",
+        "crt.sh",
+        "dnstwist"
+      ],
+      "title": "Typosquat candidate: nij.gov \u2014 squat of nih.gov",
+      "url": "https://crt.sh/?q=nij.gov"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:18:26Z",
+      "id": "fffec5fc64f83c03",
+      "published": "2026-04-28T23:17:27Z",
+      "source": "NIH Typosquat Watch",
+      "summary": "Lookalike domain 'nlm.nihgov.com' detected against seed 'nlm.nih.gov'. Evidence: DNS active (13.248.169.48). Sources: dnstwist.",
+      "tags": [
+        "typosquat",
+        "nlm.nih.gov",
+        "dnstwist"
+      ],
+      "title": "Typosquat candidate: nlm.nihgov.com \u2014 squat of nlm.nih.gov",
+      "url": "https://crt.sh/?q=nlm.nihgov.com"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-28T23:18:26Z",
+      "id": "ed45cf7d13201f7f",
+      "published": "2026-04-28T23:15:15Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: anonymous.",
+      "tags": [
+        "malware_download",
+        "ClearFake"
+      ],
+      "title": "Malicious URL: https://grainmeshnode.silicapathsys.garden/cdk-msdn-3457325-null/load-file0dsdf567.chk",
+      "url": "https://urlhaus.abuse.ch/url/3834133/"
+    },
     {
       "category": "ioc",
       "first_seen": "2026-04-28T23:15:36Z",
@@ -3552,7 +3700,7 @@
       "summary": "Threat: malware_download. Reporter: GAYINT_DOT_ORG.",
       "tags": [
         "malware_download",
-        "None"
+        "mirai"
       ],
       "title": "Malicious URL: http://115.59.30.87:34637/bin.sh",
       "url": "https://urlhaus.abuse.ch/url/3834131/"
