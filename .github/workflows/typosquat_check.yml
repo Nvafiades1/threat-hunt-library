@@ -1,0 +1,54 @@
+name: Check NIH Typosquats
+
+on:
+  schedule:
+    - cron: '37 * * * *'   # hourly at :37 (offset from build_cti's */15)
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'tools/typosquat_check.py'
+      - '.github/workflows/typosquat_check.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: typosquat-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run typosquat check
+        run: python tools/typosquat_check.py
+
+      - name: Commit & push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/typosquat_state.json
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "Update typosquat state [skip ci]"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            sleep 3
+          done
+          echo "Push failed after retries" >&2
+          exit 1
