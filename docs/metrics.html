@@ -113,7 +113,7 @@ body.light .report-btn{color:#fff}
 </head><body>
 <header>
   <div class="brand">Threat Hunt <span class="accent">Metrics</span></div>
-  <span class="meta">Generated 2026-04-29 16:53 UTC</span>
+  <span class="meta">Generated 2026-04-29 17:02 UTC</span>
   <button id="reportWordBtn" class="report-btn" title="Download a Word document of every chart and KPI — opens directly in Microsoft Word">Generate Report (Word) &darr;</button>
   <button id="reportMdBtn" class="report-btn-secondary" title="Download the same report as plain Markdown">MD</button>
   <a class="nav-link" href="./index.html">Matrix &rarr;</a>
@@ -277,8 +277,79 @@ body.light .report-btn{color:#fff}
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
-const DATA = {"totals": {"hunts": 40, "techniques": 40, "actors": 18, "coverage": 11, "universe": 356, "last_hunt": "2026-04-28", "tactic_gap_count": 0}, "duration": {"avg_days": 0.0, "median_days": 0.0, "measured": 40, "total": 40}, "throughput": {"last_30": 13, "last_90": 29, "prev_30": 8}, "growth": {"labels": ["2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"], "new_techniques": [3, 4, 5, 7, 9, 12], "this_month": 12, "prev_month": 9}, "timeline": {"labels": ["2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"], "monthly": [3, 4, 5, 7, 9, 12], "cumulative": [3, 7, 12, 19, 28, 40]}, "tactics": {"labels": ["Reconnaissance", "Resource Development", "Initial Access", "Execution", "Persistence", "Privilege Escalation", "Defense Evasion", "Credential Access", "Discovery", "Lateral Movement", "Collection", "Command And Control", "Exfiltration", "Impact"], "hunts": [2, 2, 2, 2, 3, 7, 3, 4, 3, 3, 1, 3, 3, 2], "covered": [2, 2, 2, 2, 3, 7, 3, 4, 3, 3, 1, 3, 3, 2]}, "outcomes": {"labels": ["Completed", "Inconclusive", "In Progress"], "values": [29, 3, 8]}, "actors": {"labels": ["APT41", "APT29 (Cozy Bear)", "APT28 (Fancy Bear)", "Scattered Spider (UNC3944)", "Lazarus Group", "MuddyWater", "Sandworm", "LockBit", "Charming Kitten (APT35)", "APT33"], "values": [7, 6, 5, 3, 3, 2, 2, 2, 1, 1]}, "severity": {"labels": ["Critical", "High", "Medium", "Low"], "values": [7, 19, 12, 2]}, "confidence": {"labels": ["High", "Low", "Medium"], "values": [21, 4, 15]}, "techniques": {"labels": ["T1003", "T1018", "T1021", "T1027", "T1041", "T1048", "T1053", "T1056", "T1057", "T1059"], "values": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, "platforms": {"labels": ["Splunk", "Sentinel", "Defender XDR", "CrowdStrike"], "values": [15, 11, 8, 6]}, "gaps": {"tactics": [], "total_tactics": 14}};
+Chart.register(ChartDataLabels);
+const DATA = {"totals": {"hunts": 40, "techniques": 40, "actors": 18, "coverage": 11, "universe": 356, "last_hunt": "2026-04-28", "tactic_gap_count": 0}, "duration": {"avg_days": 0.0, "median_days": 0.0, "measured": 40, "total": 40}, "throughput": {"last_30": 13, "last_90": 29, "prev_30": 8}, "growth": {"labels": ["2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"], "new_techniques": [3, 4, 5, 7, 9, 12], "this_month": 12, "prev_month": 9}, "timeline": {"labels": ["2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"], "monthly": [3, 4, 5, 7, 9, 12], "cumulative": [3, 7, 12, 19, 28, 40]}, "tactics": {"labels": ["Reconnaissance", "Resource Development", "Initial Access", "Execution", "Persistence", "Privilege Escalation", "Defense Evasion", "Credential Access", "Discovery", "Lateral Movement", "Collection", "Command And Control", "Exfiltration", "Impact"], "hunts": [2, 2, 2, 2, 3, 7, 3, 4, 3, 3, 1, 3, 3, 2], "covered": [2, 2, 2, 2, 3, 7, 3, 4, 3, 3, 1, 3, 3, 2]}, "outcomes": {"labels": ["Completed", "Inconclusive", "In Progress"], "values": [29, 3, 8]}, "actors": {"labels": ["APT41", "APT29 (Cozy Bear)", "APT28 (Fancy Bear)", "Scattered Spider (UNC3944)", "Lazarus Group", "MuddyWater", "Sandworm", "LockBit", "Charming Kitten (APT35)", "APT33"], "values": [7, 6, 5, 3, 3, 2, 2, 2, 1, 1]}, "severity": {"labels": ["Critical", "High", "Medium", "Low"], "values": [7, 19, 12, 2]}, "confidence": {"labels": ["High", "Low", "Medium"], "values": [21, 4, 15]}, "techniques": {"labels": ["T1003", "T1018", "T1021", "T1027", "T1041", "T1048", "T1053", "T1056", "T1057", "T1059"], "values": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, "platforms": {"labels": ["Splunk", "Sentinel", "Defender XDR", "CrowdStrike"], "values": [15, 11, 8, 6]}, "gaps": {"tactics": [], "total_tactics": 14}, "hunts": [{"technique": "T1003", "tactic": "Credential Access", "title": "T1003", "date": "2026-03-10", "severity": "Critical", "status": "Completed", "platform": "Defender XDR", "actors": ["APT29 (Cozy Bear)"]}, {"technique": "T1018", "tactic": "Discovery", "title": "T1018", "date": "2026-03-28", "severity": "High", "status": "Completed", "platform": "Splunk", "actors": ["APT28 (Fancy Bear)"]}, {"technique": "T1021", "tactic": "Lateral Movement", "title": "T1021", "date": "2026-03-30", "severity": "High", "status": "Completed", "platform": "Sentinel", "actors": ["Scattered Spider (UNC3944)"]}, {"technique": "T1027", "tactic": "Defense Evasion", "title": "T1027", "date": "2026-02-24", "severity": "Medium", "status": "Inconclusive", "platform": "CrowdStrike", "actors": ["APT41"]}, {"technique": "T1041", "tactic": "Exfiltration", "title": "T1041", "date": "2026-04-21", "severity": "High", "status": "Completed", "platform": "Splunk", "actors": ["APT41"]}, {"technique": "T1048", "tactic": "Exfiltration", "title": "T1048", "date": "2026-04-25", "severity": "Medium", "status": "In Progress", "platform": "Splunk", "actors": ["APT28 (Fancy Bear)"]}, {"technique": "T1053", "tactic": "Privilege Escalation", "title": "T1053", "date": "2026-01-17", "severity": "Medium", "status": "Completed", "platform": "Splunk", "actors": ["APT41"]}, {"technique": "T1056", "tactic": "Credential Access", "title": "T1056", "date": "2026-04-06", "severity": "Medium", "status": "Completed", "platform": "CrowdStrike", "actors": ["Charming Kitten (APT35)"]}, {"technique": "T1057", "tactic": "Discovery", "title": "T1057", "date": "2026-03-25", "severity": "Low", "status": "Completed", "platform": "Sentinel", "actors": ["MuddyWater"]}, {"technique": "T1059", "tactic": "Execution", "title": "T1059", "date": "2026-01-10", "severity": "High", "status": "Completed", "platform": "Defender XDR", "actors": ["MuddyWater"]}, {"technique": "T1068", "tactic": "Privilege Escalation", "title": "T1068", "date": "2026-02-11", "severity": "Critical", "status": "Completed", "platform": "CrowdStrike", "actors": ["Lazarus Group"]}, {"technique": "T1070", "tactic": "Defense Evasion", "title": "T1070", "date": "2026-02-27", "severity": "Critical", "status": "Completed", "platform": "Splunk", "actors": ["Sandworm"]}, {"technique": "T1071", "tactic": "Command And Control", "title": "T1071", "date": "2026-04-12", "severity": "High", "status": "Completed", "platform": "Splunk", "actors": ["APT41"]}, {"technique": "T1078", "tactic": "Privilege Escalation", "title": "T1078", "date": "2026-01-04", "severity": "High", "status": "In Progress", "platform": "Splunk", "actors": ["APT41"]}, {"technique": "T1083", "tactic": "Discovery", "title": "T1083", "date": "2026-03-22", "severity": "Medium", "status": "Completed", "platform": "Splunk", "actors": ["LockBit"]}, {"technique": "T1090", "tactic": "Command And Control", "title": "T1090", "date": "2026-04-18", "severity": "High", "status": "In Progress", "platform": "Sentinel", "actors": ["Scattered Spider (UNC3944)"]}, {"technique": "T1110", "tactic": "Credential Access", "title": "T1110", "date": "2026-03-14", "severity": "High", "status": "Completed", "platform": "Sentinel", "actors": ["APT33"]}, {"technique": "T1112", "tactic": "Persistence", "title": "T1112", "date": "2026-03-06", "severity": "High", "status": "Completed", "platform": "Sentinel", "actors": ["Conti"]}, {"technique": "T1113", "tactic": "Collection", "title": "T1113", "date": "2026-04-09", "severity": "Medium", "status": "Inconclusive", "platform": "Defender XDR", "actors": ["APT28 (Fancy Bear)"]}, {"technique": "T1133", "tactic": "Persistence", "title": "T1133", "date": "2025-12-28", "severity": "High", "status": "Completed", "platform": "Sentinel", "actors": ["Scattered Spider (UNC3944)"]}, {"technique": "T1134", "tactic": "Privilege Escalation", "title": "T1134", "date": "2026-02-16", "severity": "High", "status": "In Progress", "platform": "Defender XDR", "actors": ["APT29 (Cozy Bear)"]}, {"technique": "T1136", "tactic": "Persistence", "title": "T1136", "date": "2026-02-06", "severity": "High", "status": "Completed", "platform": "Splunk", "actors": ["APT28 (Fancy Bear)"]}, {"technique": "T1190", "tactic": "Initial Access", "title": "T1190", "date": "2025-12-19", "severity": "Critical", "status": "Completed", "platform": "Splunk", "actors": ["Volt Typhoon"]}, {"technique": "T1204", "tactic": "Execution", "title": "T1204", "date": "2026-01-24", "severity": "High", "status": "Completed", "platform": "Defender XDR", "actors": ["APT29 (Cozy Bear)"]}, {"technique": "T1218", "tactic": "Defense Evasion", "title": "T1218", "date": "2026-03-03", "severity": "High", "status": "Completed", "platform": "Defender XDR", "actors": ["Mustang Panda"]}, {"technique": "T1486", "tactic": "Impact", "title": "T1486", "date": "2026-04-27", "severity": "Critical", "status": "Completed", "platform": "CrowdStrike", "actors": ["LockBit"]}, {"technique": "T1490", "tactic": "Impact", "title": "T1490", "date": "2026-04-28", "severity": "Critical", "status": "Completed", "platform": "Sentinel", "actors": ["BlackBasta"]}, {"technique": "T1543", "tactic": "Privilege Escalation", "title": "T1543", "date": "2026-02-02", "severity": "High", "status": "Completed", "platform": "Splunk", "actors": ["Sandworm"]}, {"technique": "T1547", "tactic": "Privilege Escalation", "title": "T1547", "date": "2026-01-30", "severity": "Medium", "status": "Completed", "platform": "Sentinel", "actors": ["Turla"]}, {"technique": "T1548", "tactic": "Privilege Escalation", "title": "T1548", "date": "2026-02-20", "severity": "Medium", "status": "Completed", "platform": "Sentinel", "actors": ["Kimsuky"]}, {"technique": "T1550", "tactic": "Lateral Movement", "title": "T1550", "date": "2026-04-03", "severity": "Critical", "status": "In Progress", "platform": "Sentinel", "actors": ["APT41"]}, {"technique": "T1555", "tactic": "Credential Access", "title": "T1555", "date": "2026-03-18", "severity": "High", "status": "In Progress", "platform": "CrowdStrike", "actors": ["FIN7"]}, {"technique": "T1566", "tactic": "Initial Access", "title": "T1566", "date": "2025-12-11", "severity": "High", "status": "Completed", "platform": "Defender XDR", "actors": ["APT29 (Cozy Bear)"]}, {"technique": "T1567", "tactic": "Exfiltration", "title": "T1567", "date": "2026-04-24", "severity": "High", "status": "Completed", "platform": "Defender XDR", "actors": ["Lazarus Group"]}, {"technique": "T1570", "tactic": "Lateral Movement", "title": "T1570", "date": "2026-04-01", "severity": "Medium", "status": "In Progress", "platform": "Splunk", "actors": ["APT29 (Cozy Bear)"]}, {"technique": "T1573", "tactic": "Command And Control", "title": "T1573", "date": "2026-04-15", "severity": "Medium", "status": "Completed", "platform": "Splunk", "actors": ["Cobalt Strike Operators"]}, {"technique": "T1583", "tactic": "Resource Development", "title": "T1583", "date": "2025-11-23", "severity": "High", "status": "Completed", "platform": "Splunk", "actors": ["Lazarus Group"]}, {"technique": "T1587", "tactic": "Resource Development", "title": "T1587", "date": "2025-12-03", "severity": "Medium", "status": "Inconclusive", "platform": "CrowdStrike", "actors": ["APT41"]}, {"technique": "T1592", "tactic": "Reconnaissance", "title": "T1592", "date": "2025-11-14", "severity": "Low", "status": "In Progress", "platform": "Sentinel", "actors": ["APT29 (Cozy Bear)"]}, {"technique": "T1595", "tactic": "Reconnaissance", "title": "T1595", "date": "2025-11-05", "severity": "Medium", "status": "Completed", "platform": "Splunk", "actors": ["APT28 (Fancy Bear)"]}]};
+
+// Per-actor profiles surfaced in the Generate Report output. Curated from
+// public sources (MITRE ATT&CK, CrowdStrike adversary universe, vendor blogs,
+// CISA joint advisories). Only actors present in DATA.actors.labels with a
+// matching key here will be included as report spotlights.
+const ACTOR_PROFILES = {
+  "APT29 (Cozy Bear)": {
+    aliases: ["Cozy Bear", "The Dukes", "NOBELIUM", "Midnight Blizzard", "IRON HEMLOCK", "UNC2452"],
+    active: "2008 – present",
+    industries: ["Government", "Defense", "Think tanks / NGOs", "Healthcare (vaccine R&D)", "Technology"],
+    countries: ["United States", "United Kingdom", "Germany", "Netherlands", "NATO members"],
+    category: "Nation-state · Russia (SVR)",
+    references: [
+      ["MITRE ATT&CK · G0016", "https://attack.mitre.org/groups/G0016/"],
+      ["CrowdStrike · Cozy Bear", "https://www.crowdstrike.com/adversaries/cozy-bear/"],
+      ["CISA AA21-148A · Russian SVR", "https://www.cisa.gov/news-events/cybersecurity-advisories/aa21-148a"],
+      ["Microsoft · Midnight Blizzard analysis", "https://www.microsoft.com/en-us/security/blog/2024/01/19/midnight-blizzard-guidance-for-responders-on-nation-state-attack/"],
+    ],
+  },
+  "APT28 (Fancy Bear)": {
+    aliases: ["Fancy Bear", "Pawn Storm", "Sofacy", "Sednit", "STRONTIUM", "Forest Blizzard", "IRON TWILIGHT"],
+    active: "2004 – present",
+    industries: ["Government", "Military", "Journalism", "Sports / anti-doping bodies"],
+    countries: ["United States", "Ukraine", "NATO members", "Eastern Europe"],
+    category: "Nation-state · Russia (GRU Unit 26165)",
+    references: [
+      ["MITRE ATT&CK · G0007", "https://attack.mitre.org/groups/G0007/"],
+      ["CrowdStrike · Fancy Bear", "https://www.crowdstrike.com/adversaries/fancy-bear/"],
+      ["Microsoft · Forest Blizzard", "https://www.microsoft.com/en-us/security/blog/2023/12/04/microsoft-mitigates-russian-aligned-actor-attempting-to-compromise-microsoft-corporate-email-accounts/"],
+    ],
+  },
+  "APT41": {
+    aliases: ["Wicked Panda", "BARIUM", "Blackfly", "Winnti", "BRONZE ATLAS", "TG-2633"],
+    active: "2012 – present",
+    industries: ["Healthcare", "Telecommunications", "Technology / SaaS", "Video games", "Aviation", "Government"],
+    countries: ["United States", "India", "Japan", "South Korea", "United Kingdom", "France"],
+    category: "Nation-state · China (with parallel financially-motivated operations)",
+    references: [
+      ["MITRE ATT&CK · G0096", "https://attack.mitre.org/groups/G0096/"],
+      ["Mandiant · APT41 dual-mission report", "https://www.mandiant.com/resources/blog/apt41-dual-espionage-and-cyber-crime-operation"],
+      ["CrowdStrike · Wicked Panda", "https://www.crowdstrike.com/adversaries/wicked-panda/"],
+    ],
+  },
+  "Lazarus Group": {
+    aliases: ["HIDDEN COBRA", "ZINC", "Diamond Sleet", "Labyrinth Chollima", "Guardians of Peace"],
+    active: "2009 – present",
+    industries: ["Banking / SWIFT", "Cryptocurrency exchanges", "Defense", "Entertainment", "Aerospace"],
+    countries: ["United States", "South Korea", "Bangladesh", "Vietnam", "global"],
+    category: "Nation-state · DPRK (Reconnaissance General Bureau / Lab 110)",
+    references: [
+      ["MITRE ATT&CK · G0032", "https://attack.mitre.org/groups/G0032/"],
+      ["CISA AA20-239A · BeagleBoyz / HIDDEN COBRA", "https://www.cisa.gov/news-events/cybersecurity-advisories/aa20-239a"],
+      ["CrowdStrike · Labyrinth Chollima", "https://www.crowdstrike.com/adversaries/labyrinth-chollima/"],
+    ],
+  },
+  "Scattered Spider (UNC3944)": {
+    aliases: ["UNC3944", "Octo Tempest", "0ktapus", "Scatter Swine", "Roasted 0ktapus"],
+    active: "2022 – present",
+    industries: ["Hospitality / casinos", "Telecommunications", "BPO", "Finance", "Technology / SaaS"],
+    countries: ["United States", "United Kingdom", "Canada", "Australia"],
+    category: "Cybercrime · English-speaking, frequently aligned with ALPHV/BlackCat",
+    references: [
+      ["MITRE ATT&CK · G1015", "https://attack.mitre.org/groups/G1015/"],
+      ["CISA AA23-320A · Joint advisory", "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-320a"],
+      ["Microsoft · Octo Tempest", "https://www.microsoft.com/en-us/security/blog/2023/10/25/octo-tempest-crosses-boundaries-to-facilitate-extensive-cross-domain-attack/"],
+      ["Mandiant · UNC3944 SIM-swap research", "https://www.mandiant.com/resources/blog/unc3944-sms-phishing-sim-swapping-ransomware"],
+    ],
+  },
+};
 
 function cssVar(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
@@ -326,10 +397,39 @@ function baseOpts(p) {
     plugins: {
       legend: { labels: { color: p.text, boxWidth: 10, font: { size: 11 } } },
       tooltip: { enabled: true },
+      // Off by default — each chart opts in with its own formatter.
+      datalabels: { display: false },
     },
     scales: {},
   };
 }
+
+// Datalabels formatter for parts-of-whole charts (doughnut). Shows "N · P%".
+function pctLabel(value, ctx) {
+  const arr = ctx.chart.data.datasets[0].data || [];
+  const total = arr.reduce((a, b) => a + (Number(b) || 0), 0);
+  if (!total) return '';
+  const pct = Math.round((value / total) * 100);
+  return pct < 4 ? '' : pct + '%';
+}
+const PCT_DATALABELS = {
+  display: true,
+  color: '#fff',
+  font: { weight: '700', size: 11 },
+  formatter: pctLabel,
+};
+const COUNT_DATALABELS = (p) => ({
+  display: ctx => {
+    const v = ctx.dataset.data[ctx.dataIndex];
+    return Number(v) > 0;
+  },
+  anchor: 'end',
+  align: 'end',
+  clip: false,
+  color: p.text,
+  font: { weight: '600', size: 10 },
+  formatter: v => v,
+});
 
 function renderAll() {
   destroyAll();
@@ -350,6 +450,7 @@ function renderAll() {
     },
     options: {
       ...baseOpts(p),
+      plugins: { ...baseOpts(p).plugins, datalabels: { display: false } },
       scales: {
         x:  { ticks:{color:p.dim}, grid:{color:p.grid} },
         y:  { beginAtZero:true, ticks:{color:p.dim, precision:0}, grid:{color:p.grid} },
@@ -369,7 +470,7 @@ function renderAll() {
         borderWidth: 2, borderColor: cssVar('--surface'),
       }],
     },
-    options: { ...baseOpts(p), cutout:'62%' },
+    options: { ...baseOpts(p), cutout:'62%', plugins: { ...baseOpts(p).plugins, datalabels: PCT_DATALABELS } },
   });
 
   // ── Confidence donut ───────────────────────────────────────────────────
@@ -384,7 +485,7 @@ function renderAll() {
         borderWidth: 2, borderColor: cssVar('--surface'),
       }],
     },
-    options: { ...baseOpts(p), cutout:'62%' },
+    options: { ...baseOpts(p), cutout:'62%', plugins: { ...baseOpts(p).plugins, datalabels: PCT_DATALABELS } },
   });
 
   // ── Tactics ────────────────────────────────────────────────────────────
@@ -400,6 +501,7 @@ function renderAll() {
     options: {
       ...baseOpts(p),
       indexAxis:'y',
+      plugins: { ...baseOpts(p).plugins, datalabels: COUNT_DATALABELS(p) },
       scales: {
         x: { beginAtZero:true, ticks:{color:p.dim, precision:0}, grid:{color:p.grid} },
         y: { ticks:{color:p.text}, grid:{display:false} },
@@ -416,7 +518,7 @@ function renderAll() {
     },
     options: {
       ...baseOpts(p), indexAxis:'y',
-      plugins:{ ...baseOpts(p).plugins, legend:{display:false} },
+      plugins:{ ...baseOpts(p).plugins, legend:{display:false}, datalabels: COUNT_DATALABELS(p) },
       scales: {
         x: { beginAtZero:true, ticks:{color:p.dim, precision:0}, grid:{color:p.grid} },
         y: { ticks:{color:p.text}, grid:{display:false} },
@@ -433,7 +535,7 @@ function renderAll() {
     },
     options: {
       ...baseOpts(p), indexAxis:'y',
-      plugins:{ ...baseOpts(p).plugins, legend:{display:false} },
+      plugins:{ ...baseOpts(p).plugins, legend:{display:false}, datalabels: COUNT_DATALABELS(p) },
       scales: {
         x: { beginAtZero:true, ticks:{color:p.dim, precision:0}, grid:{color:p.grid} },
         y: { ticks:{color:p.text}, grid:{display:false} },
@@ -453,7 +555,7 @@ function renderAll() {
         borderWidth: 2, borderColor: cssVar('--surface'),
       }],
     },
-    options: { ...baseOpts(p), cutout:'62%' },
+    options: { ...baseOpts(p), cutout:'62%', plugins: { ...baseOpts(p).plugins, datalabels: PCT_DATALABELS } },
   });
 
   // ── Outcome mix donut ─────────────────────────────────────────────────
@@ -472,7 +574,7 @@ function renderAll() {
         borderWidth: 2, borderColor: cssVar('--surface'),
       }],
     },
-    options: { ...baseOpts(p), cutout:'62%' },
+    options: { ...baseOpts(p), cutout:'62%', plugins: { ...baseOpts(p).plugins, datalabels: PCT_DATALABELS } },
   });
 
   // ── Coverage growth line ──────────────────────────────────────────────
@@ -488,7 +590,7 @@ function renderAll() {
     },
     options: {
       ...baseOpts(p),
-      plugins:{ ...baseOpts(p).plugins, legend:{display:false} },
+      plugins:{ ...baseOpts(p).plugins, legend:{display:false}, datalabels: COUNT_DATALABELS(p) },
       scales:{
         x:{ ticks:{color:p.dim}, grid:{color:p.grid} },
         y:{ beginAtZero:true, ticks:{color:p.dim, precision:0}, grid:{color:p.grid} },
@@ -701,6 +803,75 @@ function buildReportSections() {
   return { today, snapshot, charts };
 }
 
+// ── per-actor spotlight builders ───────────────────────────────────────
+function huntsByActor(actor) {
+  return (DATA.hunts || []).filter(h => (h.actors || []).includes(actor));
+}
+
+// Decide which actors to include: every profiled actor that also has hunts in the data.
+function spotlightActors() {
+  return DATA.actors.labels.filter(a => ACTOR_PROFILES[a]);
+}
+
+function actorMarkdown(actor) {
+  const prof = ACTOR_PROFILES[actor];
+  if (!prof) return '';
+  const hunts = huntsByActor(actor);
+  const lines = [];
+  lines.push(`### ${actor}`);
+  lines.push('');
+  lines.push(`- **Aliases:** ${prof.aliases.join(', ')}`);
+  lines.push(`- **Active:** ${prof.active}`);
+  lines.push(`- **Targeted industries:** ${prof.industries.join(', ')}`);
+  lines.push(`- **Targeted countries:** ${prof.countries.join(', ')}`);
+  lines.push(`- **Category:** ${prof.category}`);
+  lines.push('');
+  lines.push(`**Reporting:**`);
+  for (const [label, url] of prof.references.slice(0, 5)) {
+    lines.push(`- [${label}](${url})`);
+  }
+  lines.push('');
+  if (hunts.length) {
+    lines.push(`**Hunts attributed to this actor (${hunts.length}):**`);
+    lines.push('');
+    lines.push('| Technique | Tactic | Severity | Status | Date |');
+    lines.push('|---|---|---|---|---|');
+    for (const h of hunts) {
+      lines.push(`| ${h.technique} | ${h.tactic || '—'} | ${h.severity || '—'} | ${h.status || '—'} | ${h.date} |`);
+    }
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+
+function actorHTML(actor) {
+  const prof = ACTOR_PROFILES[actor];
+  if (!prof) return '';
+  const hunts = huntsByActor(actor);
+  const refs = prof.references.slice(0, 5)
+    .map(([label, url]) => `<li><a href="${escHtml(url)}">${escHtml(label)}</a></li>`)
+    .join('');
+  const huntRows = hunts.map(h =>
+    `<tr><td>${escHtml(h.technique)}</td><td>${escHtml(h.tactic || '—')}</td>` +
+    `<td>${escHtml(h.severity || '—')}</td><td>${escHtml(h.status || '—')}</td>` +
+    `<td>${escHtml(h.date)}</td></tr>`).join('');
+  return (
+    `<h3>${escHtml(actor)}</h3>` +
+    `<table>` +
+      `<tr><td><b>Aliases</b></td><td>${escHtml(prof.aliases.join(', '))}</td></tr>` +
+      `<tr><td><b>Active</b></td><td>${escHtml(prof.active)}</td></tr>` +
+      `<tr><td><b>Targeted industries</b></td><td>${escHtml(prof.industries.join(', '))}</td></tr>` +
+      `<tr><td><b>Targeted countries</b></td><td>${escHtml(prof.countries.join(', '))}</td></tr>` +
+      `<tr><td><b>Category</b></td><td>${escHtml(prof.category)}</td></tr>` +
+    `</table>` +
+    `<p><b>Reporting</b></p><ul>${refs}</ul>` +
+    (hunts.length
+      ? `<p><b>Hunts attributed to this actor (${hunts.length})</b></p>` +
+        `<table><tr><th>Technique</th><th>Tactic</th><th>Severity</th><th>Status</th><th>Date</th></tr>${huntRows}</table>`
+      : '')
+  );
+}
+
 function generateReportMarkdown() {
   const { today, snapshot, charts } = buildReportSections();
   const lines = [
@@ -726,6 +897,16 @@ function generateReportMarkdown() {
       lines.push('');
     }
   }
+  // Per-actor spotlights
+  const spotlights = spotlightActors();
+  if (spotlights.length) {
+    lines.push('## Threat Actor Spotlights');
+    lines.push('');
+    for (const actor of spotlights) {
+      lines.push(actorMarkdown(actor));
+    }
+  }
+
   lines.push('---');
   lines.push('');
   lines.push(`_Source: Threat Hunt Library · https://github.com/Nvafiades1/threat-hunt-library_`);
@@ -766,6 +947,16 @@ function generateReportWord() {
       body += `<p><b>Insight.</b> ${escHtml(narrative)}</p>`;
     }
   }
+
+  // Per-actor spotlights
+  const spotlights = spotlightActors();
+  if (spotlights.length) {
+    body += `<h2>Threat Actor Spotlights</h2>`;
+    for (const actor of spotlights) {
+      body += actorHTML(actor);
+    }
+  }
+
   body += `<p class="footer"><i>Source: Threat Hunt Library &middot; https://github.com/Nvafiades1/threat-hunt-library</i></p>`;
 
   const html =
