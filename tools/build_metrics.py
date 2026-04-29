@@ -499,7 +499,7 @@ body.light .report-btn{{color:#fff}}
        padding:1.1rem 1.25rem}}
 .card h3{{margin:0 0 .75rem;font-size:.85rem;font-weight:600;letter-spacing:.03em;color:var(--text)}}
 .card .sub-label{{font-size:.72rem;color:var(--text-dim);margin-bottom:.75rem}}
-.card canvas{{max-width:100%}}
+.card canvas{{max-width:100%;max-height:340px}}
 .span-6{{grid-column:span 6}}
 .span-4{{grid-column:span 4}}
 .span-8{{grid-column:span 8}}
@@ -670,10 +670,10 @@ body.light .report-btn{{color:#fff}}
       <button class="chart-action" data-export="techniques" data-format="md">Copy MD</button>
     </div>
   </div>
-  <div class="card span-12" data-chart="platforms">
+  <div class="card span-6" data-chart="platforms">
     <h3>Hunt Platforms</h3>
     <div class="sub-label">Tools used across hunts</div>
-    <canvas id="chart-platforms" height="100"></canvas>
+    <canvas id="chart-platforms" height="240"></canvas>
     <div class="chart-actions">
       <button class="chart-action" data-export="platforms" data-format="csv">CSV &darr;</button>
       <button class="chart-action" data-export="platforms" data-format="md">Copy MD</button>
@@ -849,20 +849,18 @@ function renderAll() {{
   }});
 
   // ── Platforms ──────────────────────────────────────────────────────────
+  const platformPalette = [p.coverage, p.accent, p.info, p.danger, p.dim];
   charts.platforms = new Chart(document.getElementById('chart-platforms'), {{
-    type:'bar',
+    type:'doughnut',
     data: {{
       labels: DATA.platforms.labels,
-      datasets: [{{ data: DATA.platforms.values, backgroundColor: p.coverage }}],
+      datasets: [{{
+        data: DATA.platforms.values,
+        backgroundColor: DATA.platforms.labels.map((_, i) => platformPalette[i % platformPalette.length]),
+        borderWidth: 2, borderColor: cssVar('--surface'),
+      }}],
     }},
-    options: {{
-      ...baseOpts(p), indexAxis:'y',
-      plugins:{{ ...baseOpts(p).plugins, legend:{{display:false}} }},
-      scales: {{
-        x: {{ beginAtZero:true, ticks:{{color:p.dim, precision:0}}, grid:{{color:p.grid}} }},
-        y: {{ ticks:{{color:p.text}}, grid:{{display:false}} }},
-      }},
-    }},
+    options: {{ ...baseOpts(p), cutout:'62%' }},
   }});
 
   // ── Outcome mix donut ─────────────────────────────────────────────────
