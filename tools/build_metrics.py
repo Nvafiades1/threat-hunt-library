@@ -414,9 +414,23 @@ payload = {
         "cumulative": cumulative,
     },
     "tactics": {
-        "labels": tactics_ordered,
-        "hunts":  [tactic_hunt_counts.get(t, 0) for t in tactics_ordered],
-        "covered":[len(tactic_hunted_parents.get(t, set())) for t in tactics_ordered],
+        "labels":  tactics_ordered,
+        "hunts":   [tactic_hunt_counts.get(t, 0) for t in tactics_ordered],
+        "covered": [len(tactic_hunted_parents.get(t, set())) for t in tactics_ordered],
+        # Total parent techniques per tactic (universe size), aligned with `labels`.
+        "total":   [
+            sum(1 for tid, t in tactic_for.items() if "." not in tid and t == tac)
+            for tac in tactics_ordered
+        ],
+        # Full coverage matrix across every MITRE tactic — used by the report
+        # builder to produce a complete management snapshot regardless of which
+        # tactics currently have hunts.
+        "all_labels":  list(TACTICS),
+        "all_covered": [len(tactic_hunted_parents.get(t, set())) for t in TACTICS],
+        "all_total":   [
+            sum(1 for tid, tac in tactic_for.items() if "." not in tid and tac == t)
+            for t in TACTICS
+        ],
     },
     "outcomes":   {"labels":list(outcome_counts.keys()), "values":list(outcome_counts.values())},
     "actors":     {"labels":[a for a,_ in actor_counts], "values":[n for _,n in actor_counts]},
@@ -1314,12 +1328,99 @@ function buildReportSections() {{
     ['Severity',            'severity'],
     ['Confidence',          'confidence'],
     ['Coverage by Tactic',  'tactics'],
-    ['Technique Gaps',      'gaps'],
+    ['Coverage Summary',    'gaps'],
     ['Top Threat Actors',   'actors'],
     ['Top Techniques',      'techniques'],
     ['Hunt Platforms',      'platforms'],
   ];
   return {{ today, snapshot, charts }};
+}}
+
+// ── coverage-summary builders (management snapshot) ───────────────────
+function coverageRows() {{
+  const t = DATA.tactics;
+  const labels = t.all_labels  || t.labels;
+  const cov    = t.all_covered || t.covered;
+  const tot    = t.all_total   || t.total || labels.map(() => 0);
+  return labels.map((label, i) => {{
+    const covered = cov[i] || 0;
+    const total   = tot[i] || 0;
+    const pct     = total > 0 ? Math.round((covered / total) * 100) : 0;
+    return {{ tactic: label, covered, total, pct }};
+  }}).sort((a, b) => b.pct - a.pct);
+}}
+
+function visualBar(pct, width = 10) {{
+  const filled = Math.max(0, Math.min(width, Math.round((pct / 100) * width)));
+  return '█'.repeat(filled) + '░'.repeat(width - filled);
+}}
+
+function priorityGaps(rows, maxTactics = 3, maxExamples = 4) {{
+  const byTactic = DATA.gaps.by_tactic || {{}};
+  return rows
+    .filter(r => r.total > 0 && r.pct < 100)
+    .sort((a, b) => a.pct - b.pct || (b.total - b.covered) - (a.total - a.covered))
+    .slice(0, maxTactics)
+    .map(r => ({{
+      tactic:    r.tactic,
+      covered:   r.covered,
+      total:     r.total,
+      pct:       r.pct,
+      uncovered: r.total - r.covered,
+      examples:  (byTactic[r.tactic] || []).slice(0, maxExamples),
+    }}));
+}}
+
+function coverageSummaryMD() {{
+  const rows = coverageRows();
+  const lines = [];
+  lines.push(`Overall: ${{DATA.totals.techniques}} of ${{DATA.totals.universe}} parent techniques (${{DATA.totals.coverage}}%) across ${{rows.length}} ATT&CK tactics.`);
+  lines.push('');
+  lines.push('| Tactic | Covered | Total | % | Coverage |');
+  lines.push('|---|---|---|---|---|');
+  for (const r of rows) {{
+    lines.push(`| ${{r.tactic}} | ${{r.covered}} | ${{r.total}} | ${{r.pct}}% | \\`${{visualBar(r.pct)}}\\` |`);
+  }}
+  lines.push('');
+  const priorities = priorityGaps(rows);
+  if (priorities.length) {{
+    lines.push('**Top coverage gaps — recommended next investments:**');
+    lines.push('');
+    for (const p of priorities) {{
+      const examples = p.examples.length
+        ? p.examples.map(e => `${{e.id}} ${{e.name}}`).join('; ')
+        : 'no example metadata available';
+      lines.push(`- **${{p.tactic}}** — ${{p.covered}} of ${{p.total}} covered (${{p.pct}}%). Examples worth adding next: ${{examples}}.`);
+    }}
+    lines.push('');
+  }}
+  return lines.join('\\n');
+}}
+
+function coverageSummaryHTML() {{
+  const rows = coverageRows();
+  const head = `<p>Overall: <b>${{DATA.totals.techniques}}</b> of <b>${{DATA.totals.universe}}</b> parent techniques (<b>${{DATA.totals.coverage}}%</b>) across ${{rows.length}} ATT&amp;CK tactics.</p>`;
+  const tableRows = rows.map(r =>
+    `<tr><td>${{escHtml(r.tactic)}}</td><td>${{r.covered}}</td><td>${{r.total}}</td>` +
+    `<td>${{r.pct}}%</td><td style="font-family:Consolas,Menlo,monospace">${{visualBar(r.pct)}}</td></tr>`).join('');
+  const table =
+    `<table>` +
+      `<tr><th>Tactic</th><th>Covered</th><th>Total</th><th>%</th><th>Coverage</th></tr>` +
+      tableRows +
+    `</table>`;
+  const priorities = priorityGaps(rows);
+  let priorityHtml = '';
+  if (priorities.length) {{
+    priorityHtml += `<p><b>Top coverage gaps &mdash; recommended next investments:</b></p><ul>`;
+    for (const p of priorities) {{
+      const examples = p.examples.length
+        ? p.examples.map(e => `${{escHtml(e.id)}} ${{escHtml(e.name)}}`).join('; ')
+        : 'no example metadata available';
+      priorityHtml += `<li><b>${{escHtml(p.tactic)}}</b> &mdash; ${{p.covered}} of ${{p.total}} covered (${{p.pct}}%). Examples worth adding next: ${{examples}}.</li>`;
+    }}
+    priorityHtml += `</ul>`;
+  }}
+  return head + table + priorityHtml;
 }}
 
 // ── per-actor spotlight builders ───────────────────────────────────────
@@ -1413,7 +1514,8 @@ function generateReportMarkdown() {{
   for (const [title, id] of charts) {{
     lines.push(`## ${{title}}`);
     lines.push('');
-    lines.push(chartMD(id));
+    // The gaps section is rendered as a management snapshot, not a 316-row dump.
+    lines.push(id === 'gaps' ? coverageSummaryMD() : chartMD(id));
     lines.push('');
     const narrative = NARRATIVES[id] && NARRATIVES[id]();
     if (narrative) {{
@@ -1465,7 +1567,7 @@ function generateReportWord() {{
   body += `</table>`;
   for (const [title, id] of charts) {{
     body += `<h2>${{escHtml(title)}}</h2>`;
-    body += chartHTMLTable(id);
+    body += (id === 'gaps' ? coverageSummaryHTML() : chartHTMLTable(id));
     const narrative = NARRATIVES[id] && NARRATIVES[id]();
     if (narrative) {{
       body += `<p><b>Insight.</b> ${{escHtml(narrative)}}</p>`;
