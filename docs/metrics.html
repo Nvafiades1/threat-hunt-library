@@ -97,7 +97,7 @@ body.light .report-btn{color:#fff}
        padding:1.1rem 1.25rem}
 .card h3{margin:0 0 .75rem;font-size:.85rem;font-weight:600;letter-spacing:.03em;color:var(--text)}
 .card .sub-label{font-size:.72rem;color:var(--text-dim);margin-bottom:.75rem}
-.card canvas{max-width:100%}
+.card canvas{max-width:100%;max-height:340px}
 .span-6{grid-column:span 6}
 .span-4{grid-column:span 4}
 .span-8{grid-column:span 8}
@@ -113,7 +113,7 @@ body.light .report-btn{color:#fff}
 </head><body>
 <header>
   <div class="brand">Threat Hunt <span class="accent">Metrics</span></div>
-  <span class="meta">Generated 2026-04-29 16:40 UTC</span>
+  <span class="meta">Generated 2026-04-29 16:48 UTC</span>
   <button id="reportWordBtn" class="report-btn" title="Download a Word document of every chart and KPI — opens directly in Microsoft Word">Generate Report (Word) &darr;</button>
   <button id="reportMdBtn" class="report-btn-secondary" title="Download the same report as plain Markdown">MD</button>
   <a class="nav-link" href="./index.html">Matrix &rarr;</a>
@@ -263,10 +263,10 @@ body.light .report-btn{color:#fff}
       <button class="chart-action" data-export="techniques" data-format="md">Copy MD</button>
     </div>
   </div>
-  <div class="card span-12" data-chart="platforms">
+  <div class="card span-6" data-chart="platforms">
     <h3>Hunt Platforms</h3>
     <div class="sub-label">Tools used across hunts</div>
-    <canvas id="chart-platforms" height="100"></canvas>
+    <canvas id="chart-platforms" height="240"></canvas>
     <div class="chart-actions">
       <button class="chart-action" data-export="platforms" data-format="csv">CSV &darr;</button>
       <button class="chart-action" data-export="platforms" data-format="md">Copy MD</button>
@@ -442,20 +442,18 @@ function renderAll() {
   });
 
   // ── Platforms ──────────────────────────────────────────────────────────
+  const platformPalette = [p.coverage, p.accent, p.info, p.danger, p.dim];
   charts.platforms = new Chart(document.getElementById('chart-platforms'), {
-    type:'bar',
+    type:'doughnut',
     data: {
       labels: DATA.platforms.labels,
-      datasets: [{ data: DATA.platforms.values, backgroundColor: p.coverage }],
+      datasets: [{
+        data: DATA.platforms.values,
+        backgroundColor: DATA.platforms.labels.map((_, i) => platformPalette[i % platformPalette.length]),
+        borderWidth: 2, borderColor: cssVar('--surface'),
+      }],
     },
-    options: {
-      ...baseOpts(p), indexAxis:'y',
-      plugins:{ ...baseOpts(p).plugins, legend:{display:false} },
-      scales: {
-        x: { beginAtZero:true, ticks:{color:p.dim, precision:0}, grid:{color:p.grid} },
-        y: { ticks:{color:p.text}, grid:{display:false} },
-      },
-    },
+    options: { ...baseOpts(p), cutout:'62%' },
   });
 
   // ── Outcome mix donut ─────────────────────────────────────────────────
