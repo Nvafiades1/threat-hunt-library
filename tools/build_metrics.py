@@ -258,6 +258,35 @@ unique_techniques = sorted({r["parent"] for r in records})
 unique_actors     = sorted({a for r in records for a in r["actors"]},
                            key=str.casefold)
 
+# Load technique names from each techniques/T####/README.md (first H1).
+# Used to display "T1003 — OS Credential Dumping" everywhere a bare ID would be cryptic.
+def load_technique_names() -> dict[str, str]:
+    names: dict[str, str] = {}
+    if not TECH_DIR.exists():
+        return names
+    h1_re = re.compile(r"^\s*#\s+(.+?)\s*$")
+    for sub in TECH_DIR.iterdir():
+        if not sub.is_dir() or not sub.name.startswith("T"):
+            continue
+        readme = sub / "README.md"
+        if not readme.exists():
+            continue
+        try:
+            text = readme.read_text("utf-8", "ignore")
+        except Exception:
+            continue
+        for line in text.splitlines():
+            m = h1_re.match(line)
+            if m:
+                # Strip a trailing "[T####]" or "(T####)" suffix if the README
+                # repeats the ID in the heading.
+                name = re.sub(r"\s*[\[\(]T\d{4}(?:\.\d{3})?[\]\)]\s*$", "", m.group(1)).strip()
+                names[sub.name] = name
+                break
+    return names
+
+tech_names = load_technique_names()
+
 total_parent_universe = sum(
     1 for pid in tactic_for if "." not in pid
 ) or 343  # sensible default
@@ -334,6 +363,24 @@ outcome_counts = Counter(r["status"] for r in records if r["status"])
 # Tactic gaps (zero-coverage tactics, excluding 'Unmapped' which is historical)
 tactic_gaps = [t for t in TACTICS if tactic_hunt_counts.get(t, 0) == 0]
 
+# Technique gaps — every parent technique with no hunts, grouped by tactic so
+# the dashboard can surface the most-covered-need techniques per ATT&CK column.
+covered_parents = set(unique_techniques)
+all_parents = sorted([tid for tid in tactic_for if "." not in tid])
+uncovered_parents = [tid for tid in all_parents if tid not in covered_parents]
+tech_gaps_by_tactic: dict[str, list[dict]] = {}
+for tid in uncovered_parents:
+    t = tactic_for.get(tid) or "Other"
+    tech_gaps_by_tactic.setdefault(t, []).append({
+        "id":   tid,
+        "name": tech_names.get(tid, tid),
+    })
+# Sort tactics by descending gap count, techniques alphabetically by ID
+tech_gaps_by_tactic = {
+    t: sorted(items, key=lambda x: x["id"])
+    for t, items in sorted(tech_gaps_by_tactic.items(), key=lambda kv: -len(kv[1]))
+}
+
 payload = {
     "totals": {
         "hunts":      total_hunts,
@@ -377,7 +424,14 @@ payload = {
     "confidence": {"labels":list(conf_counts.keys()), "values":list(conf_counts.values())},
     "techniques": {"labels":[t for t,_ in tech_counts], "values":[n for _,n in tech_counts]},
     "platforms":  {"labels":[p for p,_ in plat_counts], "values":[n for _,n in plat_counts]},
-    "gaps":       {"tactics": tactic_gaps, "total_tactics": len(TACTICS)},
+    "gaps": {
+        "tactics":         tactic_gaps,           # legacy field for narratives
+        "total_tactics":   len(TACTICS),
+        "by_tactic":       tech_gaps_by_tactic,   # new: uncovered parent techniques per tactic
+        "total_uncovered": len(uncovered_parents),
+        "universe":        len(all_parents),
+    },
+    "tech_names": tech_names,
     # Slim per-hunt records so reports can pivot by actor / technique / etc.
     "hunts": [
         {
@@ -503,7 +557,9 @@ body.light .report-btn{{color:#fff}}
 .report-btn-secondary:hover{{color:var(--accent);border-color:var(--accent)}}
 
 /* ── tactic-gaps panel ───────────────────────────────────────────────── */
-.gaps-list{{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem}}
+.gaps-row{{margin:.4rem 0 .8rem}}
+.gaps-tactic{{font-size:.78rem;color:var(--text);font-weight:600;letter-spacing:.02em}}
+.gaps-list{{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.25rem}}
 .gaps-chip{{
   background:var(--chip-bg);color:var(--chip-fg);
   padding:.25rem .55rem;border-radius:12px;font-size:.78rem;
@@ -658,8 +714,8 @@ body.light .report-btn{{color:#fff}}
     </div>
   </div>
   <div class="card span-4" data-chart="gaps">
-    <h3>Tactic Gaps</h3>
-    <div class="sub-label">MITRE tactics with no completed hunts yet &mdash; potential next investments.</div>
+    <h3>Technique Gaps</h3>
+    <div class="sub-label">MITRE parent techniques with no hunts yet, grouped by tactic &mdash; potential next investments.</div>
     <div id="gaps-content"></div>
     <div class="chart-actions">
       <button class="chart-action" data-export="gaps" data-format="csv">CSV &darr;</button>
@@ -952,10 +1008,14 @@ function renderAll() {{
   }});
 
   // ── Top techniques ─────────────────────────────────────────────────────
+  const techLabel = id => {{
+    const n = (DATA.tech_names || {{}})[id];
+    return n ? `${{id}} — ${{n}}` : id;
+  }};
   charts.techniques = new Chart(document.getElementById('chart-techniques'), {{
     type:'bar',
     data: {{
-      labels: DATA.techniques.labels,
+      labels: DATA.techniques.labels.map(techLabel),
       datasets: [{{ data: DATA.techniques.values, backgroundColor: p.accent }}],
     }},
     options: {{
@@ -1023,15 +1083,28 @@ function renderAll() {{
     }},
   }});
 
-  // ── Tactic gaps panel (HTML, not Chart.js) ────────────────────────────
+  // ── Technique gaps panel (HTML, not Chart.js) ─────────────────────────
   const gapsEl = document.getElementById('gaps-content');
   if (gapsEl) {{
-    if (DATA.gaps.tactics.length === 0) {{
-      gapsEl.innerHTML = '<div class="gaps-empty">No tactic gaps &mdash; every ATT&amp;CK tactic has at least one hunt.</div>';
+    const byTactic = DATA.gaps.by_tactic || {{}};
+    const tactics = Object.keys(byTactic);
+    if (tactics.length === 0) {{
+      gapsEl.innerHTML = '<div class="gaps-empty">All parent techniques covered.</div>';
     }} else {{
-      gapsEl.innerHTML = '<div class="gaps-list">' +
-        DATA.gaps.tactics.map(t => `<span class="gaps-chip">${{t}}</span>`).join('') +
-        `</div><div class="kpi-sub" style="margin-top:.6rem">${{DATA.gaps.tactics.length}} of ${{DATA.gaps.total_tactics}} tactics still uncovered.</div>`;
+      const SAMPLE = 4;  // example IDs to show per tactic
+      const sections = tactics.map(t => {{
+        const items = byTactic[t];
+        const sample = items.slice(0, SAMPLE).map(x =>
+          `<span class="gaps-chip" title="${{escHtml(x.name)}}">${{escHtml(x.id)}}</span>`
+        ).join('');
+        const more = items.length > SAMPLE ? ` <span class="kpi-sub">+${{items.length - SAMPLE}} more</span>` : '';
+        return `<div class="gaps-row">
+          <div class="gaps-tactic">${{escHtml(t)}} <span class="kpi-sub">&middot; ${{items.length}} uncovered</span></div>
+          <div class="gaps-list">${{sample}}${{more}}</div>
+        </div>`;
+      }}).join('');
+      gapsEl.innerHTML = sections +
+        `<div class="kpi-sub" style="margin-top:.7rem">${{DATA.gaps.total_uncovered}} of ${{DATA.gaps.universe}} parent techniques uncovered.</div>`;
     }}
   }}
 }}
@@ -1055,17 +1128,30 @@ const CHART_EXPORTERS = {{
     headers: ['Tactic','Techniques covered','Total hunts'],
     rows: DATA.tactics.labels.map((l,i) => [l, DATA.tactics.covered[i], DATA.tactics.hunts[i]]),
   }}),
-  gaps: () => ({{
-    headers: ['Tactic','Status'],
-    rows: DATA.gaps.tactics.length
-      ? DATA.gaps.tactics.map(t => [t, 'No coverage'])
-      : [['(all tactics covered)', '—']],
-  }}),
+  gaps: () => {{
+    const byTactic = DATA.gaps.by_tactic || {{}};
+    const rows = [];
+    for (const tactic of Object.keys(byTactic)) {{
+      for (const item of byTactic[tactic]) {{
+        rows.push([tactic, item.id, item.name]);
+      }}
+    }}
+    return {{
+      headers: ['Tactic', 'Technique ID', 'Technique Name'],
+      rows: rows.length ? rows : [['(all techniques covered)', '—', '—']],
+    }};
+  }},
   severity:   () => simplePair('severity'),
   confidence: () => simplePair('confidence'),
   outcomes:   () => simplePair('outcomes'),
   actors:     () => simplePair('actors'),
-  techniques: () => simplePair('techniques'),
+  techniques: () => {{
+    const d = DATA.techniques, names = DATA.tech_names || {{}};
+    return {{
+      headers: ['Technique ID', 'Technique Name', 'Count'],
+      rows: d.labels.map((id, i) => [id, names[id] || '', d.values[i]]),
+    }};
+  }},
   platforms:  () => simplePair('platforms'),
 }};
 
@@ -1168,8 +1254,16 @@ const NARRATIVES = {{
     return `Most-hunted tactic: ${{top}} (${{topHunts}} hunts). ${{DATA.gaps.tactics.length}} of ${{DATA.gaps.total_tactics}} tactics have zero coverage.`;
   }},
   gaps: () => {{
-    if (DATA.gaps.tactics.length === 0) return 'Every MITRE tactic has at least one completed hunt.';
-    return `Uncovered tactics: ${{DATA.gaps.tactics.join(', ')}}. Consider scheduling at least one hunt per tactic.`;
+    const total = DATA.gaps.total_uncovered || 0;
+    const universe = DATA.gaps.universe || 0;
+    if (total === 0) return 'Every parent technique has at least one hunt.';
+    const byTactic = DATA.gaps.by_tactic || {{}};
+    const top = Object.entries(byTactic)
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 3)
+      .map(([t, items]) => `${{t}} (${{items.length}})`)
+      .join(', ');
+    return `${{total}} of ${{universe}} parent techniques uncovered. Largest gap tactics: ${{top}}.`;
   }},
   actors: () => {{
     const a = DATA.actors;
@@ -1211,7 +1305,7 @@ function buildReportSections() {{
     ['Throughput \u00B7 last 30 days', `${{thru.last_30}} hunts (${{pct(thru.last_30, thru.prev_30)}} vs prior 30)`],
     ['Throughput \u00B7 last 90 days', `${{thru.last_90}} hunts`],
     ['New Coverage \u00B7 this month', `+${{grw.this_month}} techniques (vs +${{grw.prev_month}} prior)`],
-    ['Tactic Gaps',                    `${{DATA.gaps.tactics.length}} of ${{DATA.gaps.total_tactics}} tactics uncovered`],
+    ['Technique Gaps',                 `${{DATA.gaps.total_uncovered}} of ${{DATA.gaps.universe}} parent techniques uncovered`],
   ];
   const charts = [
     ['Hunts Over Time',     'timeline'],
@@ -1220,7 +1314,7 @@ function buildReportSections() {{
     ['Severity',            'severity'],
     ['Confidence',          'confidence'],
     ['Coverage by Tactic',  'tactics'],
-    ['Tactic Gaps',         'gaps'],
+    ['Technique Gaps',      'gaps'],
     ['Top Threat Actors',   'actors'],
     ['Top Techniques',      'techniques'],
     ['Hunt Platforms',      'platforms'],
@@ -1262,7 +1356,9 @@ function actorMarkdown(actor) {{
     lines.push('| Technique | Tactic | Severity | Status | Date |');
     lines.push('|---|---|---|---|---|');
     for (const h of hunts) {{
-      lines.push(`| ${{h.technique}} | ${{h.tactic || '—'}} | ${{h.severity || '—'}} | ${{h.status || '—'}} | ${{h.date}} |`);
+      const name = (DATA.tech_names || {{}})[h.technique];
+      const tech = name ? `${{h.technique}} — ${{name}}` : h.technique;
+      lines.push(`| ${{tech}} | ${{h.tactic || '—'}} | ${{h.severity || '—'}} | ${{h.status || '—'}} | ${{h.date}} |`);
     }}
     lines.push('');
   }}
@@ -1276,10 +1372,13 @@ function actorHTML(actor) {{
   const refs = prof.references.slice(0, 5)
     .map(([label, url]) => `<li><a href="${{escHtml(url)}}">${{escHtml(label)}}</a></li>`)
     .join('');
-  const huntRows = hunts.map(h =>
-    `<tr><td>${{escHtml(h.technique)}}</td><td>${{escHtml(h.tactic || '—')}}</td>` +
-    `<td>${{escHtml(h.severity || '—')}}</td><td>${{escHtml(h.status || '—')}}</td>` +
-    `<td>${{escHtml(h.date)}}</td></tr>`).join('');
+  const huntRows = hunts.map(h => {{
+    const name = (DATA.tech_names || {{}})[h.technique];
+    const tech = name ? `${{h.technique}} — ${{name}}` : h.technique;
+    return `<tr><td>${{escHtml(tech)}}</td><td>${{escHtml(h.tactic || '—')}}</td>` +
+      `<td>${{escHtml(h.severity || '—')}}</td><td>${{escHtml(h.status || '—')}}</td>` +
+      `<td>${{escHtml(h.date)}}</td></tr>`;
+  }}).join('');
   return (
     `<h3>${{escHtml(actor)}}</h3>` +
     `<table>` +
