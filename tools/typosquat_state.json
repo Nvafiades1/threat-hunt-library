@@ -14,7 +14,7 @@
       },
       "domain": "cancergov.com",
       "first_seen": "2026-04-28T23:17:27Z",
-      "last_seen": "2026-04-28T23:27:23Z",
+      "last_seen": "2026-04-29T00:05:51Z",
       "nrd": false,
       "seed": "cancer.gov",
       "sources": [
@@ -32,7 +32,7 @@
       },
       "domain": "cc.nihgov.com",
       "first_seen": "2026-04-28T23:17:27Z",
-      "last_seen": "2026-04-28T23:27:23Z",
+      "last_seen": "2026-04-29T00:05:51Z",
       "nrd": false,
       "seed": "cc.nih.gov",
       "sources": [
@@ -43,13 +43,13 @@
       "ct": null,
       "dns": {
         "a": [
-          "76.223.54.146"
+          "13.248.169.48"
         ],
         "mx": false
       },
       "domain": "niaid.nihgov.com",
       "first_seen": "2026-04-28T23:17:27Z",
-      "last_seen": "2026-04-28T23:27:23Z",
+      "last_seen": "2026-04-29T00:05:51Z",
       "nrd": false,
       "seed": "niaid.nih.gov",
       "sources": [
@@ -70,7 +70,7 @@
       },
       "domain": "nihgov.com",
       "first_seen": "2026-04-28T23:17:27Z",
-      "last_seen": "2026-04-28T23:27:23Z",
+      "last_seen": "2026-04-29T00:05:51Z",
       "nrd": false,
       "seed": "nih.gov",
       "sources": [
@@ -82,21 +82,123 @@
       "ct": null,
       "dns": {
         "a": [
-          "13.248.169.48"
+          "76.223.54.146"
         ],
         "mx": false
       },
       "domain": "nlm.nihgov.com",
       "first_seen": "2026-04-28T23:17:27Z",
-      "last_seen": "2026-04-28T23:27:23Z",
+      "last_seen": "2026-04-29T00:05:51Z",
       "nrd": false,
       "seed": "nlm.nih.gov",
       "sources": [
         "dnstwist"
       ]
+    },
+    "xn--clincltrials-tbb43h.gov": {
+      "ct": null,
+      "dns": {
+        "a": [
+          "!ServFail"
+        ],
+        "mx": false
+      },
+      "domain": "xn--clincltrials-tbb43h.gov",
+      "first_seen": "2026-04-29T00:05:51Z",
+      "last_seen": "2026-04-29T00:05:51Z",
+      "nrd": false,
+      "seed": "clinicaltrials.gov",
+      "sources": [
+        "dnstwist"
+      ]
+    },
+    "xn--clinicalrals-9j5f30c.gov": {
+      "ct": null,
+      "dns": {
+        "a": [
+          "!ServFail"
+        ],
+        "mx": false
+      },
+      "domain": "xn--clinicalrals-9j5f30c.gov",
+      "first_seen": "2026-04-29T00:05:51Z",
+      "last_seen": "2026-04-29T00:05:51Z",
+      "nrd": false,
+      "seed": "clinicaltrials.gov",
+      "sources": [
+        "dnstwist"
+      ]
+    },
+    "xn--clinicaltals-jhf9x.gov": {
+      "ct": null,
+      "dns": {
+        "a": [
+          "!ServFail"
+        ],
+        "mx": false
+      },
+      "domain": "xn--clinicaltals-jhf9x.gov",
+      "first_seen": "2026-04-29T00:05:51Z",
+      "last_seen": "2026-04-29T00:05:51Z",
+      "nrd": false,
+      "seed": "clinicaltrials.gov",
+      "sources": [
+        "dnstwist"
+      ]
+    },
+    "xn--clnicaltrils-lbb3n.gov": {
+      "ct": null,
+      "dns": {
+        "a": [
+          "!ServFail"
+        ],
+        "mx": false
+      },
+      "domain": "xn--clnicaltrils-lbb3n.gov",
+      "first_seen": "2026-04-29T00:05:51Z",
+      "last_seen": "2026-04-29T00:05:51Z",
+      "nrd": false,
+      "seed": "clinicaltrials.gov",
+      "sources": [
+        "dnstwist"
+      ]
+    },
+    "xn--clnicatrials-gfb01i.gov": {
+      "ct": null,
+      "dns": {
+        "a": [
+          "!ServFail"
+        ],
+        "mx": false
+      },
+      "domain": "xn--clnicatrials-gfb01i.gov",
+      "first_seen": "2026-04-29T00:05:51Z",
+      "last_seen": "2026-04-29T00:05:51Z",
+      "nrd": false,
+      "seed": "clinicaltrials.gov",
+      "sources": [
+        "dnstwist"
+      ]
+    },
+    "xn--linialtrials-wqbe.gov": {
+      "ct": null,
+      "dns": {
+        "a": [
+          "!ServFail"
+        ],
+        "mx": false
+      },
+      "domain": "xn--linialtrials-wqbe.gov",
+      "first_seen": "2026-04-29T00:05:51Z",
+      "last_seen": "2026-04-29T00:05:51Z",
+      "nrd": false,
+      "seed": "clinicaltrials.gov",
+      "sources": [
+        "dnstwist"
+      ]
     }
   },
-  "last_run": "2026-04-28T23:27:23Z",
+  "last_run": "2026-04-29T00:05:51Z",
   "seeds": [
     "nih.gov",
     "nlm.nih.gov",
