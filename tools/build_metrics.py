@@ -193,9 +193,7 @@ for path in hunt_files:
         text = path.read_text("utf-8", "ignore")
     except Exception:
         continue
-    # First path component under techniques/, so files nested in subdirs
-    # (e.g. techniques/T1003/_synthetic/foo.md) still resolve to T1003.
-    parent_folder = path.relative_to(TECH_DIR).parts[0]
+    parent_folder = path.parent.name  # T1003
     fields = parse_hunt(text)
 
     # Technique: folder is authoritative, fall back to body mentions
@@ -697,17 +695,17 @@ function applyMode(light) {{
   document.getElementById('modeToggle').textContent = light ? '\u263D' : '\u263C';
   renderAll();
 }}
-applyMode(localStorage.getItem('prefersLight') === 'true');
+Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+
+const charts = {{}};
+function destroyAll() {{ for (const k in charts) charts[k]?.destroy(); }}
+// Initial render is deferred to the end of the script so all helper
+// declarations (palette, baseOpts, renderAll, etc.) are initialized first.
 document.getElementById('modeToggle').addEventListener('click', () => {{
   const toLight = !document.body.classList.contains('light');
   localStorage.setItem('prefersLight', toLight);
   applyMode(toLight);
 }});
-
-Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
-
-const charts = {{}};
-function destroyAll() {{ for (const k in charts) charts[k]?.destroy(); }}
 
 function palette() {{
   return {{
@@ -1221,7 +1219,7 @@ ${{body}}
 document.getElementById('reportWordBtn')?.addEventListener('click', generateReportWord);
 document.getElementById('reportMdBtn')?.addEventListener('click', generateReportMarkdown);
 
-renderAll();
+applyMode(localStorage.getItem('prefersLight') === 'true');
 </script>
 </body></html>"""
 
