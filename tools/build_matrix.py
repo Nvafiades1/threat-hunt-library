@@ -506,6 +506,32 @@ details:not([open]) > summary .sub-count::before{{content:"\u25B8 "; color:var(-
   <div class="grid" id="matrix">{''.join(headers + columns)}</div>
 </div>
 
+<div id="coverageModal" class="cov-modal" hidden role="dialog" aria-modal="true" aria-labelledby="covTitle">
+  <div class="cov-overlay"></div>
+  <div class="cov-panel">
+    <button class="cov-close" aria-label="Close">&times;</button>
+    <h2 id="covTitle">Coverage Summary</h2>
+    <p class="cov-kpi"><b>{total_filled}</b> of <b>{total_parents}</b> parent techniques covered &middot; <b>{pct}%</b> across {len(TACTICS)} ATT&amp;CK tactics.</p>
+    <div class="cov-table-wrap">
+      <table class="cov-table">
+        <thead>
+          <tr><th>Tactic</th><th>Covered</th><th>Total</th><th>%</th><th>Coverage</th></tr>
+        </thead>
+        <tbody>
+          {cov_table_rows}
+        </tbody>
+      </table>
+    </div>
+    <h3>Top coverage gaps &mdash; recommended next investments</h3>
+    <ul class="cov-priorities">
+      {cov_priority_html}
+    </ul>
+    <div class="cov-foot">
+      <a class="nav-link" href="./metrics.html">View full metrics &rarr;</a>
+    </div>
+  </div>
+</div>
+
 <script>
 (() => {{
   const q       = document.getElementById('search');
@@ -592,32 +618,6 @@ details:not([open]) > summary .sub-count::before{{content:"\u25B8 "; color:var(-
   }});
 }})();
 </script>
-
-<div id="coverageModal" class="cov-modal" hidden role="dialog" aria-modal="true" aria-labelledby="covTitle">
-  <div class="cov-overlay"></div>
-  <div class="cov-panel">
-    <button class="cov-close" aria-label="Close">&times;</button>
-    <h2 id="covTitle">Coverage Summary</h2>
-    <p class="cov-kpi"><b>{total_filled}</b> of <b>{total_parents}</b> parent techniques covered &middot; <b>{pct}%</b> across {len(TACTICS)} ATT&amp;CK tactics.</p>
-    <div class="cov-table-wrap">
-      <table class="cov-table">
-        <thead>
-          <tr><th>Tactic</th><th>Covered</th><th>Total</th><th>%</th><th>Coverage</th></tr>
-        </thead>
-        <tbody>
-          {cov_table_rows}
-        </tbody>
-      </table>
-    </div>
-    <h3>Top coverage gaps &mdash; recommended next investments</h3>
-    <ul class="cov-priorities">
-      {cov_priority_html}
-    </ul>
-    <div class="cov-foot">
-      <a class="nav-link" href="./metrics.html">View full metrics &rarr;</a>
-    </div>
-  </div>
-</div>
 </body></html>"""
 
 DOCS_DIR.mkdir(exist_ok=True)
