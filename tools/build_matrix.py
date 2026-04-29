@@ -212,6 +212,56 @@ total_filled  = sum(1 for t in TACTICS for p in matrix.get(t, {}).values()
                     if p["parent"] and p["parent"][2])
 pct = round(100 * total_filled / total_parents) if total_parents else 0
 
+# ── per-tactic coverage stats for the management Coverage Summary modal ─────
+coverage_rows = []
+for t in TACTICS:
+    bucket = matrix.get(t, {})
+    parents = [p["parent"] for p in bucket.values() if p["parent"]]
+    parents_total = len(parents)
+    parents_covered = sum(1 for _, _, f in parents if f)
+    uncovered = [(pid, pname) for pid, pname, f in parents if not f][:5]
+    tactic_pct = round(100 * parents_covered / parents_total) if parents_total else 0
+    coverage_rows.append({
+        "tactic":   t,
+        "covered":  parents_covered,
+        "total":    parents_total,
+        "pct":      tactic_pct,
+        "examples": uncovered,
+    })
+
+# Sort: highest coverage first (matches metrics report ordering)
+coverage_rows_sorted = sorted(coverage_rows, key=lambda r: -r["pct"])
+
+def visual_bar(p: int, width: int = 10) -> str:
+    filled = max(0, min(width, round(p / 100 * width)))
+    return "█" * filled + "░" * (width - filled)
+
+# Top 3 tactics with the worst coverage that still have ≥1 technique to add.
+priority_rows = sorted(
+    [r for r in coverage_rows if r["total"] > 0 and r["pct"] < 100],
+    key=lambda r: (r["pct"], -(r["total"] - r["covered"])),
+)[:3]
+
+cov_table_rows = "".join(
+    f'<tr><td>{html.escape(r["tactic"])}</td>'
+    f'<td>{r["covered"]}</td><td>{r["total"]}</td><td>{r["pct"]}%</td>'
+    f'<td class="cov-bar">{visual_bar(r["pct"])}</td></tr>'
+    for r in coverage_rows_sorted
+)
+
+def example_str(examples):
+    if not examples:
+        return "no example metadata available"
+    return "; ".join(f"{html.escape(pid)} {html.escape(pname)}" for pid, pname in examples[:4])
+
+cov_priority_html = "".join(
+    f'<li><b>{html.escape(r["tactic"])}</b> &mdash; {r["covered"]} of {r["total"]} '
+    f'covered ({r["pct"]}%). Examples worth adding next: {example_str(r["examples"])}.</li>'
+    for r in priority_rows
+)
+if not cov_priority_html:
+    cov_priority_html = "<li>Every tactic has full coverage.</li>"
+
 # ── HTML document ────────────────────────────────────────────────────────────
 HTML = f"""<!DOCTYPE html>
 <html lang="en"><head>
@@ -299,6 +349,45 @@ header{{
   padding:.3rem .55rem; border:1px solid var(--input-border); border-radius:4px;
 }}
 .nav-link:hover{{color:var(--accent); border-color:var(--accent)}}
+.nav-btn{{background:transparent; cursor:pointer; font:inherit; line-height:inherit}}
+
+/* ── coverage summary modal ──────────────────────────────────────────────── */
+.cov-modal[hidden]{{display:none}}
+.cov-modal{{
+  position:fixed; inset:0; z-index:50;
+  display:flex; align-items:center; justify-content:center;
+  padding:2rem;
+}}
+.cov-overlay{{position:absolute; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(2px)}}
+.cov-panel{{
+  position:relative; z-index:1;
+  background:var(--surface); color:var(--text);
+  border:1px solid var(--border); border-radius:10px;
+  width:min(820px, 100%); max-height:88vh; overflow-y:auto;
+  padding:1.5rem 1.75rem;
+  box-shadow:0 16px 48px rgba(0,0,0,.4);
+}}
+body.cov-open{{overflow:hidden}}
+.cov-close{{
+  position:absolute; top:.6rem; right:.8rem; background:none; border:none;
+  color:var(--text-dim); font-size:1.6rem; line-height:1; cursor:pointer;
+}}
+.cov-close:hover{{color:var(--accent)}}
+.cov-panel h2{{margin:0 0 .5rem; font-size:1.25rem; color:var(--text)}}
+.cov-panel h3{{margin:1.4rem 0 .5rem; font-size:.95rem; color:var(--text)}}
+.cov-kpi{{color:var(--text-dim); font-size:.95rem; margin:.3rem 0 1rem}}
+.cov-kpi b{{color:var(--text)}}
+.cov-table-wrap{{overflow-x:auto}}
+.cov-table{{width:100%; border-collapse:collapse; font-size:.85rem}}
+.cov-table th,.cov-table td{{
+  padding:.45rem .6rem; border-bottom:1px solid var(--border); text-align:left;
+}}
+.cov-table th{{color:var(--text-dim); font-weight:600; font-size:.78rem; letter-spacing:.04em; text-transform:uppercase}}
+.cov-table td.cov-bar{{font-family:Consolas,Menlo,monospace; color:var(--coverage); letter-spacing:1px}}
+.cov-priorities{{padding-left:1.2rem; line-height:1.5; font-size:.88rem}}
+.cov-priorities li{{margin:.4rem 0}}
+.cov-priorities b{{color:var(--text)}}
+.cov-foot{{margin-top:1rem; text-align:right}}
 
 /* ── grid ─────────────────────────────────────────────────────────────────── */
 .scroll-x{{overflow-x:auto}}
@@ -406,6 +495,7 @@ details:not([open]) > summary .sub-count::before{{content:"\u25B8 "; color:var(-
 <header>
   <div class="brand">Threat Hunt <span class="accent">Matrix</span></div>
   <div class="stats"><b>{total_filled}</b> / {total_parents} techniques covered &middot; <b>{pct}%</b></div>
+  <button id="coverageBtn" class="nav-link nav-btn" title="Open coverage summary">Coverage Summary</button>
   <a class="nav-link" href="./metrics.html">Metrics &rarr;</a>
   <a class="nav-link" href="./cti.html">CTI Hub &rarr;</a>
   <input id="search" type="search" placeholder="Search techniques&hellip;" autocomplete="off">
@@ -477,8 +567,57 @@ details:not([open]) > summary .sub-count::before{{content:"\u25B8 "; color:var(-
     applyMode(toLight);
     localStorage.setItem('prefersLight', toLight);
   }});
+
+  // ── Coverage Summary modal ────────────────────────────────────────────
+  const covBtn   = document.getElementById('coverageBtn');
+  const covModal = document.getElementById('coverageModal');
+  const covClose = covModal && covModal.querySelector('.cov-close');
+  function showCov() {{
+    if (!covModal) return;
+    covModal.removeAttribute('hidden');
+    document.body.classList.add('cov-open');
+  }}
+  function hideCov() {{
+    if (!covModal) return;
+    covModal.setAttribute('hidden', '');
+    document.body.classList.remove('cov-open');
+  }}
+  covBtn?.addEventListener('click', showCov);
+  covClose?.addEventListener('click', hideCov);
+  covModal?.addEventListener('click', e => {{
+    if (e.target === covModal || e.target.classList.contains('cov-overlay')) hideCov();
+  }});
+  document.addEventListener('keydown', e => {{
+    if (e.key === 'Escape' && covModal && !covModal.hasAttribute('hidden')) hideCov();
+  }});
 }})();
 </script>
+
+<div id="coverageModal" class="cov-modal" hidden role="dialog" aria-modal="true" aria-labelledby="covTitle">
+  <div class="cov-overlay"></div>
+  <div class="cov-panel">
+    <button class="cov-close" aria-label="Close">&times;</button>
+    <h2 id="covTitle">Coverage Summary</h2>
+    <p class="cov-kpi"><b>{total_filled}</b> of <b>{total_parents}</b> parent techniques covered &middot; <b>{pct}%</b> across {len(TACTICS)} ATT&amp;CK tactics.</p>
+    <div class="cov-table-wrap">
+      <table class="cov-table">
+        <thead>
+          <tr><th>Tactic</th><th>Covered</th><th>Total</th><th>%</th><th>Coverage</th></tr>
+        </thead>
+        <tbody>
+          {cov_table_rows}
+        </tbody>
+      </table>
+    </div>
+    <h3>Top coverage gaps &mdash; recommended next investments</h3>
+    <ul class="cov-priorities">
+      {cov_priority_html}
+    </ul>
+    <div class="cov-foot">
+      <a class="nav-link" href="./metrics.html">View full metrics &rarr;</a>
+    </div>
+  </div>
+</div>
 </body></html>"""
 
 DOCS_DIR.mkdir(exist_ok=True)
