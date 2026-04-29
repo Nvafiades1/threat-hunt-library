@@ -5,10 +5,10 @@ T1204
 TH-SYNTH-011
 
 ### Created
-2026-04-29T12:00:00Z
+2026-01-24T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-01-24T12:00:00Z
 
 ### Hypothesis
 ISO/IMG containers bypass MOTW and are mounted by users from email — a common APT29 technique. Mount events on user workstations are rare.

@@ -5,10 +5,10 @@ T1566
 TH-SYNTH-005
 
 ### Created
-2026-04-29T12:00:00Z
+2025-12-11T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2025-12-11T12:00:00Z
 
 ### Hypothesis
 APT29 has shifted to HTML smuggling — embedding encoded payloads in HTML attachments that decode and write a file client-side, evading gateway scanning.

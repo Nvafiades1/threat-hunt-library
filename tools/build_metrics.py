@@ -205,13 +205,15 @@ for path in hunt_files:
     primary = tech_ids[0]
     parent_id = primary.split(".")[0]
 
-    # Date: git add-date, else "Created" field, else file mtime
-    dt: datetime | None = added.get(path)
+    # Date: prefer "Created" field (authoritative — set by issue automation
+    # at issue-creation time), else git add-date, else file mtime.
+    dt: datetime | None = None
+    try:
+        dt = datetime.fromisoformat(fields.get("Created", "").replace("Z", "+00:00"))
+    except Exception:
+        dt = None
     if dt is None:
-        try:
-            dt = datetime.fromisoformat(fields.get("Created", "").replace("Z", "+00:00"))
-        except Exception:
-            dt = None
+        dt = added.get(path)
     if dt is None:
         dt = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
 

@@ -5,10 +5,10 @@ T1078
 TH-SYNTH-008
 
 ### Created
-2026-04-29T12:00:00Z
+2026-01-04T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-01-04T12:00:00Z
 
 ### Hypothesis
 Adversaries enumerate AD for stale service accounts (no logon in >180d) and use compromised credentials, banking on accounts not being monitored.

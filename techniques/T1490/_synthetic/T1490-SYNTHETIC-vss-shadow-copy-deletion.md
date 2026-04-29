@@ -5,10 +5,10 @@ T1490
 TH-SYNTH-040
 
 ### Created
-2026-04-29T12:00:00Z
+2026-04-28T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-04-28T12:00:00Z
 
 ### Hypothesis
 Volume Shadow Copy deletion is a near-universal ransomware precursor. vssadmin / wbadmin / wmic shadowcopy commands are very high-fidelity.

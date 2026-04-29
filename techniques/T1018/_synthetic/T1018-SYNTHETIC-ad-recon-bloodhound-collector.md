@@ -5,10 +5,10 @@ T1018
 TH-SYNTH-027
 
 ### Created
-2026-04-29T12:00:00Z
+2026-03-28T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-03-28T12:00:00Z
 
 ### Hypothesis
 BloodHound / SharpHound / AdFind collection produces distinctive LDAP queries against AD — heavy LDAP from a single non-admin host is a strong hunt signal.

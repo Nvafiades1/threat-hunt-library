@@ -11,7 +11,25 @@ from __future__ import annotations
 
 import os
 import textwrap
+from datetime import datetime, timezone
 from pathlib import Path
+
+# Spread the 40 hunts across the last 6 months with an accelerating ramp so
+# the "Hunts Over Time" timeline shows realistic coverage growth instead of a
+# single 40-tall bar in the current month.
+DATE_PLAN: list[tuple[int, int, list[int]]] = [
+    # (year, month, days-of-month)  — len(days) is the bucket size for the month
+    (2025, 11, [5, 14, 23]),                                    # 3
+    (2025, 12, [3, 11, 19, 28]),                                # 4
+    (2026,  1, [4, 10, 17, 24, 30]),                            # 5
+    (2026,  2, [2, 6, 11, 16, 20, 24, 27]),                     # 7
+    (2026,  3, [3, 6, 10, 14, 18, 22, 25, 28, 30]),             # 9
+    (2026,  4, [1, 3, 6, 9, 12, 15, 18, 21, 24, 25, 27, 28]),   # 12
+]
+HUNT_DATES: list[datetime] = [
+    datetime(y, m, d, 12, 0, 0, tzinfo=timezone.utc)
+    for y, m, days in DATE_PLAN for d in days
+]
 
 OUT_ROOT = Path(os.environ.get("OUT_ROOT", "techniques"))
 
@@ -778,10 +796,10 @@ TEMPLATE = """### MITRE Technique ID
 TH-SYNTH-{idx:03d}
 
 ### Created
-2026-04-29T12:00:00Z
+{created}
 
 ### Last Modified
-2026-04-29T12:00:00Z
+{last_modified}
 
 ### Hypothesis
 {hypothesis}
@@ -848,9 +866,16 @@ synthetic, demo, {tactic_tag}
 
 
 def render(idx: int, h: dict) -> str:
+    created_dt = HUNT_DATES[idx - 1]
+    # Last Modified mirrors Created for Completed hunts; for In Progress /
+    # Inconclusive we leave it equal to Created (no separate "modified" semantics
+    # in the demo data).
+    iso = lambda d: d.strftime("%Y-%m-%dT%H:%M:%SZ")
     return TEMPLATE.format(
         idx=idx,
         tid=h["tid"],
+        created=iso(created_dt),
+        last_modified=iso(created_dt),
         hypothesis=h["hypothesis"],
         tactic=h["tactic"],
         platform=h["platform"],

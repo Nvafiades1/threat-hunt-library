@@ -5,10 +5,10 @@ T1567
 TH-SYNTH-037
 
 ### Created
-2026-04-29T12:00:00Z
+2026-04-24T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-04-24T12:00:00Z
 
 ### Hypothesis
 Adversaries use legit cloud storage (mega.nz, anonfiles, tmpfiles) for exfil to bypass DLP. Endpoint connections to those domains warrant review.

@@ -5,10 +5,10 @@ T1486
 TH-SYNTH-039
 
 ### Created
-2026-04-29T12:00:00Z
+2026-04-27T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-04-27T12:00:00Z
 
 ### Hypothesis
 Ransomware encryption produces a burst of file rename + write events with new extensions across a single host or share.

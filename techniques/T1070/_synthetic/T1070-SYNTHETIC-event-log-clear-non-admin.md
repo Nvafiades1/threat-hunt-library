@@ -5,10 +5,10 @@ T1070
 TH-SYNTH-019
 
 ### Created
-2026-04-29T12:00:00Z
+2026-02-27T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-02-27T12:00:00Z
 
 ### Hypothesis
 Event log clearing is a high-fidelity post-compromise signal; legitimate clears are rare and almost always from a known admin during maintenance.

@@ -5,10 +5,10 @@ T1570
 TH-SYNTH-029
 
 ### Created
-2026-04-29T12:00:00Z
+2026-04-01T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-04-01T12:00:00Z
 
 ### Hypothesis
 Adversaries often copy follow-on tooling via SMB to admin$/c$ shares of a target host. Writes from non-admin source workstations are suspicious.

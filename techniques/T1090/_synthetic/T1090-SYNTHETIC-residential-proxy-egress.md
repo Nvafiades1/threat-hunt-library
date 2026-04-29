@@ -5,10 +5,10 @@ T1090
 TH-SYNTH-035
 
 ### Created
-2026-04-29T12:00:00Z
+2026-04-18T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-04-18T12:00:00Z
 
 ### Hypothesis
 Adversaries route C2 through residential proxy networks (911 S5, BrightData) to defeat geographic detections. Outbound to known residential proxy ranges from corporate endpoints is anomalous.

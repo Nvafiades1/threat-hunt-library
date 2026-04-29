@@ -5,10 +5,10 @@ T1134
 TH-SYNTH-016
 
 ### Created
-2026-04-29T12:00:00Z
+2026-02-16T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-02-16T12:00:00Z
 
 ### Hypothesis
 Token impersonation/duplication is common in post-exploitation. While lsass interaction is heavily monitored, less-watched processes (e.g., spoolsv, taskhostw) abusing tokens are a hunt opportunity.

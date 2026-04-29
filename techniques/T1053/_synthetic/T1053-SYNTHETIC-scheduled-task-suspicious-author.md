@@ -5,10 +5,10 @@ T1053
 TH-SYNTH-010
 
 ### Created
-2026-04-29T12:00:00Z
+2026-01-17T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-01-17T12:00:00Z
 
 ### Hypothesis
 Adversaries register scheduled tasks with non-administrative authors or NULL author fields to blend in. Most legit tasks are authored by Microsoft, vendor agents, or local admins.

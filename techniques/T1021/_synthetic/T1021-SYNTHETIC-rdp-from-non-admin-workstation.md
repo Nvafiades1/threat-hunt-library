@@ -5,10 +5,10 @@ T1021
 TH-SYNTH-028
 
 ### Created
-2026-04-29T12:00:00Z
+2026-03-30T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-03-30T12:00:00Z
 
 ### Hypothesis
 RDP from regular user workstations to servers (or between non-admin endpoints) is rare in well-segmented environments. UNC3944 uses RDP extensively post-foothold.

@@ -5,10 +5,10 @@ T1041
 TH-SYNTH-036
 
 ### Created
-2026-04-29T12:00:00Z
+2026-04-21T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-04-21T12:00:00Z
 
 ### Hypothesis
 When data leaves over an established C2 channel, byte-out >> byte-in asymmetry per session is a hallmark of exfil.

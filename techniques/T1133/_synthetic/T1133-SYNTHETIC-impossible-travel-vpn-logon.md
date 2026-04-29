@@ -5,10 +5,10 @@ T1133
 TH-SYNTH-007
 
 ### Created
-2026-04-29T12:00:00Z
+2025-12-28T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2025-12-28T12:00:00Z
 
 ### Hypothesis
 UNC3944 obtains valid creds via help-desk social engineering and uses them over VPN/SSO from non-baseline geos within a short window of a legitimate logon.

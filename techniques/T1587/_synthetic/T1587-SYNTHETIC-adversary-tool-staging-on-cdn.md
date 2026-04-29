@@ -5,10 +5,10 @@ T1587
 TH-SYNTH-004
 
 ### Created
-2026-04-29T12:00:00Z
+2025-12-03T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2025-12-03T12:00:00Z
 
 ### Hypothesis
 Threat actors stage second-stage payloads on legitimate CDNs (GitHub Releases, jsDelivr, Discord CDN) to bypass network filtering.

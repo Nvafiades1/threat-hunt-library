@@ -5,10 +5,10 @@ T1057
 TH-SYNTH-026
 
 ### Created
-2026-04-29T12:00:00Z
+2026-03-25T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-03-25T12:00:00Z
 
 ### Hypothesis
 Adversaries enumerate running processes via tasklist.exe / Get-Process to identify AV/EDR. Bursts of these from a single user are a hunt seed.

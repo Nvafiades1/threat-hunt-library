@@ -5,10 +5,10 @@ T1136
 TH-SYNTH-014
 
 ### Created
-2026-04-29T12:00:00Z
+2026-02-06T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-02-06T12:00:00Z
 
 ### Hypothesis
 Adversaries create new domain accounts after hours to maintain access. Account creation outside of HR onboarding windows or by non-IT principals is highly suspicious.

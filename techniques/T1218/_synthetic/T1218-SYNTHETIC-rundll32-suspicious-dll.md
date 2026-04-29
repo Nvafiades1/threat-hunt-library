@@ -5,10 +5,10 @@ T1218
 TH-SYNTH-020
 
 ### Created
-2026-04-29T12:00:00Z
+2026-03-03T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-03-03T12:00:00Z
 
 ### Hypothesis
 rundll32.exe loading DLLs from user-writable paths or with unusual export names is a frequent LOLBin technique. Mustang Panda uses sideloading via rundll32 frequently.

@@ -5,10 +5,10 @@ T1027
 TH-SYNTH-018
 
 ### Created
-2026-04-29T12:00:00Z
+2026-02-24T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-02-24T12:00:00Z
 
 ### Hypothesis
 Packed/obfuscated binaries often have abnormally few imports or unusually high entropy. While not definitive, the combination is a useful hunt seed.

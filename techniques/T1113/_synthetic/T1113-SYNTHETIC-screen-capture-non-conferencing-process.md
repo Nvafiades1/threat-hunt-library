@@ -5,10 +5,10 @@ T1113
 TH-SYNTH-032
 
 ### Created
-2026-04-29T12:00:00Z
+2026-04-09T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-04-09T12:00:00Z
 
 ### Hypothesis
 Screen-capture APIs called from binaries that aren't conferencing / screen-recording tools (Teams, Zoom, OBS) suggest covert collection.

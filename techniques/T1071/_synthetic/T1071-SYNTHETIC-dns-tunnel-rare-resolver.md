@@ -5,10 +5,10 @@ T1071
 TH-SYNTH-033
 
 ### Created
-2026-04-29T12:00:00Z
+2026-04-12T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-04-12T12:00:00Z
 
 ### Hypothesis
 DNS tunneling produces high query rates with unusually long subdomain labels. APT41 has used iodine-style tunnels for backup C2.

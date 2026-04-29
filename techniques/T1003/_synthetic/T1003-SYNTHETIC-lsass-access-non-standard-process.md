@@ -5,10 +5,10 @@ T1003
 TH-SYNTH-022
 
 ### Created
-2026-04-29T12:00:00Z
+2026-03-10T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-03-10T12:00:00Z
 
 ### Hypothesis
 LSASS handle/memory access by processes other than antivirus or lsm.exe/wininit.exe is a high-fidelity dumping signal.

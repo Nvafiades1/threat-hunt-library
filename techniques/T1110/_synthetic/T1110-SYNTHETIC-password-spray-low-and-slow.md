@@ -5,10 +5,10 @@ T1110
 TH-SYNTH-023
 
 ### Created
-2026-04-29T12:00:00Z
+2026-03-14T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-03-14T12:00:00Z
 
 ### Hypothesis
 Password spray (1-2 attempts/account, many accounts) evades classic lockout-based detection. Low-and-slow spray is APT33 / APT28 staple.

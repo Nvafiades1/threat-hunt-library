@@ -5,10 +5,10 @@ T1056
 TH-SYNTH-031
 
 ### Created
-2026-04-29T12:00:00Z
+2026-04-06T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-04-06T12:00:00Z
 
 ### Hypothesis
 Keyloggers register via the SetWindowsHookEx API or as low-level keyboard drivers. Installation often coincides with Run-key persistence.

@@ -5,10 +5,10 @@ T1068
 TH-SYNTH-015
 
 ### Created
-2026-04-29T12:00:00Z
+2026-02-11T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-02-11T12:00:00Z
 
 ### Hypothesis
 Lazarus and similar actors load vulnerable signed drivers (BYOVD) for kernel-level priv-esc. New driver loads from non-vendor paths warrant investigation.

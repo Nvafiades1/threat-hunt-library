@@ -5,10 +5,10 @@ T1083
 TH-SYNTH-025
 
 ### Created
-2026-04-29T12:00:00Z
+2026-03-22T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-03-22T12:00:00Z
 
 ### Hypothesis
 Pre-encryption and pre-exfil, ransomware operators enumerate file shares looking for valuable data — this produces a burst of file-system discovery.

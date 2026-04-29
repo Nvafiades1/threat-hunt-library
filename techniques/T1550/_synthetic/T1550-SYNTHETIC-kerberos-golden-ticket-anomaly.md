@@ -5,10 +5,10 @@ T1550
 TH-SYNTH-030
 
 ### Created
-2026-04-29T12:00:00Z
+2026-04-03T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-04-03T12:00:00Z
 
 ### Hypothesis
 Golden tickets are forged TGTs with arbitrary lifetime/group membership. Tickets with abnormal lifetimes (>10h) or referencing unknown groups are a forgery indicator.

@@ -5,10 +5,10 @@ T1543
 TH-SYNTH-013
 
 ### Created
-2026-04-29T12:00:00Z
+2026-02-02T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-02-02T12:00:00Z
 
 ### Hypothesis
 Malicious actors install Windows services (e.g. fake-named like WindowsUpdateSvc, OneDriveSync) that point to user-writable paths or non-vendor binaries. Sandworm has used this for backdoor persistence.

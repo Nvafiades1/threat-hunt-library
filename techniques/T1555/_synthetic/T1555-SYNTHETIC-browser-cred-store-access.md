@@ -5,10 +5,10 @@ T1555
 TH-SYNTH-024
 
 ### Created
-2026-04-29T12:00:00Z
+2026-03-18T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-03-18T12:00:00Z
 
 ### Hypothesis
 Browser-stored credentials (Chrome Login Data, Edge / Brave SQLite stores) are commonly stolen by infostealers and FIN7 droppers.

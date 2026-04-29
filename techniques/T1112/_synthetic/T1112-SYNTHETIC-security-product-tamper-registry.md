@@ -5,10 +5,10 @@ T1112
 TH-SYNTH-021
 
 ### Created
-2026-04-29T12:00:00Z
+2026-03-06T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-03-06T12:00:00Z
 
 ### Hypothesis
 Ransomware operators (Conti, BlackBasta) disable AV/EDR via registry tampering before payload deploy. Modifications to HKLM\SOFTWARE\Policies\Microsoft\Windows Defender are a strong signal.

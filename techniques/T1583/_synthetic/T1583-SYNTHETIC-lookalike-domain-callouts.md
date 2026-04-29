@@ -5,10 +5,10 @@ T1583
 TH-SYNTH-003
 
 ### Created
-2026-04-29T12:00:00Z
+2025-11-23T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2025-11-23T12:00:00Z
 
 ### Hypothesis
 Adversaries register typosquat domains of our brand for phishing or C2. DNS resolution from internal hosts to those domains indicates a lure has reached an endpoint.

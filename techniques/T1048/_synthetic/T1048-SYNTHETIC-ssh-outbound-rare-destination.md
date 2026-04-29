@@ -5,10 +5,10 @@ T1048
 TH-SYNTH-038
 
 ### Created
-2026-04-29T12:00:00Z
+2026-04-25T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-04-25T12:00:00Z
 
 ### Hypothesis
 Outbound SSH from corporate hosts to non-vendor IPs is rare in most enterprises. Adversaries use SSH for tunneling and exfil.

@@ -5,10 +5,10 @@ T1548
 TH-SYNTH-017
 
 ### Created
-2026-04-29T12:00:00Z
+2026-02-20T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-02-20T12:00:00Z
 
 ### Hypothesis
 UAC bypass via fodhelper / computerdefaults / sdclt registry hijack is a stable technique used by Kimsuky and others.

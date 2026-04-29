@@ -5,10 +5,10 @@ T1059
 TH-SYNTH-009
 
 ### Created
-2026-04-29T12:00:00Z
+2026-01-10T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-01-10T12:00:00Z
 
 ### Hypothesis
 MuddyWater spawns base64-encoded PowerShell from Office processes (WINWORD/EXCEL/OUTLOOK) — a high-fidelity phishing-execution chain.

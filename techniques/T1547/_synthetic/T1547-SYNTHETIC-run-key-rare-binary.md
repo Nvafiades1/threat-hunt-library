@@ -5,10 +5,10 @@ T1547
 TH-SYNTH-012
 
 ### Created
-2026-04-29T12:00:00Z
+2026-01-30T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2026-01-30T12:00:00Z
 
 ### Hypothesis
 New entries in HKCU/HKLM Run/RunOnce keys pointing to binaries outside Program Files, Windows, or known vendor paths are likely persistence.

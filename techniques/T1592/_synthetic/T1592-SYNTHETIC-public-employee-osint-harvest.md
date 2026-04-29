@@ -5,10 +5,10 @@ T1592
 TH-SYNTH-002
 
 ### Created
-2026-04-29T12:00:00Z
+2025-11-14T12:00:00Z
 
 ### Last Modified
-2026-04-29T12:00:00Z
+2025-11-14T12:00:00Z
 
 ### Hypothesis
 Threat actors are scraping public-facing employee data (LinkedIn, GitHub, conference talks) to seed phishing pretext. APT29 has used targeted spearphishing keyed to recent presentations and posts.
