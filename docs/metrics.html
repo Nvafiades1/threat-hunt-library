@@ -113,7 +113,7 @@ body.light .report-btn{color:#fff}
 </head><body>
 <header>
   <div class="brand">Threat Hunt <span class="accent">Metrics</span></div>
-  <span class="meta">Generated 2026-04-29 16:32 UTC</span>
+  <span class="meta">Generated 2026-04-29 16:40 UTC</span>
   <button id="reportWordBtn" class="report-btn" title="Download a Word document of every chart and KPI — opens directly in Microsoft Word">Generate Report (Word) &darr;</button>
   <button id="reportMdBtn" class="report-btn-secondary" title="Download the same report as plain Markdown">MD</button>
   <a class="nav-link" href="./index.html">Matrix &rarr;</a>
@@ -130,7 +130,7 @@ body.light .report-btn{color:#fff}
   </div>
   <div class="kpi green">
     <div class="kpi-label">Techniques Covered</div>
-    <div class="kpi-value">40</div>
+    <div class="kpi-value">1</div>
     <div class="kpi-sub">of 356 mapped techniques</div>
   </div>
   <div class="kpi blue">
@@ -140,7 +140,7 @@ body.light .report-btn{color:#fff}
   </div>
   <div class="kpi red">
     <div class="kpi-label">Coverage</div>
-    <div class="kpi-value">11%</div>
+    <div class="kpi-value">0%</div>
     <div class="kpi-sub">of MITRE ATT&amp;CK Enterprise</div>
   </div>
   <div class="kpi orange">
@@ -160,8 +160,8 @@ body.light .report-btn{color:#fff}
   </div>
   <div class="kpi green">
     <div class="kpi-label">New Coverage &middot; this month</div>
-    <div class="kpi-value">+40</div>
-    <div class="kpi-sub"><span class="kpi-trend trend-up">+40 vs prior month</span></div>
+    <div class="kpi-value">+1</div>
+    <div class="kpi-sub"><span class="kpi-trend trend-up">+1 vs prior month</span></div>
   </div>
 </section>
 
@@ -278,7 +278,7 @@ body.light .report-btn{color:#fff}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
-const DATA = {"totals": {"hunts": 40, "techniques": 40, "actors": 18, "coverage": 11, "universe": 356, "last_hunt": "2026-04-29", "tactic_gap_count": 0}, "duration": {"avg_days": 0.0, "median_days": 0.0, "measured": 40, "total": 40}, "throughput": {"last_30": 40, "last_90": 40, "prev_30": 0}, "growth": {"labels": ["2026-04"], "new_techniques": [40], "this_month": 40, "prev_month": 0}, "timeline": {"labels": ["2026-04"], "monthly": [40], "cumulative": [40]}, "tactics": {"labels": ["Reconnaissance", "Resource Development", "Initial Access", "Execution", "Persistence", "Privilege Escalation", "Defense Evasion", "Credential Access", "Discovery", "Lateral Movement", "Collection", "Command And Control", "Exfiltration", "Impact"], "hunts": [2, 2, 2, 2, 3, 7, 3, 4, 3, 3, 1, 3, 3, 2], "covered": [2, 2, 2, 2, 3, 7, 3, 4, 3, 3, 1, 3, 3, 2]}, "outcomes": {"labels": ["Completed", "Inconclusive", "In Progress"], "values": [29, 3, 8]}, "actors": {"labels": ["APT41", "APT29 (Cozy Bear)", "APT28 (Fancy Bear)", "Scattered Spider (UNC3944)", "Lazarus Group", "MuddyWater", "Sandworm", "LockBit", "Charming Kitten (APT35)", "APT33"], "values": [7, 6, 5, 3, 3, 2, 2, 2, 1, 1]}, "severity": {"labels": ["Critical", "High", "Medium", "Low"], "values": [7, 19, 12, 2]}, "confidence": {"labels": ["High", "Low", "Medium"], "values": [21, 4, 15]}, "techniques": {"labels": ["T1003", "T1018", "T1021", "T1027", "T1041", "T1048", "T1053", "T1056", "T1057", "T1059"], "values": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, "platforms": {"labels": ["Splunk", "Sentinel", "Defender XDR", "CrowdStrike"], "values": [15, 11, 8, 6]}, "gaps": {"tactics": [], "total_tactics": 14}};
+const DATA = {"totals": {"hunts": 40, "techniques": 1, "actors": 18, "coverage": 0, "universe": 356, "last_hunt": "2026-04-29", "tactic_gap_count": 14}, "duration": {"avg_days": 0.0, "median_days": 0.0, "measured": 40, "total": 40}, "throughput": {"last_30": 40, "last_90": 40, "prev_30": 0}, "growth": {"labels": ["2026-04"], "new_techniques": [1], "this_month": 1, "prev_month": 0}, "timeline": {"labels": ["2026-04"], "monthly": [40], "cumulative": [40]}, "tactics": {"labels": ["Unmapped"], "hunts": [40], "covered": [1]}, "outcomes": {"labels": ["Completed", "Inconclusive", "In Progress"], "values": [29, 3, 8]}, "actors": {"labels": ["APT41", "APT29 (Cozy Bear)", "APT28 (Fancy Bear)", "Scattered Spider (UNC3944)", "Lazarus Group", "MuddyWater", "Sandworm", "LockBit", "Charming Kitten (APT35)", "APT33"], "values": [7, 6, 5, 3, 3, 2, 2, 2, 1, 1]}, "severity": {"labels": ["Critical", "High", "Medium", "Low"], "values": [7, 19, 12, 2]}, "confidence": {"labels": ["High", "Low", "Medium"], "values": [21, 4, 15]}, "techniques": {"labels": ["_synthetic"], "values": [40]}, "platforms": {"labels": ["Splunk", "Sentinel", "Defender XDR", "CrowdStrike"], "values": [15, 11, 8, 6]}, "gaps": {"tactics": ["Reconnaissance", "Resource Development", "Initial Access", "Execution", "Persistence", "Privilege Escalation", "Defense Evasion", "Credential Access", "Discovery", "Lateral Movement", "Collection", "Command And Control", "Exfiltration", "Impact"], "total_tactics": 14}};
 
 function cssVar(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
@@ -288,17 +288,17 @@ function applyMode(light) {
   document.getElementById('modeToggle').textContent = light ? '☽' : '☼';
   renderAll();
 }
-applyMode(localStorage.getItem('prefersLight') === 'true');
+Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+
+const charts = {};
+function destroyAll() { for (const k in charts) charts[k]?.destroy(); }
+// Initial render is deferred to the end of the script so all helper
+// declarations (palette, baseOpts, renderAll, etc.) are initialized first.
 document.getElementById('modeToggle').addEventListener('click', () => {
   const toLight = !document.body.classList.contains('light');
   localStorage.setItem('prefersLight', toLight);
   applyMode(toLight);
 });
-
-Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
-
-const charts = {};
-function destroyAll() { for (const k in charts) charts[k]?.destroy(); }
 
 function palette() {
   return {
@@ -812,6 +812,6 @@ ${body}
 document.getElementById('reportWordBtn')?.addEventListener('click', generateReportWord);
 document.getElementById('reportMdBtn')?.addEventListener('click', generateReportMarkdown);
 
-renderAll();
+applyMode(localStorage.getItem('prefersLight') === 'true');
 </script>
 </body></html>
