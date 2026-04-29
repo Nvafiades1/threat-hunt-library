@@ -193,7 +193,9 @@ for path in hunt_files:
         text = path.read_text("utf-8", "ignore")
     except Exception:
         continue
-    parent_folder = path.parent.name  # T1003
+    # First path component under techniques/, so files nested in subdirs
+    # (e.g. techniques/T1003/_synthetic/foo.md) still resolve to T1003.
+    parent_folder = path.relative_to(TECH_DIR).parts[0]
     fields = parse_hunt(text)
 
     # Technique: folder is authoritative, fall back to body mentions
