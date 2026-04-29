@@ -378,6 +378,20 @@ payload = {
     "techniques": {"labels":[t for t,_ in tech_counts], "values":[n for _,n in tech_counts]},
     "platforms":  {"labels":[p for p,_ in plat_counts], "values":[n for _,n in plat_counts]},
     "gaps":       {"tactics": tactic_gaps, "total_tactics": len(TACTICS)},
+    # Slim per-hunt records so reports can pivot by actor / technique / etc.
+    "hunts": [
+        {
+            "technique": r["technique"],
+            "tactic":    r["tactic"],
+            "title":     r["title"][:160],
+            "date":      r["date"],
+            "severity":  r["severity"],
+            "status":    r["status"],
+            "platform":  r["platform"],
+            "actors":    r["actors"],
+        }
+        for r in records
+    ],
 }
 
 generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -688,8 +702,79 @@ body.light .report-btn{{color:#fff}}
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
+Chart.register(ChartDataLabels);
 const DATA = {json.dumps(payload)};
+
+// Per-actor profiles surfaced in the Generate Report output. Curated from
+// public sources (MITRE ATT&CK, CrowdStrike adversary universe, vendor blogs,
+// CISA joint advisories). Only actors present in DATA.actors.labels with a
+// matching key here will be included as report spotlights.
+const ACTOR_PROFILES = {{
+  "APT29 (Cozy Bear)": {{
+    aliases: ["Cozy Bear", "The Dukes", "NOBELIUM", "Midnight Blizzard", "IRON HEMLOCK", "UNC2452"],
+    active: "2008 – present",
+    industries: ["Government", "Defense", "Think tanks / NGOs", "Healthcare (vaccine R&D)", "Technology"],
+    countries: ["United States", "United Kingdom", "Germany", "Netherlands", "NATO members"],
+    category: "Nation-state · Russia (SVR)",
+    references: [
+      ["MITRE ATT&CK · G0016", "https://attack.mitre.org/groups/G0016/"],
+      ["CrowdStrike · Cozy Bear", "https://www.crowdstrike.com/adversaries/cozy-bear/"],
+      ["CISA AA21-148A · Russian SVR", "https://www.cisa.gov/news-events/cybersecurity-advisories/aa21-148a"],
+      ["Microsoft · Midnight Blizzard analysis", "https://www.microsoft.com/en-us/security/blog/2024/01/19/midnight-blizzard-guidance-for-responders-on-nation-state-attack/"],
+    ],
+  }},
+  "APT28 (Fancy Bear)": {{
+    aliases: ["Fancy Bear", "Pawn Storm", "Sofacy", "Sednit", "STRONTIUM", "Forest Blizzard", "IRON TWILIGHT"],
+    active: "2004 – present",
+    industries: ["Government", "Military", "Journalism", "Sports / anti-doping bodies"],
+    countries: ["United States", "Ukraine", "NATO members", "Eastern Europe"],
+    category: "Nation-state · Russia (GRU Unit 26165)",
+    references: [
+      ["MITRE ATT&CK · G0007", "https://attack.mitre.org/groups/G0007/"],
+      ["CrowdStrike · Fancy Bear", "https://www.crowdstrike.com/adversaries/fancy-bear/"],
+      ["Microsoft · Forest Blizzard", "https://www.microsoft.com/en-us/security/blog/2023/12/04/microsoft-mitigates-russian-aligned-actor-attempting-to-compromise-microsoft-corporate-email-accounts/"],
+    ],
+  }},
+  "APT41": {{
+    aliases: ["Wicked Panda", "BARIUM", "Blackfly", "Winnti", "BRONZE ATLAS", "TG-2633"],
+    active: "2012 – present",
+    industries: ["Healthcare", "Telecommunications", "Technology / SaaS", "Video games", "Aviation", "Government"],
+    countries: ["United States", "India", "Japan", "South Korea", "United Kingdom", "France"],
+    category: "Nation-state · China (with parallel financially-motivated operations)",
+    references: [
+      ["MITRE ATT&CK · G0096", "https://attack.mitre.org/groups/G0096/"],
+      ["Mandiant · APT41 dual-mission report", "https://www.mandiant.com/resources/blog/apt41-dual-espionage-and-cyber-crime-operation"],
+      ["CrowdStrike · Wicked Panda", "https://www.crowdstrike.com/adversaries/wicked-panda/"],
+    ],
+  }},
+  "Lazarus Group": {{
+    aliases: ["HIDDEN COBRA", "ZINC", "Diamond Sleet", "Labyrinth Chollima", "Guardians of Peace"],
+    active: "2009 – present",
+    industries: ["Banking / SWIFT", "Cryptocurrency exchanges", "Defense", "Entertainment", "Aerospace"],
+    countries: ["United States", "South Korea", "Bangladesh", "Vietnam", "global"],
+    category: "Nation-state · DPRK (Reconnaissance General Bureau / Lab 110)",
+    references: [
+      ["MITRE ATT&CK · G0032", "https://attack.mitre.org/groups/G0032/"],
+      ["CISA AA20-239A · BeagleBoyz / HIDDEN COBRA", "https://www.cisa.gov/news-events/cybersecurity-advisories/aa20-239a"],
+      ["CrowdStrike · Labyrinth Chollima", "https://www.crowdstrike.com/adversaries/labyrinth-chollima/"],
+    ],
+  }},
+  "Scattered Spider (UNC3944)": {{
+    aliases: ["UNC3944", "Octo Tempest", "0ktapus", "Scatter Swine", "Roasted 0ktapus"],
+    active: "2022 – present",
+    industries: ["Hospitality / casinos", "Telecommunications", "BPO", "Finance", "Technology / SaaS"],
+    countries: ["United States", "United Kingdom", "Canada", "Australia"],
+    category: "Cybercrime · English-speaking, frequently aligned with ALPHV/BlackCat",
+    references: [
+      ["MITRE ATT&CK · G1015", "https://attack.mitre.org/groups/G1015/"],
+      ["CISA AA23-320A · Joint advisory", "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-320a"],
+      ["Microsoft · Octo Tempest", "https://www.microsoft.com/en-us/security/blog/2023/10/25/octo-tempest-crosses-boundaries-to-facilitate-extensive-cross-domain-attack/"],
+      ["Mandiant · UNC3944 SIM-swap research", "https://www.mandiant.com/resources/blog/unc3944-sms-phishing-sim-swapping-ransomware"],
+    ],
+  }},
+}};
 
 function cssVar(name) {{
   return getComputedStyle(document.body).getPropertyValue(name).trim();
@@ -737,10 +822,39 @@ function baseOpts(p) {{
     plugins: {{
       legend: {{ labels: {{ color: p.text, boxWidth: 10, font: {{ size: 11 }} }} }},
       tooltip: {{ enabled: true }},
+      // Off by default — each chart opts in with its own formatter.
+      datalabels: {{ display: false }},
     }},
     scales: {{}},
   }};
 }}
+
+// Datalabels formatter for parts-of-whole charts (doughnut). Shows "N · P%".
+function pctLabel(value, ctx) {{
+  const arr = ctx.chart.data.datasets[0].data || [];
+  const total = arr.reduce((a, b) => a + (Number(b) || 0), 0);
+  if (!total) return '';
+  const pct = Math.round((value / total) * 100);
+  return pct < 4 ? '' : pct + '%';
+}}
+const PCT_DATALABELS = {{
+  display: true,
+  color: '#fff',
+  font: {{ weight: '700', size: 11 }},
+  formatter: pctLabel,
+}};
+const COUNT_DATALABELS = (p) => ({{
+  display: ctx => {{
+    const v = ctx.dataset.data[ctx.dataIndex];
+    return Number(v) > 0;
+  }},
+  anchor: 'end',
+  align: 'end',
+  clip: false,
+  color: p.text,
+  font: {{ weight: '600', size: 10 }},
+  formatter: v => v,
+}});
 
 function renderAll() {{
   destroyAll();
@@ -761,6 +875,7 @@ function renderAll() {{
     }},
     options: {{
       ...baseOpts(p),
+      plugins: {{ ...baseOpts(p).plugins, datalabels: {{ display: false }} }},
       scales: {{
         x:  {{ ticks:{{color:p.dim}}, grid:{{color:p.grid}} }},
         y:  {{ beginAtZero:true, ticks:{{color:p.dim, precision:0}}, grid:{{color:p.grid}} }},
@@ -780,7 +895,7 @@ function renderAll() {{
         borderWidth: 2, borderColor: cssVar('--surface'),
       }}],
     }},
-    options: {{ ...baseOpts(p), cutout:'62%' }},
+    options: {{ ...baseOpts(p), cutout:'62%', plugins: {{ ...baseOpts(p).plugins, datalabels: PCT_DATALABELS }} }},
   }});
 
   // ── Confidence donut ───────────────────────────────────────────────────
@@ -795,7 +910,7 @@ function renderAll() {{
         borderWidth: 2, borderColor: cssVar('--surface'),
       }}],
     }},
-    options: {{ ...baseOpts(p), cutout:'62%' }},
+    options: {{ ...baseOpts(p), cutout:'62%', plugins: {{ ...baseOpts(p).plugins, datalabels: PCT_DATALABELS }} }},
   }});
 
   // ── Tactics ────────────────────────────────────────────────────────────
@@ -811,6 +926,7 @@ function renderAll() {{
     options: {{
       ...baseOpts(p),
       indexAxis:'y',
+      plugins: {{ ...baseOpts(p).plugins, datalabels: COUNT_DATALABELS(p) }},
       scales: {{
         x: {{ beginAtZero:true, ticks:{{color:p.dim, precision:0}}, grid:{{color:p.grid}} }},
         y: {{ ticks:{{color:p.text}}, grid:{{display:false}} }},
@@ -827,7 +943,7 @@ function renderAll() {{
     }},
     options: {{
       ...baseOpts(p), indexAxis:'y',
-      plugins:{{ ...baseOpts(p).plugins, legend:{{display:false}} }},
+      plugins:{{ ...baseOpts(p).plugins, legend:{{display:false}}, datalabels: COUNT_DATALABELS(p) }},
       scales: {{
         x: {{ beginAtZero:true, ticks:{{color:p.dim, precision:0}}, grid:{{color:p.grid}} }},
         y: {{ ticks:{{color:p.text}}, grid:{{display:false}} }},
@@ -844,7 +960,7 @@ function renderAll() {{
     }},
     options: {{
       ...baseOpts(p), indexAxis:'y',
-      plugins:{{ ...baseOpts(p).plugins, legend:{{display:false}} }},
+      plugins:{{ ...baseOpts(p).plugins, legend:{{display:false}}, datalabels: COUNT_DATALABELS(p) }},
       scales: {{
         x: {{ beginAtZero:true, ticks:{{color:p.dim, precision:0}}, grid:{{color:p.grid}} }},
         y: {{ ticks:{{color:p.text}}, grid:{{display:false}} }},
@@ -864,7 +980,7 @@ function renderAll() {{
         borderWidth: 2, borderColor: cssVar('--surface'),
       }}],
     }},
-    options: {{ ...baseOpts(p), cutout:'62%' }},
+    options: {{ ...baseOpts(p), cutout:'62%', plugins: {{ ...baseOpts(p).plugins, datalabels: PCT_DATALABELS }} }},
   }});
 
   // ── Outcome mix donut ─────────────────────────────────────────────────
@@ -883,7 +999,7 @@ function renderAll() {{
         borderWidth: 2, borderColor: cssVar('--surface'),
       }}],
     }},
-    options: {{ ...baseOpts(p), cutout:'62%' }},
+    options: {{ ...baseOpts(p), cutout:'62%', plugins: {{ ...baseOpts(p).plugins, datalabels: PCT_DATALABELS }} }},
   }});
 
   // ── Coverage growth line ──────────────────────────────────────────────
@@ -899,7 +1015,7 @@ function renderAll() {{
     }},
     options: {{
       ...baseOpts(p),
-      plugins:{{ ...baseOpts(p).plugins, legend:{{display:false}} }},
+      plugins:{{ ...baseOpts(p).plugins, legend:{{display:false}}, datalabels: COUNT_DATALABELS(p) }},
       scales:{{
         x:{{ ticks:{{color:p.dim}}, grid:{{color:p.grid}} }},
         y:{{ beginAtZero:true, ticks:{{color:p.dim, precision:0}}, grid:{{color:p.grid}} }},
@@ -1112,6 +1228,75 @@ function buildReportSections() {{
   return {{ today, snapshot, charts }};
 }}
 
+// ── per-actor spotlight builders ───────────────────────────────────────
+function huntsByActor(actor) {{
+  return (DATA.hunts || []).filter(h => (h.actors || []).includes(actor));
+}}
+
+// Decide which actors to include: every profiled actor that also has hunts in the data.
+function spotlightActors() {{
+  return DATA.actors.labels.filter(a => ACTOR_PROFILES[a]);
+}}
+
+function actorMarkdown(actor) {{
+  const prof = ACTOR_PROFILES[actor];
+  if (!prof) return '';
+  const hunts = huntsByActor(actor);
+  const lines = [];
+  lines.push(`### ${{actor}}`);
+  lines.push('');
+  lines.push(`- **Aliases:** ${{prof.aliases.join(', ')}}`);
+  lines.push(`- **Active:** ${{prof.active}}`);
+  lines.push(`- **Targeted industries:** ${{prof.industries.join(', ')}}`);
+  lines.push(`- **Targeted countries:** ${{prof.countries.join(', ')}}`);
+  lines.push(`- **Category:** ${{prof.category}}`);
+  lines.push('');
+  lines.push(`**Reporting:**`);
+  for (const [label, url] of prof.references.slice(0, 5)) {{
+    lines.push(`- [${{label}}](${{url}})`);
+  }}
+  lines.push('');
+  if (hunts.length) {{
+    lines.push(`**Hunts attributed to this actor (${{hunts.length}}):**`);
+    lines.push('');
+    lines.push('| Technique | Tactic | Severity | Status | Date |');
+    lines.push('|---|---|---|---|---|');
+    for (const h of hunts) {{
+      lines.push(`| ${{h.technique}} | ${{h.tactic || '—'}} | ${{h.severity || '—'}} | ${{h.status || '—'}} | ${{h.date}} |`);
+    }}
+    lines.push('');
+  }}
+  return lines.join('\\n');
+}}
+
+function actorHTML(actor) {{
+  const prof = ACTOR_PROFILES[actor];
+  if (!prof) return '';
+  const hunts = huntsByActor(actor);
+  const refs = prof.references.slice(0, 5)
+    .map(([label, url]) => `<li><a href="${{escHtml(url)}}">${{escHtml(label)}}</a></li>`)
+    .join('');
+  const huntRows = hunts.map(h =>
+    `<tr><td>${{escHtml(h.technique)}}</td><td>${{escHtml(h.tactic || '—')}}</td>` +
+    `<td>${{escHtml(h.severity || '—')}}</td><td>${{escHtml(h.status || '—')}}</td>` +
+    `<td>${{escHtml(h.date)}}</td></tr>`).join('');
+  return (
+    `<h3>${{escHtml(actor)}}</h3>` +
+    `<table>` +
+      `<tr><td><b>Aliases</b></td><td>${{escHtml(prof.aliases.join(', '))}}</td></tr>` +
+      `<tr><td><b>Active</b></td><td>${{escHtml(prof.active)}}</td></tr>` +
+      `<tr><td><b>Targeted industries</b></td><td>${{escHtml(prof.industries.join(', '))}}</td></tr>` +
+      `<tr><td><b>Targeted countries</b></td><td>${{escHtml(prof.countries.join(', '))}}</td></tr>` +
+      `<tr><td><b>Category</b></td><td>${{escHtml(prof.category)}}</td></tr>` +
+    `</table>` +
+    `<p><b>Reporting</b></p><ul>${{refs}}</ul>` +
+    (hunts.length
+      ? `<p><b>Hunts attributed to this actor (${{hunts.length}})</b></p>` +
+        `<table><tr><th>Technique</th><th>Tactic</th><th>Severity</th><th>Status</th><th>Date</th></tr>${{huntRows}}</table>`
+      : '')
+  );
+}}
+
 function generateReportMarkdown() {{
   const {{ today, snapshot, charts }} = buildReportSections();
   const lines = [
@@ -1137,6 +1322,16 @@ function generateReportMarkdown() {{
       lines.push('');
     }}
   }}
+  // Per-actor spotlights
+  const spotlights = spotlightActors();
+  if (spotlights.length) {{
+    lines.push('## Threat Actor Spotlights');
+    lines.push('');
+    for (const actor of spotlights) {{
+      lines.push(actorMarkdown(actor));
+    }}
+  }}
+
   lines.push('---');
   lines.push('');
   lines.push(`_Source: Threat Hunt Library \u00B7 https://github.com/{OWNER}/{REPO}_`);
@@ -1177,6 +1372,16 @@ function generateReportWord() {{
       body += `<p><b>Insight.</b> ${{escHtml(narrative)}}</p>`;
     }}
   }}
+
+  // Per-actor spotlights
+  const spotlights = spotlightActors();
+  if (spotlights.length) {{
+    body += `<h2>Threat Actor Spotlights</h2>`;
+    for (const actor of spotlights) {{
+      body += actorHTML(actor);
+    }}
+  }}
+
   body += `<p class="footer"><i>Source: Threat Hunt Library &middot; https://github.com/{OWNER}/{REPO}</i></p>`;
 
   const html =
