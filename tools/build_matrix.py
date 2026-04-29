@@ -60,7 +60,7 @@ def has_content(path: pathlib.Path) -> bool:
     if path.is_file():
         return True
     return any(f.is_file() and f.name.lower() not in {"readme.md", ".ds_store"}
-               for f in path.iterdir())
+               for f in path.rglob("*"))
 
 _heading_re = re.compile(r"^\s*#+\s*(.+?)\s*$")
 

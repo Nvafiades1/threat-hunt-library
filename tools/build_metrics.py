@@ -154,8 +154,8 @@ hunt_files: list[pathlib.Path] = []
 for sub in sorted(TECH_DIR.iterdir()):
     if not sub.is_dir():
         continue
-    for f in sub.iterdir():
-        if f.is_file() and f.suffix.lower() == ".md" and f.name.lower() != "readme.md":
+    for f in sub.rglob("*.md"):
+        if f.is_file() and f.name.lower() != "readme.md":
             hunt_files.append(f)
 
 # Pull git-added timestamps for all files in one shot (faster than per-file)
