@@ -45,6 +45,7 @@
     "00f38e46e22c40a2": "2026-04-27T18:08:21Z",
     "0113e17c5d796e05": "2026-04-28T17:03:39Z",
     "01197e50ee0fb595": "2026-04-29T06:32:48Z",
+    "011bca0579c8848b": "2026-04-30T23:32:06Z",
     "0124f6096606d3bc": "2026-04-27T18:08:21Z",
     "0126c373b10f7d47": "2026-04-28T15:44:33Z",
     "012adc1a1027688f": "2026-04-30T02:58:48Z",
@@ -122,6 +123,7 @@
     "03e00c3dfcf57f23": "2026-04-27T18:08:21Z",
     "03e01eaa81330a86": "2026-04-29T16:48:53Z",
     "0409335a91f1dc39": "2026-04-28T10:26:39Z",
+    "04127262574c478e": "2026-04-30T23:32:06Z",
     "041461591c0f4c2b": "2026-04-30T06:34:51Z",
     "041604ec3fc3ac3d": "2026-04-30T01:53:33Z",
     "0422c9db8c9b8932": "2026-04-28T06:35:20Z",
@@ -468,6 +470,7 @@
     "0fe2193552d46415": "2026-04-29T08:31:41Z",
     "0fe8256cd913fad4": "2026-04-30T06:34:51Z",
     "0fea61d9e5cb5f58": "2026-04-29T22:34:14Z",
+    "0feaa890b6e40cd3": "2026-04-30T23:32:06Z",
     "0ff911e12b7e9214": "2026-04-30T01:53:33Z",
     "0ffc37b4056be352": "2026-04-30T01:08:16Z",
     "1003a756479310b8": "2026-04-30T17:09:00Z",
@@ -533,6 +536,7 @@
     "125d536465943fb9": "2026-04-30T14:37:54Z",
     "1265732e0f121020": "2026-04-30T04:20:44Z",
     "126f9a80d99276db": "2026-04-28T11:12:11Z",
+    "12721dd963d916d0": "2026-04-30T23:32:06Z",
     "12767e82f7f3b5f6": "2026-04-28T17:03:39Z",
     "127e4b35c5177eee": "2026-04-30T10:16:38Z",
     "127ebeeb59f1ac01": "2026-04-28T16:25:04Z",
@@ -1761,6 +1765,7 @@
     "3e6461bf3f038840": "2026-04-30T14:37:54Z",
     "3e6f42557b39293c": "2026-04-27T23:39:50Z",
     "3e700ce2e0021561": "2026-04-27T18:08:21Z",
+    "3e73923fb50b3ab2": "2026-04-30T23:32:06Z",
     "3e75d18cec00c332": "2026-04-27T23:24:02Z",
     "3e7a0cd4ad23b35e": "2026-04-30T02:58:48Z",
     "3e7bbf2c2c5ade6c": "2026-04-27T18:08:21Z",
@@ -1793,6 +1798,7 @@
     "3f9928a030720220": "2026-04-29T15:29:13Z",
     "3f9b64f4c55a4979": "2026-04-27T18:08:21Z",
     "3fa8e66f69ca5cbe": "2026-04-29T11:48:43Z",
+    "3ff4e06e0b52029a": "2026-04-30T23:32:06Z",
     "3ff82b30d04b13c2": "2026-04-29T21:06:33Z",
     "3ffe62a8bd59b106": "2026-04-28T06:35:20Z",
     "4001441e2acd0fab": "2026-04-29T08:31:41Z",
@@ -1822,6 +1828,7 @@
     "41018e4804317212": "2026-04-29T13:52:17Z",
     "412558461ddd509b": "2026-04-30T06:34:51Z",
     "413825c406d15314": "2026-04-28T18:26:13Z",
+    "4147a2ea200984d3": "2026-04-30T23:32:06Z",
     "416fef1d1452daa1": "2026-04-29T16:48:53Z",
     "417120419286dab8": "2026-04-29T01:11:08Z",
     "417ba07696389340": "2026-04-27T18:08:21Z",
@@ -3097,6 +3104,7 @@
     "6e3c397159434b86": "2026-04-30T13:01:08Z",
     "6e42443864624e2f": "2026-04-29T13:01:23Z",
     "6e4d2c416cf72101": "2026-04-30T19:28:13Z",
+    "6e5465bf4b1833f6": "2026-04-30T23:32:06Z",
     "6e61ec4359ed9df3": "2026-04-28T16:25:04Z",
     "6e62f307a99f762a": "2026-04-27T18:08:21Z",
     "6e68a8cf71ced142": "2026-04-27T18:08:21Z",
@@ -3746,6 +3754,7 @@
     "848eaee175cdedaa": "2026-04-30T05:38:08Z",
     "84921291fa6e6a24": "2026-04-27T18:08:21Z",
     "849c83f3f2d5ecc0": "2026-04-27T23:24:02Z",
+    "84a966569409236b": "2026-04-30T23:32:06Z",
     "84b8f9fbfcf5571d": "2026-04-30T02:58:48Z",
     "84cbc9b489df77d4": "2026-04-28T11:52:55Z",
     "84cd7ccbf79da64b": "2026-04-27T23:24:02Z",
@@ -5262,6 +5271,7 @@
     "b7e1b724b5ab1161": "2026-04-29T09:27:28Z",
     "b7e4820a91869ad6": "2026-04-27T23:43:28Z",
     "b80eba4f27cbe474": "2026-04-27T23:24:02Z",
+    "b81392d30906cf02": "2026-04-30T23:32:06Z",
     "b8145503765b7d1b": "2026-04-27T18:08:21Z",
     "b827fc7a255c6eb3": "2026-04-30T14:37:54Z",
     "b82f62ad1a181ad2": "2026-04-27T23:24:02Z",
@@ -5538,6 +5548,7 @@
     "c16ed6686c15d078": "2026-04-29T16:09:29Z",
     "c17da51deb18db5d": "2026-04-30T06:34:51Z",
     "c184092f14eec5c2": "2026-04-30T11:48:40Z",
+    "c18cc0454ff8ad3e": "2026-04-30T23:32:06Z",
     "c18d323747cad78a": "2026-04-27T18:08:21Z",
     "c18d37c34a85aebe": "2026-04-27T18:08:21Z",
     "c1909df661abdabb": "2026-04-29T21:38:07Z",
@@ -5715,6 +5726,7 @@
     "c7ccc812f848cad3": "2026-04-29T08:31:41Z",
     "c7cfbacf7796a395": "2026-04-29T17:29:03Z",
     "c7dbc5b5b483b97d": "2026-04-30T13:01:08Z",
+    "c7dbde6feb3b9bfb": "2026-04-30T23:32:06Z",
     "c7e1054b17743844": "2026-04-30T13:01:08Z",
     "c7e8ca27b585ecaa": "2026-04-28T06:35:20Z",
     "c7fa268161dbbbad": "2026-04-27T18:08:21Z",
@@ -6107,6 +6119,7 @@
     "d61e2cf44bc568f1": "2026-04-28T06:35:20Z",
     "d622e4015100cbe5": "2026-04-29T15:29:13Z",
     "d63e09a50355e189": "2026-04-27T18:08:21Z",
+    "d64252b035fb20ca": "2026-04-30T23:32:06Z",
     "d649a508e617efbf": "2026-04-29T07:32:36Z",
     "d6501f9364994e2e": "2026-04-29T01:11:08Z",
     "d65cd342f2919c91": "2026-04-28T15:44:33Z",
@@ -6659,6 +6672,7 @@
     "e93525180f8691a4": "2026-04-29T20:37:54Z",
     "e93b35eb8e59b5f9": "2026-04-28T19:50:36Z",
     "e9557a61984eec00": "2026-04-30T11:06:03Z",
+    "e97a9ac7d940a5fb": "2026-04-30T23:32:06Z",
     "e97d106d31043f41": "2026-04-30T13:52:07Z",
     "e989c4613d176db3": "2026-04-30T15:25:14Z",
     "e9adc7f36827feb5": "2026-04-28T15:44:33Z",
@@ -6837,6 +6851,7 @@
     "efff272174cccfc9": "2026-04-27T18:08:21Z",
     "f002004473b17546": "2026-04-27T23:24:02Z",
     "f00868e7ccd9c333": "2026-04-30T13:01:08Z",
+    "f008e6f79687a890": "2026-04-30T23:32:06Z",
     "f031237fa92f502d": "2026-04-29T20:37:54Z",
     "f0340965da2dd589": "2026-04-29T09:27:28Z",
     "f03d9a3c33f7a47d": "2026-04-27T18:08:21Z",
@@ -7299,6 +7314,200 @@
   "items": [
     {
       "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "0feaa890b6e40cd3",
+      "published": "2026-04-30T23:24:16Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: geenensp.",
+      "tags": [
+        "malware_download",
+        "32-bit",
+        "elf",
+        "mips"
+      ],
+      "title": "Malicious URL: http://182.113.26.199:51598/i",
+      "url": "https://urlhaus.abuse.ch/url/3835809/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "d64252b035fb20ca",
+      "published": "2026-04-30T23:22:12Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: anonymous.",
+      "tags": [
+        "malware_download",
+        "ClearFake"
+      ],
+      "title": "Malicious URL: https://leafhostunit.goddess-tapir.bet/software-distribution-dxnp2c7/meta-verify.index",
+      "url": "https://urlhaus.abuse.ch/url/3835808/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "f008e6f79687a890",
+      "published": "2026-04-30T23:20:58Z",
+      "source": "abuse.ch ThreatFox",
+      "summary": "Malware: ClearFake. IOC type: domain.",
+      "tags": [
+        "ClearFake",
+        "domain",
+        "None"
+      ],
+      "title": "domain: leafhostunit.goddess-tapir.bet (ClearFake)",
+      "url": "https://threatfox.abuse.ch/ioc/1803034/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "011bca0579c8848b",
+      "published": "2026-04-30T23:16:13Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: anonymous.",
+      "tags": [
+        "malware_download",
+        "ClearFake"
+      ],
+      "title": "Malicious URL: https://grow6taskhub.goddess-tapir.bet/software-distribution-dxnp2c7/meta-verify.index",
+      "url": "https://urlhaus.abuse.ch/url/3835807/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "c18cc0454ff8ad3e",
+      "published": "2026-04-30T23:15:19Z",
+      "source": "abuse.ch ThreatFox",
+      "summary": "Malware: ClearFake. IOC type: domain.",
+      "tags": [
+        "ClearFake",
+        "domain",
+        "None"
+      ],
+      "title": "domain: grow6taskhub.goddess-tapir.bet (ClearFake)",
+      "url": "https://threatfox.abuse.ch/ioc/1803032/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "12721dd963d916d0",
+      "published": "2026-04-30T23:14:20Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: geenensp.",
+      "tags": [
+        "malware_download",
+        "32-bit",
+        "elf",
+        "mips"
+      ],
+      "title": "Malicious URL: http://115.55.254.182:59101/bin.sh",
+      "url": "https://urlhaus.abuse.ch/url/3835806/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "3e73923fb50b3ab2",
+      "published": "2026-04-30T23:12:13Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: geenensp.",
+      "tags": [
+        "malware_download",
+        "32-bit",
+        "arm",
+        "elf"
+      ],
+      "title": "Malicious URL: http://182.117.80.128:47507/i",
+      "url": "https://urlhaus.abuse.ch/url/3835805/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "c7dbde6feb3b9bfb",
+      "published": "2026-04-30T23:10:09Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: anonymous.",
+      "tags": [
+        "malware_download",
+        "ClearFake"
+      ],
+      "title": "Malicious URL: https://rootmeshsite.goddess-tapir.bet/software-distribution-dxnp2c7/meta-verify.index",
+      "url": "https://urlhaus.abuse.ch/url/3835804/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "04127262574c478e",
+      "published": "2026-04-30T23:09:47Z",
+      "source": "abuse.ch ThreatFox",
+      "summary": "Malware: ClearFake. IOC type: domain.",
+      "tags": [
+        "ClearFake",
+        "domain",
+        "None"
+      ],
+      "title": "domain: rootmeshsite.goddess-tapir.bet (ClearFake)",
+      "url": "https://threatfox.abuse.ch/ioc/1803030/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "b81392d30906cf02",
+      "published": "2026-04-30T23:06:07Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: anonymous.",
+      "tags": [
+        "malware_download",
+        "ClearFake"
+      ],
+      "title": "Malicious URL: https://wild3logicway.goddess-tapir.bet/software-distribution-dxnp2c7/meta-verify.index",
+      "url": "https://urlhaus.abuse.ch/url/3835803/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "3ff4e06e0b52029a",
+      "published": "2026-04-30T23:04:02Z",
+      "source": "abuse.ch ThreatFox",
+      "summary": "Malware: ClearFake. IOC type: domain.",
+      "tags": [
+        "ClearFake",
+        "domain",
+        "None"
+      ],
+      "title": "domain: wild3logicway.goddess-tapir.bet (ClearFake)",
+      "url": "https://threatfox.abuse.ch/ioc/1803028/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "4147a2ea200984d3",
+      "published": "2026-04-30T23:00:10Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: geenensp.",
+      "tags": [
+        "malware_download",
+        "32-bit",
+        "elf",
+        "mips"
+      ],
+      "title": "Malicious URL: http://219.155.201.30:55211/bin.sh",
+      "url": "https://urlhaus.abuse.ch/url/3835802/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "84a966569409236b",
+      "published": "2026-04-30T22:59:07Z",
+      "source": "abuse.ch URLhaus",
+      "summary": "Threat: malware_download. Reporter: anonymous.",
+      "tags": [
+        "malware_download",
+        "ClearFake"
+      ],
+      "title": "Malicious URL: https://void4siteview.eleuther-stupidity.bet/software-distribution-dxnp2c7/meta-verify.index",
+      "url": "https://urlhaus.abuse.ch/url/3835801/"
+    },
+    {
+      "category": "ioc",
       "first_seen": "2026-04-30T23:03:13Z",
       "id": "207ef33d712f4fac",
       "published": "2026-04-30T22:54:07Z",
@@ -7630,6 +7839,20 @@
     },
     {
       "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "6e5465bf4b1833f6",
+      "published": "2026-04-30T22:29:47Z",
+      "source": "abuse.ch MalwareBazaar",
+      "summary": "SHA256 794846abbea20e47f4dd643c\u2026  Type: php.",
+      "tags": [
+        "n/a",
+        "php"
+      ],
+      "title": "Sample: n/a (83.168.89.181_1777588166937988_hello.world_ADd_allow_url_include_3d1_ADd_auto_pr)",
+      "url": "https://bazaar.abuse.ch/sample/794846abbea20e47f4dd643c82fdc9548aaa687120e87e6886579f5d5b1745ef/"
+    },
+    {
+      "category": "ioc",
       "first_seen": "2026-04-30T22:32:03Z",
       "id": "caabba3b48ce2b7d",
       "published": "2026-04-30T22:28:20Z",
@@ -7886,6 +8109,20 @@
       ],
       "title": "Malicious URL: http://42.224.251.105:47337/bin.sh",
       "url": "https://urlhaus.abuse.ch/url/3835773/"
+    },
+    {
+      "category": "ioc",
+      "first_seen": "2026-04-30T23:32:06Z",
+      "id": "e97a9ac7d940a5fb",
+      "published": "2026-04-30T22:00:58Z",
+      "source": "abuse.ch MalwareBazaar",
+      "summary": "SHA256 bee8b62453ff94b739826768\u2026  Type: exe.",
+      "tags": [
+        "n/a",
+        "exe"
+      ],
+      "title": "Sample: n/a (file)",
+      "url": "https://bazaar.abuse.ch/sample/bee8b62453ff94b7398267687b977261d5e6b2651e218c513c8b5593b3206538/"
     },
     {
       "category": "vendor",
@@ -63231,7 +63468,7 @@
       ],
       "published": "2026-04-28T23:17:27Z",
       "source": "NIH Typosquat Watch",
-      "summary": "Lookalike domain 'niaid.nihgov.com' detected against seed 'niaid.nih.gov'. Evidence: DNS active (76.223.54.146). Sources: dnstwist.",
+      "summary": "Lookalike domain 'niaid.nihgov.com' detected against seed 'niaid.nih.gov'. Evidence: DNS active (13.248.169.48). Sources: dnstwist.",
       "tags": [
         "typosquat",
         "niaid.nih.gov",
@@ -63264,7 +63501,7 @@
       ],
       "published": "2026-04-28T23:17:27Z",
       "source": "NIH Typosquat Watch",
-      "summary": "Lookalike domain 'nihgov.com' detected against seed 'nih.gov'. Evidence: DNS active (76.223.54.146); TLS cert 2023-07-22. Sources: crt.sh, dnstwist.",
+      "summary": "Lookalike domain 'nihgov.com' detected against seed 'nih.gov'. Evidence: DNS active (13.248.169.48); TLS cert 2023-07-22. Sources: crt.sh, dnstwist.",
       "tags": [
         "typosquat",
         "nih.gov",
@@ -63298,7 +63535,7 @@
       ],
       "published": "2026-04-28T23:17:27Z",
       "source": "NIH Typosquat Watch",
-      "summary": "Lookalike domain 'nlm.nihgov.com' detected against seed 'nlm.nih.gov'. Evidence: DNS active (13.248.169.48). Sources: dnstwist.",
+      "summary": "Lookalike domain 'nlm.nihgov.com' detected against seed 'nlm.nih.gov'. Evidence: DNS active (76.223.54.146). Sources: dnstwist.",
       "tags": [
         "typosquat",
         "nlm.nih.gov",
