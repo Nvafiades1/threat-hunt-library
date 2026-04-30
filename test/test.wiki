@@ -1,10 +1,134 @@
-{{TOC right}}
+== Target Audience ==
+
+CSO Threat Hunters and Task 3 program staff, as well as anyone in CSO that may benefit from a guide in investigation of RMM activity in the environment.
+
+== Introduction ==
+
+Remote Monitoring and Management (RMM) tools are often used by IT organizations to support internal customers (employees) as well as to implement system changes and patching. Threat actors also use RMMs for persistence and defense evasion, as most security tools recognize RMM tools as legitimate software. This creates a detection challenge when analyzing RMM activity for suspicious/malicious behavior that requires looking at surrounding activity. Installation methods and actions taken by the RMM are valuable activities to look into for context around the intention of the RMM installation.
+
+In general, organizations should know what RMMs are supported or sanctioned and investigate any RMM activity outside of that known-good activity. In practice, this is difficult in complex organizations where shadow IT, contractor tools, and legacy support arrangements introduce RMMs outside the authorized inventory.
+
+This guide is meant to assist analysts in making determinations about the disposition of RMM activity in the environment.
+
+== References on RMM Threat Hunting ==
+
+=== General ===
+
+* '''CISA AA23-025A''' — ''Protecting Against Malicious Use of Remote Monitoring and Management Software'' (Jan 2023). Canonical advisory; foundational read.
+* '''MITRE ATT&CK T1219''' — ''Remote Access Software''. Primary technique mapping for this hunt program.
+* '''MITRE ATT&CK T1133''' — ''External Remote Services''. Adjacent technique covering RMM as initial access vector.
+* '''MITRE ATT&CK T1572''' — ''Protocol Tunneling''. Covers tunneling-adjacent tools (cloudflared, ngrok) tracked alongside RMMs.
+* '''MITRE ATT&CK T1543.003''' — ''Create or Modify System Process: Windows Service''. Covers the RMM service-install persistence mechanism.
+
+=== Case Studies ===
+
+* '''CISA AA24-241A''' — ''RansomHub Ransomware''. Documents Atera and ScreenConnect deployment in the kill chain.
+* '''CISA AA25-XXXX''' — ''SimpleHelp RMM Vulnerabilities Exploited by Threat Actors'' (CVE-2024-57727 / 57728 / 57726).
+* '''Huntress Annual Cyber Threat Report''' (most recent edition) — empirical frequency distribution of RMM abuse from MSP-tier telemetry.
+* '''Sophos State of Ransomware''' (most recent edition) — RMM abuse trends in ransomware operations.
+
+=== Research Papers ===
+
+* Huntress, ''Living Off the Foreign Land'' — analysis of RMM abuse patterns by initial-access brokers.
+* Mandiant / Google Cloud, ''M-Trends'' (most recent edition) — annual investigations data including RMM abuse statistics.
+* Red Canary ''Threat Detection Report'' (most recent edition) — top techniques and tools observed; T1219 frequency tracking.
+
+== Current State of RMM Detections ==
+
+At any given time in Splunk, currently active scheduled detections can be enumerated with the following query:
+
+<syntaxhighlight lang="splunk">
+| rest /servicesNS/-/-/saved/searches splunk_server=local timeout=0
+       search="is_scheduled=1 disabled=0"
+| table title author "eai:acl.app" updated actions qualifiedSearch
+| rename "eai:acl.app" as app
+| eval haystack=title." ".qualifiedSearch
+| where match(haystack,"(?i)(rmm|remote\s+monitoring|screenconnect|connectwise|anydesk|atera|action1|ninjarmm|ninjaone|splashtop|meshagent|meshcentral|tacticalrmm|simplehelp|rutserv|remote\s+utilities|syncro|pulseway|level-remote|goverlan|teamviewer|logmein|ltsvc|kaseya|zoho\s+assist|rustdesk|cloudflared|ngrok)")
+| table title author app updated actions
+| sort app title
+</syntaxhighlight>
+
+Note: replace placeholder keyword filters with terms relevant to the specific RMM under review. The original draft used <code>IN (*KEYWORD*)</code> which is invalid MediaWiki/SPL syntax (<code>IN</code> does not support wildcards); the corrected form above uses a regex match against a combined title+query haystack.
+
+To filter for a single RMM, replace the regex with a specific term:
+
+<syntaxhighlight lang="splunk">
+| rest /servicesNS/-/-/saved/searches splunk_server=local timeout=0
+       search="is_scheduled=1 disabled=0"
+| table title author "eai:acl.app" updated actions qualifiedSearch
+| rename "eai:acl.app" as app
+| where match(title,"(?i)teamviewer") OR match(qualifiedSearch,"(?i)teamviewer")
+</syntaxhighlight>
+
+A more robust alternative — drive the keyword list from the <code>rmm_tools</code> lookup so there is a single source of truth:
+
+<syntaxhighlight lang="splunk">
+| rest /servicesNS/-/-/saved/searches splunk_server=local timeout=0
+       search="is_scheduled=1 disabled=0"
+| table title author "eai:acl.app" updated actions qualifiedSearch
+| rename "eai:acl.app" as app
+| eval haystack=title." ".qualifiedSearch
+| join type=left max=0 [ | inputlookup rmm_tools | fields name | rename name as rmm_match
+                         | eval haystack="*" ]
+| where like(lower(haystack), "%" . lower(rmm_match) . "%")
+| stats values(title) as detections values(actions) as actions count by rmm_match app author
+| sort - count
+</syntaxhighlight>
+
+=== Currently Active Detections ===
+
+The table below tracks scheduled detections covering RMM activity. Update on detection creation, retirement, or significant tuning. Any RMM listed in [[#Section 2 — Authorized RMMs|Section 2]] without at least one corresponding detection here represents a coverage gap and should be raised in the Gap Analysis section.
+
+{| class="wikitable" style="width:100%;"
+! style="background:#1F4E79; color:#FFFFFF;" | Detection Name
+! style="background:#1F4E79; color:#FFFFFF;" | RMM Coverage
+! style="background:#1F4E79; color:#FFFFFF;" | Action
+! style="background:#1F4E79; color:#FFFFFF;" | Purpose
+! style="background:#1F4E79; color:#FFFFFF;" | Owner
+! style="background:#1F4E79; color:#FFFFFF;" | Last Reviewed
+|-
+| ''<no current scheduled detections>'' || — || — || — || — || —
+|}
+
+'''Note:''' as of last review, no scheduled RMM-specific detections exist in production. The hunt queries developed under this program (see [[#Section 2 — Authorized RMMs|Authorized RMMs]] and [[Per-RMM Profiles]]) are candidates for promotion to scheduled detection status. This is the highest-priority gap to address.
+
+=== Gap Analysis & Hunt Opportunities ===
+
+Based on the current detection inventory, the following are potential analytics for hunt or for promotion to scheduled detection. Each maps to a specific data source and an indicator from [[#Section 3 — Disposition Triage|Section 3]].
+
+{| class="wikitable" style="width:100%;"
+! style="background:#1F4E79; color:#FFFFFF;" | # 
+! style="background:#1F4E79; color:#FFFFFF;" | Hunt Opportunity
+! style="background:#1F4E79; color:#FFFFFF;" | Primary Data Source
+! style="background:#1F4E79; color:#FFFFFF;" | Triage Tier
+! style="background:#1F4E79; color:#FFFFFF;" | Status
+|-
+| 1 || Unauthorized RMM service install (4697 with Service_Name not in Authorized RMMs) || Splunk <code>win_security</code> 4697 || Tier 1 || Hunt query developed
+|-
+| 2 || RMM execution from user-writable path (Temp, AppData, Public, Downloads, ProgramData<random-guid>) || MDE <code>DeviceProcessEvents</code> || Tier 1 || Hunt query developed
+|-
+| 3 || Tenant ID mismatch on authorized RMM (KACE appliance hostname, Bomgar appliance, Goverlan server, Adobe Connect URL) || Splunk 4688 + MDE <code>DeviceProcessEvents</code>, <code>DeviceFileEvents</code>, <code>DeviceRegistryEvents</code> || Tier 1 || Per-RMM queries in development
+|-
+| 4 || Multiple distinct RMMs on a single host (RMM stacking) || Splunk 4697 + 4688 || Tier 1 || Stack-rank query developed
+|-
+| 5 || Suspicious parent process for RMM install (powershell, mshta, Office, browser, LOLBINs spawning msiexec) || MDE <code>DeviceProcessEvents</code> || Tier 2 || Hunt query developed
+|-
+| 6 || RMM agent spawning interactive shells or LOLBINs post-install || MDE <code>DeviceProcessEvents</code> || Tier 3 || Hunt query developed
+|-
+| 7 || Discovery commands within 60 minutes of RMM install || MDE <code>DeviceProcessEvents</code> + 4697 correlation || Tier 3 || Correlation logic drafted
+|-
+| 8 || RMM agent listening on inbound port (AnyDesk:7070, MeshAgent/RURat configurable) || Stealthwatch / NetFlow + Sysmon EID 5/3 || Tier 3 || Network-side query in development
+|-
+| 9 || Portable AnyDesk execution (no service install, evades 4697-driven hunts) || MDE <code>DeviceFileEvents</code> + <code>DeviceProcessEvents</code> || Tier 1 || Coverage gap — file-event detection required
+|-
+| 10 || RMM binary signer mismatch (unsigned or signer ≠ vendor norm) || MDE <code>DeviceFileCertificateInfo</code> || Tier 1 || Hunt query developed
+|}
 
 == Section 2 — Authorized RMMs ==
 
 This is the canonical reference for what RMMs are sanctioned in the environment. If an analyst sees an RMM artifact and cannot find a matching row below, treat the activity as unauthorized until proven otherwise. This table is the single source of truth that downstream triage logic depends on; keep it current.
 
-'''Maintenance:''' Owner = TH Lead. Review cadence: quarterly, plus on any change request that introduces or retires an RMM. Tenant/Instance ID changes (e.g., ScreenConnect on-prem rebuild) require same-day update.
+'''Maintenance:''' Owner = TH Lead. Review cadence: quarterly, plus on any change request that introduces or retires an RMM. Tenant/Instance ID changes require same-day update. Fields marked <code><FILL></code> require environment-specific input from the listed Owner Team.
 
 {| class="wikitable" style="width:100%;"
 |+ Authorized RMMs in <ENVIRONMENT>
@@ -15,13 +139,23 @@ This is the canonical reference for what RMMs are sanctioned in the environment.
 ! style="background:#1F4E79; color:#FFFFFF;" | Approved Host Classes
 ! style="background:#1F4E79; color:#FFFFFF;" | Approved Installer (Account / Method)
 |-
-| ScreenConnect || EUC / Service Desk || End-user remote support; on-demand technician sessions || <code><INSTANCE_HASH></code> (single instance) || Workstations; non-clinical servers || SCCM as SYSTEM, or <code>svc-sccm-deploy</code>
+| Absolute (Computrace) || Endpoint Management || Persistent endpoint visibility, asset tracking, theft recovery || Customer ID <code><FILL></code> (Absolute Console) || All managed workstations and laptops || OEM BIOS-resident agent; activation by Endpoint Management
 |-
-| <RMM> || <Team> || <Use case> || <Tenant ID> || <Host classes> || <Account / Method>
+| BeyondTrust (Bomgar) || Privileged Access (PAM) || Privileged remote access for IT/admin operations and vendor support sessions || Appliance: <code><FILL></code> (e.g., <code>support.<org>.com</code>) || Servers; IT admin workstations; designated vendor endpoints || PAM admin install via signed BeyondTrust package
 |-
-| <RMM> || <Team> || <Use case> || <Tenant ID> || <Host classes> || <Account / Method>
+| Goverlan || EUC / Service Desk || End-user remote support; agent-based remote control || Goverlan server: <code><FILL></code> || Workstations || EUC admin push via Goverlan deployment console
 |-
-| <RMM> || <Team> || <Use case> || <Tenant ID> || <Host classes> || <Account / Method>
+| Quest KACE Agent (formerly Dell KACE) || Endpoint Management || Systems management, software deployment, patch management, inventory || KACE appliance: <code><FILL></code> (K1000 / SMA hostname) || All managed Windows endpoints || KACE Agent provisioning (GPO push, SCCM, manual)
+|-
+| mRemoteNG || IT Engineering / SysAdmins || Multi-protocol connection manager (RDP/SSH/VNC) for admin sessions; '''admin use only''' || N/A — per-admin local config (no central tenant) || IT admin workstations '''only'''; not approved for general user population || Manual install by approved IT admin from authorized package source
+|-
+| Microsoft Quick Assist || EUC / Service Desk || Built-in Windows remote assistance for end-user troubleshooting || N/A — Microsoft-hosted; no per-tenant identifier || All Windows endpoints (built-in OS component) || Built-in OS component; no install required
+|-
+| DameWare (SolarWinds) || EUC / Service Desk || Remote support / mini remote control for end-user workstations || DameWare central server: <code><FILL></code> || Workstations || EUC admin push via DameWare Centralized deployment
+|-
+| Adobe Connect || Communications / Collaboration || Web conferencing; remote desktop control limited to authorized meeting hosts || URL: <code><FILL></code> (e.g., <code><org>.adobeconnect.com</code>) || All endpoints (web add-in) || User-installed add-in via approved download URL
+|-
+| Basecamp || PMO / Collaboration || Project management, team collaboration, file sharing || URL: <code><FILL></code> (e.g., <code>3.basecamp.com/<account-id></code>) || All endpoints (web/app) || Web-based; native app via approved channel
 |}
 
 === How to populate this table ===
@@ -29,11 +163,21 @@ This is the canonical reference for what RMMs are sanctioned in the environment.
 * '''RMM''' — vendor product name. One row per RMM family (do not split by version).
 * '''Owner Team''' — team accountable for the deployment. They are the escalation point when an analyst needs a yes/no on a specific install.
 * '''Approved Use Case''' — narrow this. "General IT support" is too vague to be actionable; "end-user remote support; on-demand technician sessions" lets an analyst recognize when an install falls outside scope.
-* '''Tenant/Instance ID''' — the identifier that distinguishes our tenant from any other. ScreenConnect: instance hash. Atera: AccountId GUID. Action1: OrganizationId GUID. AnyDesk: agent ID(s). [[#Section 4 — Per-RMM Profiles|Per-RMM Profiles]] section gives the extraction logic for each.
+* '''Tenant/Instance ID''' — the identifier that distinguishes our tenant from any other. Quest KACE: appliance hostname. BeyondTrust/Bomgar: appliance hostname. Goverlan: server hostname. Adobe Connect: account URL. Absolute: customer ID. mRemoteNG and Quick Assist do not have central tenant identifiers (per-host config or Microsoft-hosted respectively). [[Per-RMM Profiles]] gives the extraction logic for unauthorized RMMs that may appear in the environment.
 * '''Approved Host Classes''' — workstation, server (with subtype), specific user populations. "All hosts" is rarely correct; most authorized RMMs deploy to a defined subset.
 * '''Approved Installer (Account / Method)''' — the SubjectUserName in 4697 that should appear when this RMM is installed legitimately, and the deployment method (SCCM, Intune, manual by approved admin). Anything else in 4697 SubjectUserName = Tier 1 hit per [[#Section 3 — Disposition Triage|Section 3]].
 
 '''Note on "shadow IT":''' Unauthorized but legitimate use (a team running an unsanctioned RMM for a real business purpose) and unauthorized malicious use produce identical Section 2 outcomes initially. Disambiguation happens in Section 3 triage. Do not pre-disposition based on assumed intent.
+
+=== Authorized RMM Risk Notes ===
+
+Authorization does not equal low risk. Several tools on the Authorized RMMs list have specific abuse patterns or credential-exposure risks that warrant analyst attention even when activity is in-scope.
+
+* '''Microsoft Quick Assist — high abuse risk.''' Heavily abused by Storm-1811 (Black Basta affiliate cluster) and other groups in 2024-2025 as a vishing-based initial access vector. The attacker calls the user pretending to be IT, walks them through opening Quick Assist, has the user provide the security code, and gains interactive access. Detection focus: Quick Assist sessions ('''quickassist.exe''' execution) where the calling user has no associated change ticket or service desk record, especially on user workstations where IT had no prior business reason to remote in. Reference: Microsoft Threat Intelligence reporting on Storm-1811.
+* '''mRemoteNG — credential exposure risk.''' mRemoteNG stores connection credentials in <code>confCons.xml</code> using AES encryption with a known weakness (CVE-2020-25776 and prior); password extraction is trivial with public tools. Treat any unauthorized access to an admin's mRemoteNG config file as a credential compromise event. Detection focus: file access events on <code>%APPDATA%\mRemoteNG\confCons.xml</code> by processes other than mRemoteNG itself.
+* '''DameWare — historical CVE exposure.''' Multiple CVEs across DameWare's history including DNTU/MRC remote code execution and credential issues. Verify version currency on the DameWare central server and any mini remote-control client deployments. Detection focus: outbound DameWare connections from hosts that should not be administering systems remotely.
+* '''Adobe Connect — remote control feature is often overlooked.''' The remote desktop control capability inside Adobe Connect meetings is a legitimate but underexamined remote-access vector. Restrict the role assignment that grants control privilege; treat unsolicited control prompts as social engineering until proven otherwise.
+* '''mRemoteNG installation outside IT admin workstations is a Tier 1 hit.''' Per the Authorized Host Classes column, mRemoteNG is admin-only. Presence on a standard user workstation = unauthorized regardless of who installed it.
 
 == Section 3 — Disposition Triage ==
 
@@ -54,7 +198,7 @@ Triage logic for an RMM artifact (4697 service install, 4688 process execution, 
 |- style="background:#F8CBAD;"
 |  || Two or more distinct RMMs on the same endpoint || Single hit (except IT admin workstations). Operators routinely deploy a second RMM as redundant persistence.
 |- style="background:#F8CBAD;"
-|  || Authorized RMM family present, but tenant/instance ID does not match ours || Single hit. A second ScreenConnect tenant or different Atera customer ID = different operator. Use the per-RMM profile for the extraction logic.
+|  || Authorized RMM family present, but tenant/instance ID does not match ours || Single hit. A KACE Agent pointing to a non-authorized KACE appliance, a Bomgar agent connecting to an unauthorized appliance, or a different Goverlan server hostname = different operator. Use the per-RMM profile for the extraction logic.
 |- style="background:#F8CBAD;"
 |  || Binary is unsigned, or signer ≠ vendor norm || Single hit. Tampered build or attacker re-pack. Cross-check DeviceFileCertificateInfo.
 |- style="background:#FFE699;"
@@ -68,7 +212,7 @@ Triage logic for an RMM artifact (4697 service install, 4688 process execution, 
 |- style="background:#FFE699;"
 |  || Service install with auto-start type and SYSTEM run, but no entry in software inventory || Two-hit threshold. The CMDB / Intune / Tanium gap is the signal.
 |- style="background:#C6E0B4;"
-| '''Tier 3''' || Outbound connection from RMM agent to a non-corporate tenant (different ScreenConnect instance, different Atera customer subdomain, different AnyDesk relay) || Confirmatory. Per-RMM profile defines the tenant-identifier extraction.
+| '''Tier 3''' || Outbound connection from RMM agent to a non-corporate tenant (different KACE appliance hostname, different Bomgar appliance, unauthorized Adobe Connect URL, unauthorized Goverlan server) || Confirmatory. Per-RMM profile defines the tenant-identifier extraction.
 |- style="background:#C6E0B4;"
 |  || RMM agent listening on a port for incoming connections (vs. pure outbound) || Confirmatory. AnyDesk:7070, MeshAgent/RURat configurable. Most modern RMMs are outbound-only to SaaS broker; listener mode is unusual.
 |- style="background:#C6E0B4;"
@@ -93,7 +237,7 @@ Triage logic for an RMM artifact (4697 service install, 4688 process execution, 
 
 ==== Example A — Legitimate authorized install ====
 
-Sentinel fires on 4697 for <code>ScreenConnect Client (a3f9c1d2e4b5670a)</code> on WKSTN-1234. Section 2 lookup: ScreenConnect, instance hash <code>a3f9c1d2e4b5670a</code> is the authorized hash. SubjectUserName: <code>NT AUTHORITY\SYSTEM</code> (parent: msiexec spawned by ccmexec.exe — SCCM deployment). Install path: <code>C:\Program Files (x86)\ScreenConnect Client (a3f9c1d2e4b5670a)\</code>. Single RMM on host. No discovery commands or agent shell-spawning in the following hour.
+Sentinel fires on 4697 for service <code>Quest KACE Agent</code> on WKSTN-1234. Section 2 lookup: Quest KACE Agent is on the Authorized RMMs list (Owner: Endpoint Management). SubjectUserName: <code>NT AUTHORITY\SYSTEM</code> (parent: msiexec spawned by ccmexec.exe — SCCM deployment, consistent with KACE Agent provisioning). Install path: <code>C:\Program Files (x86)\Quest\KACE\</code>. KACE appliance configured (registry value): matches the authorized KACE server hostname recorded in Section 2. Single RMM service install in the past 30 days; no agent-spawned shells or discovery commands in the following hour.
 
 '''Disposition:''' Authorized. Close as benign with a one-line note. No tier hits.
 
@@ -109,386 +253,11 @@ Sentinel fires on 4697 for <code>ScreenConnect Client (a3f9c1d2e4b5670a)</code> 
 
 '''Disposition:''' Confirmed compromise. Engage IR immediately. Containment priorities: isolate FILESRV-12, identify and disable the user account (likely compromised credentials), preserve memory for AnyDesk peer-ID extraction (connection_trace.txt), capture outbound netflow, hunt for lateral movement from this host.
 
-== Section 4 — Per-RMM Profiles ==
+== See Also ==
 
-Reference profiles for the RMMs most frequently observed in current intrusions. Each profile contains the data points needed to execute the [[#Section 3 — Disposition Triage|Section 3]] triage logic — install paths, signer, tenant identifier extraction, and behavioral red flags. Add additional profiles as new RMMs are encountered or as threat reporting shifts.
-
-'''Initial coverage:''' ScreenConnect (because it is our authorized RMM and the tenant-identification logic is critical), AnyDesk, Atera, Action1, SimpleHelp. Next-priority additions: MeshCentral, Tactical RMM, Remote Utilities (RURat), Splashtop, NinjaOne. Tunneling adjacencies (cloudflared, ngrok, RustDesk) tracked separately but follow the same profile structure.
-
-=== ScreenConnect (ConnectWise Control) ===
-
-{| class="wikitable" style="width:100%;"
-! style="width:25%; background:#F2F2F2;" | Vendor
-| ConnectWise, LLC
-|-
-! style="background:#F2F2F2;" | Status in our environment
-| '''AUTHORIZED''' — single instance only. Any second instance = unauthorized.
-|-
-! style="background:#F2F2F2;" | Threat actor association
-|
-* Heavily abused both via attacker-owned cloud tenants and via on-prem server compromise.
-* '''CVE-2024-1709''' (Feb 2024) — authentication bypass on on-prem ScreenConnect servers; attackers compromised servers and pushed agents to all downstream clients. Continue to validate any on-prem ScreenConnect server is patched ≥ 23.9.8.
-* Observed in: Black Basta, LockBit affiliates, Akira, multiple access brokers.
-|-
-! style="background:#F2F2F2;" | Process names
-| <code>ScreenConnect.ClientService.exe</code>, <code>ScreenConnect.WindowsClient.exe</code>, <code>ScreenConnect.WindowsBackstageShell.exe</code>
-|-
-! style="background:#F2F2F2;" | Expected install path(s)
-|
-* <code>C:\Program Files (x86)\ScreenConnect Client (<INSTANCE_HASH>)\</code>
-* <code>C:\ProgramData\ScreenConnect Client (<INSTANCE_HASH>)\</code> — config and session state
-* Anything outside these paths is unauthorized.
-|-
-! style="background:#F2F2F2;" | Service name(s) — 4697
-|
-* Service name format: <code>ScreenConnect Client (<INSTANCE_HASH>)</code>
-* <code><INSTANCE_HASH></code> is the 16-character lowercase hex identifier tied to a ScreenConnect tenant.
-* Our authorized hash: <code><FILL_IN_INSTANCE_HASH></code>. Any other hash present in 4697 Service_Name = unauthorized tenant.
-|-
-! style="background:#F2F2F2;" | Expected signer (publisher CN)
-| ConnectWise, LLC (formerly Connectwise, Inc / Elsinore Technologies, Inc on legacy builds)
-|-
-! style="background:#F2F2F2;" | Network destinations / tenant ID extraction
-|
-* Outbound to <code><instance>.screenconnect.com</code> or <code><instance>.connectwise.com</code> on 443/8040/8041 (configurable).
-* Tenant identifier appears in: <code>--cxn-factory-proxy-detect <fqdn>:<port>;</code> command line, registry <code>HKLM\SOFTWARE\WOW6432Node\ScreenConnect\<HASH></code>, and the parenthetical in service name.
-* '''Triage rule:''' if FQDN is not <code><our instance>.screenconnect.com</code> → Tier 1 hit.
-|-
-! style="background:#F2F2F2;" | Persistence mechanisms
-|
-* Windows service (Auto Start) — installed via MSI as SYSTEM.
-* Registry: <code>HKLM\SYSTEM\CurrentControlSet\Services\ScreenConnect Client (<HASH>)</code>.
-* No scheduled task in default install.
-|-
-! style="background:#F2F2F2;" | Specific behavioral red flags
-|
-* Service hash differs from authorized.
-* Binary executing from <code>\ProgramData\<guid>\</code> or <code>\Users\Public\</code>.
-* Agent spawning <code>cmd.exe</code>/<code>powershell.exe</code> with command lines containing base64 or invoke-expression patterns — that is the technician execution channel being used by an operator.
-* Multiple ScreenConnect Client services on the same host (test/dev sometimes legitimate; otherwise unauthorized tenant chain).
-|-
-! style="background:#F2F2F2;" | Triage queries
-|
-Stack-rank tenants in environment:
-<syntaxhighlight lang="splunk">
-`win_security` EventCode=4697 Service_Name="ScreenConnect Client*"
-| rex field=Service_Name "\((?<instance_hash>[a-f0-9]+)\)"
-| stats dc(dvc) as hosts values(dvc) as device_list min(_time) as first by instance_hash
-| convert ctime(first)
-| sort hosts
-</syntaxhighlight>
-
-Detect non-corporate proxy probe target:
-<syntaxhighlight lang="splunk">
-`win_security` EventCode=4688 "--cxn-factory-proxy-detect"
-| rex field=Process_Command_Line "--cxn-factory-proxy-detect (?<fqdn>[^:]+):(?<dest_port>[^;]+);"
-| search NOT fqdn="<OUR_INSTANCE>.screenconnect.com"
-| stats values(Account_Name) by dvc fqdn dest_port
-</syntaxhighlight>
-|}
-
-=== AnyDesk ===
-
-{| class="wikitable" style="width:100%;"
-! style="width:25%; background:#F2F2F2;" | Vendor
-| AnyDesk Software GmbH (publisher CN: <code>philandro Software GmbH</code> on older signed builds; <code>AnyDesk Software GmbH</code> on current)
-|-
-! style="background:#F2F2F2;" | Status in our environment
-| '''NOT AUTHORIZED.''' Any presence in environment = investigate.
-|-
-! style="background:#F2F2F2;" | Threat actor association
-|
-* Among the most heavily abused RMMs in current intrusions. Frequently deployed as initial-access persistence via phishing or tech-support social engineering.
-* Feb 2024 — AnyDesk's code-signing infrastructure was compromised; for a time window, malicious AnyDesk binaries could carry the legitimate publisher cert. Treat signature presence as necessary but not sufficient.
-* Observed in: BlackCat/ALPHV, Akira, Conti-lineage groups, Cl0p, Scattered Spider, multiple access brokers.
-|-
-! style="background:#F2F2F2;" | Process names
-| <code>AnyDesk.exe</code>, <code>AnyDesk_*.exe</code> (installer variants)
-|-
-! style="background:#F2F2F2;" | Expected install path(s)
-|
-* '''Legit install:''' <code>C:\Program Files (x86)\AnyDesk\</code>
-* '''Per-user (portable mode):''' <code>%APPDATA%\AnyDesk\</code> — frequently abused; portable mode does not require admin rights, leaves agent running as user.
-* '''Operator-deployed:''' <code>\Users\Public\</code>, <code>\Users\<x>\AppData\Local\Temp\</code>, <code>\Users\<x>\Downloads\</code>, <code>\ProgramData\<random>\</code>.
-|-
-! style="background:#F2F2F2;" | Service name(s) — 4697
-|
-* Service name: <code>AnyDesk</code> (when installed in service mode).
-* '''Portable mode does not register a service''' — process will appear in 4688 only, not 4697. Important: portable AnyDesk evades the 4697-driven hunt entirely. Cover with file-creation and process-execution telemetry.
-|-
-! style="background:#F2F2F2;" | Expected signer (publisher CN)
-| <code>philandro Software GmbH</code> (legacy) or <code>AnyDesk Software GmbH</code> (current). Verify against DeviceFileCertificateInfo IsTrusted=true.
-|-
-! style="background:#F2F2F2;" | Network destinations / tenant ID extraction
-|
-* Outbound to <code>*.net.anydesk.com</code> (boot servers) and <code>relay-*.net.anydesk.com</code> on 443/80/6568.
-* Listens on TCP 7070 for direct connections (LAN/direct mode).
-* AnyDesk does not have a per-tenant FQDN in the same way ScreenConnect does; the AnyDesk-ID (9-10 digit numeric) identifies the agent, configured in <code>%APPDATA%\AnyDesk\service.conf</code> or <code>%PROGRAMDATA%\AnyDesk\service.conf</code>.
-* '''Allowlist correlation:''' pull <code>ad.trace</code> and <code>connection_trace.txt</code> from the AnyDesk install during IR — they log peer IDs and connection timestamps.
-|-
-! style="background:#F2F2F2;" | Persistence mechanisms
-|
-* '''Service mode:''' standard auto-start service.
-* '''Portable mode:''' no service, no registry persistence; relies on user re-launch — but operators commonly add an HKCU\Run entry or scheduled task to relaunch.
-* Unattended access password: configured in <code>service.conf</code>; presence indicates pre-staged remote access.
-|-
-! style="background:#F2F2F2;" | Specific behavioral red flags
-|
-* Portable-mode execution from user-writable paths.
-* Non-default unattended access password set immediately after install.
-* <code>service.conf</code> modified to set <code>ad.anynet.alias</code> (custom alias for the agent — operator convenience).
-* Connection trace file shows peer IDs that have never connected before, immediately after install.
-* Listener on 7070 in an environment where direct AnyDesk connections are not used.
-|-
-! style="background:#F2F2F2;" | Triage queries
-|
-Detect AnyDesk presence (process + file events):
-<syntaxhighlight lang="kusto">
-DeviceProcessEvents
-| where FileName =~ "AnyDesk.exe"
-| project Timestamp, DeviceName, FolderPath, ProcessCommandLine,
-          InitiatingProcessFileName, AccountName
-</syntaxhighlight>
-
-Find AnyDesk config file writes (peer ID enumeration):
-<syntaxhighlight lang="kusto">
-DeviceFileEvents
-| where FileName in~ ("service.conf","system.conf","connection_trace.txt","ad.trace")
-| where FolderPath has "AnyDesk"
-</syntaxhighlight>
-|}
-
-=== Atera ===
-
-{| class="wikitable" style="width:100%;"
-! style="width:25%; background:#F2F2F2;" | Vendor
-| Atera Networks Ltd
-|-
-! style="background:#F2F2F2;" | Status in our environment
-| '''NOT AUTHORIZED.''' Any presence = investigate as Tier 1.
-|-
-! style="background:#F2F2F2;" | Threat actor association
-|
-* Currently one of the two most-abused RMMs in incident reporting (along with Action1). Free trial requires only an email address; attackers stand up tenants in minutes.
-* MSI installer is small, signed, and runs cleanly from a one-liner — making it the canonical phishing-to-persistence payload.
-* Observed in: Black Basta, Akira, Medusa, BianLian, multiple access brokers including those tracked as Storm-1811, Storm-1175.
-|-
-! style="background:#F2F2F2;" | Process names
-|
-* <code>AteraAgent.exe</code> (main agent service)
-* <code>AgentPackageRunCommand.exe</code> (executes operator-issued commands — high-fidelity post-exploitation indicator)
-* <code>AgentPackageHeartbeat.exe</code>, <code>AgentPackageMonitoring.exe</code>, <code>AgentPackageNetworkDiscovery.exe</code>, <code>AgentPackageSTRemote.exe</code>, <code>AgentPackageWindowsUpdate.exe</code>
-|-
-! style="background:#F2F2F2;" | Expected install path(s)
-|
-* <code>C:\Program Files\ATERA Networks\AteraAgent\</code>
-* Operator-deployed installs sometimes drop installer to <code>\Users\<x>\AppData\Local\Temp\</code> before MSI execution — surviving artifact in DeviceFileEvents.
-|-
-! style="background:#F2F2F2;" | Service name(s) — 4697
-|
-* <code>AteraAgent</code> (display name: Atera Agent)
-* <code>AteraAgentMonitor</code> (newer versions)
-|-
-! style="background:#F2F2F2;" | Expected signer (publisher CN)
-| <code>Atera Networks Ltd</code>
-|-
-! style="background:#F2F2F2;" | Network destinations / tenant ID extraction
-|
-* Outbound to <code>agent-api.atera.com</code>, <code>app.atera.com</code>, <code>*.atera.com</code>, <code>agentwebsocket.atera.com</code> on 443.
-* '''Tenant/customer identifier:''' AccountId GUID embedded in MSI install command line and in registry <code>HKLM\SOFTWARE\ATERA Networks\AlphaAgent\AccountId</code>.
-* '''Triage rule:''' extract AccountId from MSI install command-line in 4688 (parent of 4697). If GUID does not match a known authorized tenant — Tier 1.
-* Atera publishes its IP ranges; outbound to those IPs is reliable network-side evidence of presence.
-|-
-! style="background:#F2F2F2;" | Persistence mechanisms
-|
-* Windows service (auto-start), installed by msiexec as SYSTEM.
-* Registry: <code>HKLM\SOFTWARE\ATERA Networks\AlphaAgent\</code> contains AccountId, FolderId, IntegratorLogin.
-* Multiple AgentPackage* helper EXEs registered as scheduled tasks in some versions.
-|-
-! style="background:#F2F2F2;" | Specific behavioral red flags
-|
-* MSI launched by powershell.exe, mshta.exe, wscript.exe, or any Office process — phishing-to-Atera chain.
-* <code>AgentPackageRunCommand.exe</code> spawning interactive shells, encoded PowerShell, or LOLBINs — this is the operator executing commands through the Atera console.
-* AccountId GUID in registry does not match authorized tenant.
-* Install on a workstation that has no managed software-deployment history in SCCM/Intune.
-|-
-! style="background:#F2F2F2;" | Triage queries
-|
-Detect Atera install via MSI from suspicious parent:
-<syntaxhighlight lang="kusto">
-DeviceProcessEvents
-| where FileName =~ "msiexec.exe"
-| where ProcessCommandLine has_any ("AteraAgent","setup.msi") and ProcessCommandLine has "AccountId"
-| where InitiatingProcessFileName matches regex @"(?i)(powershell|pwsh|mshta|wscript|cscript|outlook|winword|excel|chrome|msedge|firefox)\.exe"
-</syntaxhighlight>
-
-Extract AccountId GUID for tenant comparison:
-<syntaxhighlight lang="kusto">
-DeviceProcessEvents
-| where FileName =~ "msiexec.exe" and ProcessCommandLine has "AteraAgent"
-| extend AccountId = extract(@"AccountId=([A-Fa-f0-9\-]{36})", 1, ProcessCommandLine)
-| where isnotempty(AccountId)
-| summarize by AccountId, DeviceName, Timestamp
-</syntaxhighlight>
-
-Operator command execution channel:
-<syntaxhighlight lang="kusto">
-DeviceProcessEvents
-| where InitiatingProcessFileName =~ "AgentPackageRunCommand.exe"
-| project Timestamp, DeviceName, FileName, ProcessCommandLine, AccountName
-</syntaxhighlight>
-|}
-
-=== Action1 ===
-
-{| class="wikitable" style="width:100%;"
-! style="width:25%; background:#F2F2F2;" | Vendor
-| Action1 Corporation
-|-
-! style="background:#F2F2F2;" | Status in our environment
-| '''NOT AUTHORIZED.''' Any presence = investigate as Tier 1.
-|-
-! style="background:#F2F2F2;" | Threat actor association
-|
-* Sharp uptick from mid-2024 onward; now a co-leader with Atera in unauthorized RMM deployments. Free tier supports up to 200 endpoints with email-only signup.
-* Capabilities include patch management and remote command execution — attractive to operators because it doubles as recon / payload-delivery infrastructure.
-* Observed in: Akira, Medusa, BianLian, Cl0p, multiple access brokers. Flagged in CISA and Huntress reporting through 2024-2025.
-|-
-! style="background:#F2F2F2;" | Process names
-|
-* <code>Action1_agent.exe</code> (main service)
-* <code>action1_remote.exe</code> (interactive remote session client)
-* <code>Action1_update_service.exe</code>
-|-
-! style="background:#F2F2F2;" | Expected install path(s)
-|
-* <code>C:\Program Files (x86)\Action1\</code>
-* <code>C:\ProgramData\Action1\</code> — config, logs, deployed payload staging (operationally significant — payloads pushed via Action1 land here first).
-|-
-! style="background:#F2F2F2;" | Service name(s) — 4697
-|
-* <code>Action1 Agent</code>
-* <code>Action1 Remote Access Tool</code> (when remote session active)
-|-
-! style="background:#F2F2F2;" | Expected signer (publisher CN)
-| <code>Action1 Corporation</code>
-|-
-! style="background:#F2F2F2;" | Network destinations / tenant ID extraction
-|
-* Outbound to <code>*.action1.com</code>, <code>app.action1.com</code>, <code>agent.action1.com</code> on 443.
-* '''Tenant identifier:''' OrganizationId GUID in MSI install command line and registry <code>HKLM\SOFTWARE\Action1\</code>.
-* '''Triage rule:''' any Action1 outbound traffic in environment without a matching authorized OrganizationId = Tier 1.
-|-
-! style="background:#F2F2F2;" | Persistence mechanisms
-|
-* Windows service (auto-start), installed by msiexec.
-* Registry: <code>HKLM\SOFTWARE\Action1\</code> holds OrganizationId, AgentId, server URL.
-* Update service registers as separate Auto service.
-|-
-! style="background:#F2F2F2;" | Specific behavioral red flags
-|
-* <code>C:\ProgramData\Action1\</code> contains executables or scripts dropped within minutes of agent install — operator using Action1 as payload delivery.
-* <code>action1_remote.exe</code> spawning shells or LOLBINs.
-* MSI install launched by browser, Office, or LOLBIN parent.
-* Multiple OrganizationId values appearing across the estate (only one should be authorized, if any).
-|-
-! style="background:#F2F2F2;" | Triage queries
-|
-Detect any Action1 presence:
-<syntaxhighlight lang="splunk">
-`win_security` EventCode IN (4688,4697)
-| search New_Process_Name="*Action1*" OR Service_File_Name="*Action1*" OR Service_Name="*Action1*"
-| stats min(_time) as first count by dvc Service_Name New_Process_Name
-</syntaxhighlight>
-
-Extract OrganizationId for tenant comparison:
-<syntaxhighlight lang="kusto">
-DeviceProcessEvents
-| where FileName =~ "msiexec.exe" and ProcessCommandLine has "Action1"
-| extend OrgId = extract(@"(?i)OrganizationId=([A-Fa-f0-9\-]{36})", 1, ProcessCommandLine)
-| where isnotempty(OrgId)
-| summarize by OrgId, DeviceName, Timestamp
-</syntaxhighlight>
-
-Payload staging in ProgramData:
-<syntaxhighlight lang="kusto">
-DeviceFileEvents
-| where FolderPath has @"\ProgramData\Action1\"
-| where FileName endswith ".exe" or FileName endswith ".ps1"
-   or FileName endswith ".bat" or FileName endswith ".vbs"
-| where InitiatingProcessFileName has "Action1"
-</syntaxhighlight>
-|}
-
-=== SimpleHelp ===
-
-{| class="wikitable" style="width:100%;"
-! style="width:25%; background:#F2F2F2;" | Vendor
-| SimpleHelp Ltd
-|-
-! style="background:#F2F2F2;" | Status in our environment
-| '''NOT AUTHORIZED.''' Special caution: server-side vulnerabilities in scope through 2025.
-|-
-! style="background:#F2F2F2;" | Threat actor association
-|
-* Deployment frequency increased sharply after '''CVE-2024-57727 / 57728 / 57726''' (Jan 2025) — multiple unauthenticated vulnerabilities in SimpleHelp server allowing path traversal, file upload, and remote code execution. Attackers compromised SimpleHelp servers and used them to push remote sessions to managed endpoints.
-* DragonForce ransomware adopted the SimpleHelp chain immediately upon disclosure. Multiple other groups followed.
-* If any SimpleHelp server exists in environment, server version matters more than client behavior — verify ≥ 5.5.8.
-|-
-! style="background:#F2F2F2;" | Process names
-|
-* <code>SimpleHelpRemoteSupport.exe</code>
-* <code>JWrapper-Remote Access.exe</code> / <code>JWrapper-Remote Support.exe</code> (Java wrapper variants)
-* <code>remote_access_service.exe</code> (newer naming)
-|-
-! style="background:#F2F2F2;" | Expected install path(s)
-|
-* <code>C:\Program Files\SimpleHelp\</code> or <code>C:\Program Files\JWrapper-Remote Access\</code>
-* <code>C:\Users\<x>\AppData\Local\JWrapper-Remote Access\</code> — per-user variant
-* <code>C:\ProgramData\JWrapper-Remote Access\</code> — service config
-|-
-! style="background:#F2F2F2;" | Service name(s) — 4697
-|
-* <code>Remote Access by JWrapper</code> or <code>SimpleHelp Remote Access</code>
-* Service file path will reference JWrapper-Remote Access directory.
-|-
-! style="background:#F2F2F2;" | Expected signer (publisher CN)
-| <code>SimpleHelp Ltd</code> or <code>JWrapper Limited</code> (Java wrapper layer)
-|-
-! style="background:#F2F2F2;" | Network destinations / tenant ID extraction
-|
-* Outbound to the SimpleHelp server (customer-hosted). Common ports: 443, 8443, sometimes 80.
-* '''Tenant identifier:''' server URL is hardcoded in service config (<code>serviceconfig.properties</code> under <code>JWrapper-Remote Access\JWAppsSharedConfig\</code>).
-* '''Triage rule:''' extract server URL from config file. If URL is not a known authorized SimpleHelp server, Tier 1.
-|-
-! style="background:#F2F2F2;" | Persistence mechanisms
-|
-* Windows service (auto-start).
-* Java-based wrapper means the running process is often <code>javaw.exe</code> with SimpleHelp jars — process-name hunts must include javaw.exe loading SimpleHelp jars.
-|-
-! style="background:#F2F2F2;" | Specific behavioral red flags
-|
-* '''ANY SimpleHelp presence''' in environments without an authorized SimpleHelp server.
-* Connection to a SimpleHelp server FQDN that is not the authorized one.
-* Multiple file writes to JWrapper config directory immediately after install — operator pre-staging.
-* Unsigned or mismatched-signer jar files in the SimpleHelp directory.
-|-
-! style="background:#F2F2F2;" | Triage queries
-|
-Detect SimpleHelp service or process presence:
-<syntaxhighlight lang="kusto">
-DeviceProcessEvents
-| where FileName matches regex @"(?i)(SimpleHelpRemoteSupport|JWrapper-Remote.*|remote_access_service)\.exe"
-   or (FileName =~ "javaw.exe" and ProcessCommandLine has "JWrapper")
-</syntaxhighlight>
-
-Extract server URL from config (file event):
-<syntaxhighlight lang="kusto">
-DeviceFileEvents
-| where FileName =~ "serviceconfig.properties" and FolderPath has "JWrapper"
-| project Timestamp, DeviceName, FolderPath, InitiatingProcessFileName
-</syntaxhighlight>
-|}
+* [[Per-RMM Profiles]] — reference data for ScreenConnect, AnyDesk, Atera, Action1, SimpleHelp (and additional RMMs as added)
+* [[Threat Hunt Program]] — parent program documentation
+* [[PEAK Framework]] — methodology reference
 
 [[Category:Threat Hunting]]
 [[Category:RMM]]
