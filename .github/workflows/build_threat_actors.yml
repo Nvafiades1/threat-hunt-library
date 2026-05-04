@@ -1,0 +1,50 @@
+name: Build Threat Actor Priority
+
+on:
+  schedule:
+    - cron: '0 9 1 * *'   # 09:00 UTC on the 1st of every month
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'tools/build_threat_actors.py'
+      - 'tools/threat_actors_hhs.json'
+      - '.github/workflows/build_threat_actors.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-threat-actors
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Build threat-actor priority page
+        run: python tools/build_threat_actors.py
+
+      - name: Commit & push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/threat-actors.html tools/threat_actors_state.json
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "Auto-build threat actor priority [skip ci]"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            sleep 3
+          done
+          echo "Push failed after retries" >&2
+          exit 1

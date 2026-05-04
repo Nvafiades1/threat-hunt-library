@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HHS / NIH Threat Actor Priority</title>
+<style>
+:root {
+  --bg:#0f1620; --surface:#17202c; --surface-2:#1e2833; --border:#2a3644;
+  --text:#e6ecf2; --text-dim:#8a97a8; --accent:#e87722; --good:#2fbf71;
+  --chip-bg:#243142; --chip-fg:#a9b4c2;
+  --h0:#1a2231; --h1:#2c3a52; --h2:#3a5379; --h3:#5b75a0; --h4:#9b6a3c; --h5:#e87722;
+  --mot-ransomware:#dc2626; --mot-destructive:#b91c1c; --mot-espionage:#7c3aed;
+  --mot-financial:#0891b2; --mot-hacktivism:#65a30d; --mot-iab:#a16207;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+body.light {
+  --bg:#f6f6f6; --surface:#ffffff; --surface-2:#fafbfc; --border:#dfe3e8;
+  --text:#23394a; --text-dim:#5b6a7a; --accent:#c75f11; --good:#17905a;
+  --chip-bg:#eef1f5; --chip-fg:#4a5a6c;
+  --h0:#eaecef; --h1:#cdd9e5; --h2:#a4bedb; --h3:#719ec7; --h4:#dd8a3a; --h5:#c75f11;
+}
+*{box-sizing:border-box} html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.4;-webkit-font-smoothing:antialiased}
+header{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:.75rem;
+  padding:.6rem 1rem;background:var(--surface);border-bottom:1px solid var(--border)}
+.brand{font-weight:600;font-size:1.05rem;margin-right:auto;letter-spacing:.2px}
+.brand .accent{color:var(--accent)}
+.brand .sub{color:var(--text-dim);font-size:.78rem;font-weight:400;margin-left:.4rem}
+.nav-link{color:var(--text-dim);text-decoration:none;font-size:.82rem;
+  padding:.3rem .55rem;border:1px solid var(--border);border-radius:4px}
+.nav-link:hover{color:var(--accent);border-color:var(--accent)}
+#modeToggle{cursor:pointer;font-size:1rem;background:none;color:var(--text);
+  border:1px solid var(--border);border-radius:4px;padding:.3rem .55rem}
+#modeToggle:hover{border-color:var(--accent)}
+main{max-width:1500px;margin:0 auto;padding:1rem 1.25rem 4rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:.75rem;margin:.75rem 0 1.25rem}
+.kpi{background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:.75rem .9rem}
+.kpi .num{font-size:1.75rem;font-weight:600;line-height:1.1}
+.kpi .lbl{font-size:.72rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-top:.25rem}
+h2{font-size:1.05rem;margin:1.5rem 0 .6rem}
+h2 .hint{font-weight:400;color:var(--text-dim);font-size:.8rem;margin-left:.5rem}
+table{width:100%;border-collapse:collapse;background:var(--surface);
+  border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:.85rem}
+thead th{position:sticky;top:42px;background:var(--surface-2);
+  text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--text-dim);padding:.55rem .65rem;border-bottom:1px solid var(--border)}
+tbody td{padding:.55rem .65rem;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:hover{background:var(--surface-2)}
+td.rank{color:var(--text-dim);font-variant-numeric:tabular-nums;width:2rem}
+td.num{font-variant-numeric:tabular-nums;text-align:right;width:4rem;color:var(--text-dim)}
+td.num.emph{color:var(--text);font-weight:600}
+td.num.score{color:var(--accent);font-weight:600}
+td.notes{color:var(--text-dim);font-size:.78rem;max-width:38rem}
+td a{color:var(--text);text-decoration:none}
+td a:hover{color:var(--accent);text-decoration:underline}
+.mid{font-size:.7rem;color:var(--text-dim);margin-left:.3rem;
+  background:var(--chip-bg);padding:.05rem .35rem;border-radius:3px}
+.motivation{font-size:.7rem;font-weight:600;padding:.15rem .4rem;border-radius:3px;
+  letter-spacing:.04em;color:#fff;text-transform:uppercase}
+.mot-ransomware{background:var(--mot-ransomware)}
+.mot-destructive{background:var(--mot-destructive)}
+.mot-espionage{background:var(--mot-espionage)}
+.mot-financial{background:var(--mot-financial)}
+.mot-hacktivism{background:var(--mot-hacktivism)}
+.mot-iab{background:var(--mot-iab)}
+
+.heat{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:.6rem .75rem;overflow-x:auto}
+.heat-header{display:grid;grid-template-columns:14rem repeat(12, minmax(2.6rem, 1fr));
+  gap:2px;align-items:end;color:var(--text-dim);font-size:.7rem;
+  margin-bottom:.35rem;padding-bottom:.35rem;border-bottom:1px solid var(--border)}
+.heat-header .h-spacer{}
+.heat-mh{text-align:center;line-height:1.2}
+.heat-mh .yr{color:var(--text-dim);opacity:.7}
+.heat-row{display:grid;grid-template-columns:14rem 1fr;gap:.5rem;
+  align-items:center;padding:.15rem 0}
+.heat-label{font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.heat-label a{color:inherit;text-decoration:none}
+.heat-label a:hover{color:var(--accent);text-decoration:underline}
+.heat-cells{display:grid;grid-template-columns:repeat(12, minmax(2.6rem, 1fr));gap:2px}
+.heat-cell{height:1.85rem;display:flex;align-items:center;justify-content:center;
+  font-size:.74rem;font-weight:600;border-radius:3px;color:#0d141d;
+  font-variant-numeric:tabular-nums}
+.heat-cell.h0{background:var(--h0);color:transparent}
+.heat-cell.h1{background:var(--h1);color:#dde6f0}
+.heat-cell.h2{background:var(--h2);color:#fff}
+.heat-cell.h3{background:var(--h3);color:#fff}
+.heat-cell.h4{background:var(--h4);color:#fff}
+.heat-cell.h5{background:var(--h5);color:#fff}
+.legend{margin-top:.6rem;display:flex;align-items:center;gap:.4rem;
+  font-size:.72rem;color:var(--text-dim)}
+.legend .swatch{width:1.2rem;height:.9rem;border-radius:2px;display:inline-block}
+.foot{color:var(--text-dim);font-size:.72rem;margin-top:1rem}
+.foot a{color:var(--text-dim)}
+@media (max-width:760px){
+  .heat-header,.heat-cells{grid-template-columns:repeat(12, minmax(2.1rem, 1fr))}
+  .heat-row{grid-template-columns:9rem 1fr}
+  td.notes{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">HHS / NIH <span class="accent">Threat Actor Priority</span>
+    <span class="sub">35 actors tracked · last build 2026-05-04 19:02 UTC</span>
+  </div>
+  <a class="nav-link" href="./index.html">&larr; Matrix</a>
+  <a class="nav-link" href="./metrics.html">Metrics</a>
+  <a class="nav-link" href="./cti.html">CTI Hub</a>
+  <button id="modeToggle" title="Toggle theme">☼</button>
+</header>
+
+<main>
+  <div class="kpis">
+    <div class="kpi"><div class="num">35</div><div class="lbl">Actors tracked</div></div>
+    <div class="kpi"><div class="num">2</div><div class="lbl">Active last 30d</div></div>
+    <div class="kpi"><div class="num">8</div><div class="lbl">Active last 90d</div></div>
+    <div class="kpi"><div class="num">18</div><div class="lbl">High-severity tracked</div></div>
+    <div class="kpi"><div class="num">21</div><div class="lbl">Mentions last 90d</div></div>
+  </div>
+
+  <h2>Priority list <span class="hint">— sorted by composite score (recency · severity · sector fit)</span></h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Actor</th><th>Origin</th><th>Motivation</th>
+        <th class="num" title="Curated 0–3 fit to HHS / NIH targeting">Fit</th>
+        <th class="num" title="Mentions in current month">30d</th>
+        <th class="num" title="Mentions last 90 days">90d</th>
+        <th class="num" title="Mentions last 12 months">12m</th>
+        <th class="num">Score</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr title="• 2026-05-01 — SecurityWeek: Two US Security Experts Sentenced to Prison for Helping Ransomware Gang
+• 2026-05-01 — The Hacker News: Two Cybersecurity Professionals Get 4-Year Sentences in BlackCat Ransomware Attacks
+• 2026-05-01 — BleepingComputer: US ransomware negotiators get 4 years in prison over BlackCat attacks"><td class="rank">1</td><td><a href="https://attack.mitre.org/groups/G1010/" target="_blank" rel="noopener">ALPHV / BlackCat</a> <span class="mid">G1010</span></td><td>Russia (criminal)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">3</td><td class="num emph">3</td><td class="num">5</td><td class="num">5</td><td class="num score">10.0</td><td class="notes">Hit Change Healthcare / UnitedHealth (Feb 2024) — largest US healthcare data breach to date.</td></tr>
+<tr title="• 2026-05-01 — SecurityWeek: In Other News: Scattered Spider Hacker Arrested, SOC Effectiveness Metrics, NSA Tool Vulnerability
+• 2026-04-28 — BleepingComputer: US reportedly charges Scattered Spider hacker arrested in Finland
+• 2026-04-21 — Krebs on Security: ‘Scattered Spider’ Member ‘Tylerb’ Pleads Guilty"><td class="rank">2</td><td><a href="https://attack.mitre.org/groups/G1015/" target="_blank" rel="noopener">Scattered Spider / UNC3944</a> <span class="mid">G1015</span></td><td>US/UK (criminal)</td><td><span class="motivation mot-financial">Financial</span></td><td class="num">3</td><td class="num emph">1</td><td class="num">3</td><td class="num">3</td><td class="num score">5.8</td><td class="notes">Social-engineering helpdesks for SaaS access; recent healthcare and insurance victims.</td></tr>
+<tr title="• 2026-04-27 — SecurityWeek: Incomplete Windows Patch Opens Door to Zero-Click Attacks
+• 2026-04-07 — NCSC-UK: APT28 exploit routers to enable DNS hijacking operations
+• 2026-04-07 — NCSC-UK: UK exposes Russian military intelligence hijacking vulnerable routers for cyber attacks"><td class="rank">3</td><td><a href="https://attack.mitre.org/groups/G0007/" target="_blank" rel="noopener">APT28 / Fancy Bear</a> <span class="mid">G0007</span></td><td>Russia (GRU 26165)</td><td><span class="motivation mot-espionage">Espionage</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">4</td><td class="num">5</td><td class="num score">4.0</td><td class="notes">Government / political; secondary healthcare via federal targeting.</td></tr>
+<tr title="• 2026-04-29 — SecurityWeek: Iranian Cyber Group Handala Targets US Troops in Bahrain
+• 2026-03-30 — Check Point Research: 30th March – Threat Intelligence Report
+• 2026-03-12 — Check Point Research: “Handala Hack” – Unveiling Group’s Modus Operandi"><td class="rank">4</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">Handala</a></td><td>hacktivist (Iran-aligned)</td><td><span class="motivation mot-hacktivism">Hacktivism</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">4</td><td class="num">4</td><td class="num score">3.8</td><td class="notes">Wiper attack on Stryker (medtech) reported 2026; Israel / US healthcare targeting pattern.</td></tr>
+<tr title="• 2026-04-13 — Dark Reading: APT41 Delivers &#x27;Zero-Detection&#x27; Backdoor to Harvest Cloud Credentials"><td class="rank">5</td><td><a href="https://attack.mitre.org/groups/G0096/" target="_blank" rel="noopener">APT41</a> <span class="mid">G0096</span></td><td>China</td><td><span class="motivation mot-espionage">Espionage</span></td><td class="num">3</td><td class="num emph">—</td><td class="num">1</td><td class="num">1</td><td class="num score">3.2</td><td class="notes">Heavy biomed / pharma IP-theft; mixes state-aligned espionage with financial ops.</td></tr>
+<tr title="• 2026-04-28 — Recorded Future: Lazarus Doesn&#x27;t Need AGI
+• 2026-04-24 — Dark Reading: North Korea&#x27;s Lazarus Targets macOS Users via ClickFix"><td class="rank">6</td><td><a href="https://attack.mitre.org/groups/G0032/" target="_blank" rel="noopener">Lazarus Group</a> <span class="mid">G0032</span></td><td>DPRK</td><td><span class="motivation mot-financial">Financial</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">2</td><td class="num">2</td><td class="num score">3.0</td><td class="notes">Supply-chain attacks (3CX, JumpCloud); occasional healthcare via downstream MSP compromise.</td></tr>
+<tr><td class="rank">7</td><td><a href="https://attack.mitre.org/groups/G1002/" target="_blank" rel="noopener">BianLian</a> <span class="mid">G1002</span></td><td>criminal (uncategorised)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">3</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">3.0</td><td class="notes">Pivoted to extortion-only; AHA / FBI advisories cite healthcare focus.</td></tr>
+<tr><td class="rank">8</td><td><a href="https://attack.mitre.org/groups/G1037/" target="_blank" rel="noopener">Black Basta</a> <span class="mid">G1037</span></td><td>Russia (criminal, Conti-linked)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">3</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">3.0</td><td class="notes">Ascension Health attack (May 2024); CISA / HC3 joint advisory specifically calling out healthcare targeting.</td></tr>
+<tr><td class="rank">9</td><td><a href="https://attack.mitre.org/groups/G0092/" target="_blank" rel="noopener">Cl0p</a> <span class="mid">G0092</span></td><td>Russia (criminal)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">3</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">3.0</td><td class="notes">MOVEit, GoAnywhere, Accellion mass-exfil campaigns include HHS / state Medicaid victims.</td></tr>
+<tr><td class="rank">10</td><td><a href="https://attack.mitre.org/groups/G0102/" target="_blank" rel="noopener">FIN12</a> <span class="mid">G0102</span></td><td>criminal (post-Soviet)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">3</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">3.0</td><td class="notes">20%+ of victims are healthcare per Mandiant; deploys Ryuk / Conti / Nokoyawa.</td></tr>
+<tr><td class="rank">11</td><td><a href="https://attack.mitre.org/groups/G1015/" target="_blank" rel="noopener">LockBit</a> <span class="mid">G1015</span></td><td>Russia (criminal)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">3</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">3.0</td><td class="notes">Most-prolific RaaS; repeated US healthcare victims through 2024 despite Op Cronos disruption.</td></tr>
+<tr><td class="rank">12</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">Qilin / Agenda</a></td><td>Russia (criminal)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">3</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">3.0</td><td class="notes">Synnovis / UK NHS pathology attack June 2024; demonstrated capacity against health labs.</td></tr>
+<tr><td class="rank">13</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">RansomHub</a></td><td>criminal (post-ALPHV affiliate hub)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">3</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">3.0</td><td class="notes">Absorbed ALPHV affiliates after Change Healthcare exit-scam; CISA #StopRansomware advisory.</td></tr>
+<tr><td class="rank">14</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">Rhysida</a></td><td>criminal (uncategorised)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">3</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">3.0</td><td class="notes">Lurie Children&#x27;s, Prospect Medical, multiple US hospital systems; HC3 sector alert.</td></tr>
+<tr><td class="rank">15</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">Royal / DEV-0569</a></td><td>Russia (criminal)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">3</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">3.0</td><td class="notes">Conti-rebrand lineage; CISA #StopRansomware joint advisory citing healthcare victims.</td></tr>
+<tr><td class="rank">16</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">Trinity</a></td><td>criminal (uncategorised)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">3</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">3.0</td><td class="notes">HC3 sector alert specifically citing US healthcare targeting; possible 2023Lock / Venus overlap.</td></tr>
+<tr title="• 2026-04-30 — SecurityWeek: Sandhills Medical Says Ransomware Breach Affects 170,000"><td class="rank">17</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">INC Ransom</a></td><td>criminal (uncategorised)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">1</td><td class="num">1</td><td class="num score">2.8</td><td class="notes">Cropped up 2023; healthcare and government victims; possible Lynx rebrand.</td></tr>
+<tr><td class="rank">18</td><td><a href="https://attack.mitre.org/groups/G0016/" target="_blank" rel="noopener">APT29 / Cozy Bear</a> <span class="mid">G0016</span></td><td>Russia (SVR)</td><td><span class="motivation mot-espionage">Espionage</span></td><td class="num">3</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">2.8</td><td class="notes">Targeted COVID-19 vaccine research orgs (NCSC/NSA 2020); SolarWinds; Microsoft 365 corp tenants.</td></tr>
+<tr><td class="rank">19</td><td><a href="https://attack.mitre.org/groups/G0138/" target="_blank" rel="noopener">Andariel</a> <span class="mid">G0138</span></td><td>DPRK</td><td><span class="motivation mot-espionage">Espionage</span></td><td class="num">3</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">2.8</td><td class="notes">CISA/FBI/NSA advisory July 2024 explicitly calling out US healthcare and biomedical research.</td></tr>
+<tr><td class="rank">20</td><td><a href="https://attack.mitre.org/groups/G0094/" target="_blank" rel="noopener">Kimsuky</a> <span class="mid">G0094</span></td><td>DPRK</td><td><span class="motivation mot-espionage">Espionage</span></td><td class="num">3</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">2.8</td><td class="notes">Targeted COVID-19 / biomedical research orgs; academic and policy think-tanks.</td></tr>
+<tr title="• 2026-04-22 — The Hacker News: Mustang Panda’s New LOTUSLITE Variant Targets India Banks, South Korea Policy Circles"><td class="rank">21</td><td><a href="https://attack.mitre.org/groups/G0129/" target="_blank" rel="noopener">Mustang Panda</a> <span class="mid">G0129</span></td><td>China</td><td><span class="motivation mot-espionage">Espionage</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">1</td><td class="num">1</td><td class="num score">2.5</td><td class="notes">Government / NGO / think-tank focus; PlugX / Korplug; recent FBI Aug 2024 takedown.</td></tr>
+<tr><td class="rank">22</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">Akira</a></td><td>Russia (criminal)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">2.2</td><td class="notes">Frequent mid-size healthcare and education victims; double-extortion.</td></tr>
+<tr><td class="rank">23</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">Cobalt Mirage / Lemon Sandstorm</a></td><td>Iran</td><td><span class="motivation mot-destructive">Destructive</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">2.2</td><td class="notes">Hit US local government and academic targets; ransomware-as-disruption (BitLocker abuse).</td></tr>
+<tr><td class="rank">24</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">Hunters International</a></td><td>criminal (Hive successor)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">2.2</td><td class="notes">Inherited Hive infrastructure; healthcare among targeted sectors.</td></tr>
+<tr><td class="rank">25</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">Medusa</a></td><td>criminal (uncategorised)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">2.2</td><td class="notes">Distinct from Medusa botnet/Mirai; CISA #StopRansomware advisory March 2025.</td></tr>
+<tr><td class="rank">26</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">Play</a></td><td>Russia (criminal)</td><td><span class="motivation mot-ransomware">Ransomware</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">2.2</td><td class="notes">CISA advisory; opportunistic healthcare hits.</td></tr>
+<tr><td class="rank">27</td><td><a href="https://attack.mitre.org/groups/G0034/" target="_blank" rel="noopener">Sandworm</a> <span class="mid">G0034</span></td><td>Russia (GRU 74455)</td><td><span class="motivation mot-destructive">Destructive</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">2.2</td><td class="notes">ICS-capable wiper ops; healthcare facility OT exposure.</td></tr>
+<tr><td class="rank">28</td><td><a href="https://attack.mitre.org/groups/G0059/" target="_blank" rel="noopener">APT35 / Mint Sandstorm</a> <span class="mid">G0059</span></td><td>Iran (IRGC-IO)</td><td><span class="motivation mot-espionage">Espionage</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">2.0</td><td class="notes">COVID-19 research targeting (Microsoft 2020); academic / journalist / think-tank focus.</td></tr>
+<tr><td class="rank">29</td><td><a href="https://attack.mitre.org/groups/G0046/" target="_blank" rel="noopener">FIN7</a> <span class="mid">G0046</span></td><td>criminal (post-Soviet)</td><td><span class="motivation mot-financial">Financial</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">2.0</td><td class="notes">Pivoted to ransomware affiliate work; toolkit appears in healthcare intrusions.</td></tr>
+<tr><td class="rank">30</td><td><a href="https://attack.mitre.org/groups/G0069/" target="_blank" rel="noopener">MuddyWater / Mango Sandstorm</a> <span class="mid">G0069</span></td><td>Iran (MOIS)</td><td><span class="motivation mot-espionage">Espionage</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">2.0</td><td class="notes">Government and telecom focus; healthcare via shared Middle East/US targeting overlap.</td></tr>
+<tr><td class="rank">31</td><td><a href="https://attack.mitre.org/groups/G0092/" target="_blank" rel="noopener">TA505</a> <span class="mid">G0092</span></td><td>criminal (Russia-aligned)</td><td><span class="motivation mot-financial">Financial</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">2.0</td><td class="notes">Cl0p operator; banker / loader / IAB; healthcare via mass-exfil campaigns.</td></tr>
+<tr><td class="rank">32</td><td><a href="https://attack.mitre.org/groups/G1017/" target="_blank" rel="noopener">Volt Typhoon</a> <span class="mid">G1017</span></td><td>China</td><td><span class="motivation mot-espionage">Espionage</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">2.0</td><td class="notes">US critical-infrastructure pre-positioning; healthcare considered in scope per CISA.</td></tr>
+<tr><td class="rank">33</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">Anonymous Sudan</a></td><td>hacktivist (alleged Russia-linked)</td><td><span class="motivation mot-hacktivism">Hacktivism</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">1.8</td><td class="notes">DDoS against US gov / hospitals; FBI indictment Oct 2024 named Sudanese operators.</td></tr>
+<tr><td class="rank">34</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">Killnet</a></td><td>hacktivist (Russia-aligned)</td><td><span class="motivation mot-hacktivism">Hacktivism</span></td><td class="num">2</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">1.8</td><td class="notes">DDoS against US hospitals (Jan 2023 wave) and federal sites; HC3 specific alert.</td></tr>
+<tr><td class="rank">35</td><td><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">NoName057(16)</a></td><td>hacktivist (Russia-aligned)</td><td><span class="motivation mot-hacktivism">Hacktivism</span></td><td class="num">1</td><td class="num emph">—</td><td class="num">—</td><td class="num">—</td><td class="num score">1.0</td><td class="notes">DDoSia project; opportunistic gov + sector-aligned with Russia geopolitical posture.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Activity heatmap <span class="hint">— top 8 actors with mentions over the last 12 months</span></h2>
+  <div class="heat">
+    <div class="heat-header">
+      <div class="h-spacer"></div>
+      <div class="heat-mh">06<br><span class="yr">2025</span></div><div class="heat-mh">07<br><span class="yr">2025</span></div><div class="heat-mh">08<br><span class="yr">2025</span></div><div class="heat-mh">09<br><span class="yr">2025</span></div><div class="heat-mh">10<br><span class="yr">2025</span></div><div class="heat-mh">11<br><span class="yr">2025</span></div><div class="heat-mh">12<br><span class="yr">2025</span></div><div class="heat-mh">01<br><span class="yr">2026</span></div><div class="heat-mh">02<br><span class="yr">2026</span></div><div class="heat-mh">03<br><span class="yr">2026</span></div><div class="heat-mh">04<br><span class="yr">2026</span></div><div class="heat-mh">05<br><span class="yr">2026</span></div>
+    </div>
+    <div class="heat-row"><div class="heat-label" title="Hit Change Healthcare / UnitedHealth (Feb 2024) — largest US healthcare data breach to date."><a href="https://attack.mitre.org/groups/G1010/" target="_blank" rel="noopener">ALPHV / BlackCat</a></div><div class="heat-cells"><div class="heat-cell h0" title="ALPHV / BlackCat · 2025-06 · 0 mentions"></div><div class="heat-cell h0" title="ALPHV / BlackCat · 2025-07 · 0 mentions"></div><div class="heat-cell h0" title="ALPHV / BlackCat · 2025-08 · 0 mentions"></div><div class="heat-cell h0" title="ALPHV / BlackCat · 2025-09 · 0 mentions"></div><div class="heat-cell h0" title="ALPHV / BlackCat · 2025-10 · 0 mentions"></div><div class="heat-cell h0" title="ALPHV / BlackCat · 2025-11 · 0 mentions"></div><div class="heat-cell h0" title="ALPHV / BlackCat · 2025-12 · 0 mentions"></div><div class="heat-cell h0" title="ALPHV / BlackCat · 2026-01 · 0 mentions"></div><div class="heat-cell h0" title="ALPHV / BlackCat · 2026-02 · 0 mentions"></div><div class="heat-cell h0" title="ALPHV / BlackCat · 2026-03 · 0 mentions"></div><div class="heat-cell h1" title="ALPHV / BlackCat · 2026-04 · 2 mentions">2</div><div class="heat-cell h2" title="ALPHV / BlackCat · 2026-05 · 3 mentions">3</div></div></div><div class="heat-row"><div class="heat-label" title="Social-engineering helpdesks for SaaS access; recent healthcare and insurance victims."><a href="https://attack.mitre.org/groups/G1015/" target="_blank" rel="noopener">Scattered Spider / UNC3944</a></div><div class="heat-cells"><div class="heat-cell h0" title="Scattered Spider / UNC3944 · 2025-06 · 0 mentions"></div><div class="heat-cell h0" title="Scattered Spider / UNC3944 · 2025-07 · 0 mentions"></div><div class="heat-cell h0" title="Scattered Spider / UNC3944 · 2025-08 · 0 mentions"></div><div class="heat-cell h0" title="Scattered Spider / UNC3944 · 2025-09 · 0 mentions"></div><div class="heat-cell h0" title="Scattered Spider / UNC3944 · 2025-10 · 0 mentions"></div><div class="heat-cell h0" title="Scattered Spider / UNC3944 · 2025-11 · 0 mentions"></div><div class="heat-cell h0" title="Scattered Spider / UNC3944 · 2025-12 · 0 mentions"></div><div class="heat-cell h0" title="Scattered Spider / UNC3944 · 2026-01 · 0 mentions"></div><div class="heat-cell h0" title="Scattered Spider / UNC3944 · 2026-02 · 0 mentions"></div><div class="heat-cell h0" title="Scattered Spider / UNC3944 · 2026-03 · 0 mentions"></div><div class="heat-cell h1" title="Scattered Spider / UNC3944 · 2026-04 · 2 mentions">2</div><div class="heat-cell h1" title="Scattered Spider / UNC3944 · 2026-05 · 1 mentions">1</div></div></div><div class="heat-row"><div class="heat-label" title="Government / political; secondary healthcare via federal targeting."><a href="https://attack.mitre.org/groups/G0007/" target="_blank" rel="noopener">APT28 / Fancy Bear</a></div><div class="heat-cells"><div class="heat-cell h0" title="APT28 / Fancy Bear · 2025-06 · 0 mentions"></div><div class="heat-cell h0" title="APT28 / Fancy Bear · 2025-07 · 0 mentions"></div><div class="heat-cell h0" title="APT28 / Fancy Bear · 2025-08 · 0 mentions"></div><div class="heat-cell h0" title="APT28 / Fancy Bear · 2025-09 · 0 mentions"></div><div class="heat-cell h0" title="APT28 / Fancy Bear · 2025-10 · 0 mentions"></div><div class="heat-cell h0" title="APT28 / Fancy Bear · 2025-11 · 0 mentions"></div><div class="heat-cell h0" title="APT28 / Fancy Bear · 2025-12 · 0 mentions"></div><div class="heat-cell h0" title="APT28 / Fancy Bear · 2026-01 · 0 mentions"></div><div class="heat-cell h1" title="APT28 / Fancy Bear · 2026-02 · 1 mentions">1</div><div class="heat-cell h1" title="APT28 / Fancy Bear · 2026-03 · 1 mentions">1</div><div class="heat-cell h2" title="APT28 / Fancy Bear · 2026-04 · 3 mentions">3</div><div class="heat-cell h0" title="APT28 / Fancy Bear · 2026-05 · 0 mentions"></div></div></div><div class="heat-row"><div class="heat-label" title="Wiper attack on Stryker (medtech) reported 2026; Israel / US healthcare targeting pattern."><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">Handala</a></div><div class="heat-cells"><div class="heat-cell h0" title="Handala · 2025-06 · 0 mentions"></div><div class="heat-cell h0" title="Handala · 2025-07 · 0 mentions"></div><div class="heat-cell h0" title="Handala · 2025-08 · 0 mentions"></div><div class="heat-cell h0" title="Handala · 2025-09 · 0 mentions"></div><div class="heat-cell h0" title="Handala · 2025-10 · 0 mentions"></div><div class="heat-cell h0" title="Handala · 2025-11 · 0 mentions"></div><div class="heat-cell h0" title="Handala · 2025-12 · 0 mentions"></div><div class="heat-cell h0" title="Handala · 2026-01 · 0 mentions"></div><div class="heat-cell h0" title="Handala · 2026-02 · 0 mentions"></div><div class="heat-cell h2" title="Handala · 2026-03 · 3 mentions">3</div><div class="heat-cell h1" title="Handala · 2026-04 · 1 mentions">1</div><div class="heat-cell h0" title="Handala · 2026-05 · 0 mentions"></div></div></div><div class="heat-row"><div class="heat-label" title="Heavy biomed / pharma IP-theft; mixes state-aligned espionage with financial ops."><a href="https://attack.mitre.org/groups/G0096/" target="_blank" rel="noopener">APT41</a></div><div class="heat-cells"><div class="heat-cell h0" title="APT41 · 2025-06 · 0 mentions"></div><div class="heat-cell h0" title="APT41 · 2025-07 · 0 mentions"></div><div class="heat-cell h0" title="APT41 · 2025-08 · 0 mentions"></div><div class="heat-cell h0" title="APT41 · 2025-09 · 0 mentions"></div><div class="heat-cell h0" title="APT41 · 2025-10 · 0 mentions"></div><div class="heat-cell h0" title="APT41 · 2025-11 · 0 mentions"></div><div class="heat-cell h0" title="APT41 · 2025-12 · 0 mentions"></div><div class="heat-cell h0" title="APT41 · 2026-01 · 0 mentions"></div><div class="heat-cell h0" title="APT41 · 2026-02 · 0 mentions"></div><div class="heat-cell h0" title="APT41 · 2026-03 · 0 mentions"></div><div class="heat-cell h1" title="APT41 · 2026-04 · 1 mentions">1</div><div class="heat-cell h0" title="APT41 · 2026-05 · 0 mentions"></div></div></div><div class="heat-row"><div class="heat-label" title="Supply-chain attacks (3CX, JumpCloud); occasional healthcare via downstream MSP compromise."><a href="https://attack.mitre.org/groups/G0032/" target="_blank" rel="noopener">Lazarus Group</a></div><div class="heat-cells"><div class="heat-cell h0" title="Lazarus Group · 2025-06 · 0 mentions"></div><div class="heat-cell h0" title="Lazarus Group · 2025-07 · 0 mentions"></div><div class="heat-cell h0" title="Lazarus Group · 2025-08 · 0 mentions"></div><div class="heat-cell h0" title="Lazarus Group · 2025-09 · 0 mentions"></div><div class="heat-cell h0" title="Lazarus Group · 2025-10 · 0 mentions"></div><div class="heat-cell h0" title="Lazarus Group · 2025-11 · 0 mentions"></div><div class="heat-cell h0" title="Lazarus Group · 2025-12 · 0 mentions"></div><div class="heat-cell h0" title="Lazarus Group · 2026-01 · 0 mentions"></div><div class="heat-cell h0" title="Lazarus Group · 2026-02 · 0 mentions"></div><div class="heat-cell h0" title="Lazarus Group · 2026-03 · 0 mentions"></div><div class="heat-cell h1" title="Lazarus Group · 2026-04 · 2 mentions">2</div><div class="heat-cell h0" title="Lazarus Group · 2026-05 · 0 mentions"></div></div></div><div class="heat-row"><div class="heat-label" title="Cropped up 2023; healthcare and government victims; possible Lynx rebrand."><a href="https://attack.mitre.org/groups/" target="_blank" rel="noopener">INC Ransom</a></div><div class="heat-cells"><div class="heat-cell h0" title="INC Ransom · 2025-06 · 0 mentions"></div><div class="heat-cell h0" title="INC Ransom · 2025-07 · 0 mentions"></div><div class="heat-cell h0" title="INC Ransom · 2025-08 · 0 mentions"></div><div class="heat-cell h0" title="INC Ransom · 2025-09 · 0 mentions"></div><div class="heat-cell h0" title="INC Ransom · 2025-10 · 0 mentions"></div><div class="heat-cell h0" title="INC Ransom · 2025-11 · 0 mentions"></div><div class="heat-cell h0" title="INC Ransom · 2025-12 · 0 mentions"></div><div class="heat-cell h0" title="INC Ransom · 2026-01 · 0 mentions"></div><div class="heat-cell h0" title="INC Ransom · 2026-02 · 0 mentions"></div><div class="heat-cell h0" title="INC Ransom · 2026-03 · 0 mentions"></div><div class="heat-cell h1" title="INC Ransom · 2026-04 · 1 mentions">1</div><div class="heat-cell h0" title="INC Ransom · 2026-05 · 0 mentions"></div></div></div><div class="heat-row"><div class="heat-label" title="Government / NGO / think-tank focus; PlugX / Korplug; recent FBI Aug 2024 takedown."><a href="https://attack.mitre.org/groups/G0129/" target="_blank" rel="noopener">Mustang Panda</a></div><div class="heat-cells"><div class="heat-cell h0" title="Mustang Panda · 2025-06 · 0 mentions"></div><div class="heat-cell h0" title="Mustang Panda · 2025-07 · 0 mentions"></div><div class="heat-cell h0" title="Mustang Panda · 2025-08 · 0 mentions"></div><div class="heat-cell h0" title="Mustang Panda · 2025-09 · 0 mentions"></div><div class="heat-cell h0" title="Mustang Panda · 2025-10 · 0 mentions"></div><div class="heat-cell h0" title="Mustang Panda · 2025-11 · 0 mentions"></div><div class="heat-cell h0" title="Mustang Panda · 2025-12 · 0 mentions"></div><div class="heat-cell h0" title="Mustang Panda · 2026-01 · 0 mentions"></div><div class="heat-cell h0" title="Mustang Panda · 2026-02 · 0 mentions"></div><div class="heat-cell h0" title="Mustang Panda · 2026-03 · 0 mentions"></div><div class="heat-cell h1" title="Mustang Panda · 2026-04 · 1 mentions">1</div><div class="heat-cell h0" title="Mustang Panda · 2026-05 · 0 mentions"></div></div></div>
+    <div class="legend">
+      <span>Mentions:</span>
+      <span class="swatch h0"></span>0
+      <span class="swatch h1"></span>1–2
+      <span class="swatch h2"></span>3–5
+      <span class="swatch h3"></span>6–10
+      <span class="swatch h4"></span>11–20
+      <span class="swatch h5"></span>21+
+    </div>
+  </div>
+
+  <div class="foot">
+    Built 2026-05-04 19:02 UTC from <code>tools/threat_actors_hhs.json</code> (35 entries) and
+    the rolling CTI Hub state. Scoring: <code>recency·0.5 + severity·0.25 + sector_fit·0.75</code>
+    where recency = (last 30d × 3) + (last 90d × 1), severity is motivation-based
+    (ransomware/destructive = 3.0, IAB = 2.5, financial/espionage = 2.0, hacktivism = 1.0),
+    and sector_fit is a 0–3 curated fit-to-HHS/NIH score. Edit
+    <a href="https://github.com/Nvafiades1/threat-hunt-library/blob/main/tools/threat_actors_hhs.json" target="_blank" rel="noopener">the actor list</a>
+    to tune.
+  </div>
+</main>
+
+<script>
+(() => {
+  const body = document.body, toggle = document.getElementById('modeToggle');
+  function applyMode(light) {
+    body.classList.toggle('light', light);
+    toggle.textContent = light ? '☽' : '☼';
+  }
+  applyMode(localStorage.getItem('prefersLight') === 'true');
+  toggle.addEventListener('click', () => {
+    const toLight = !body.classList.contains('light');
+    applyMode(toLight);
+    localStorage.setItem('prefersLight', toLight);
+  });
+})();
+</script>
+</body></html>

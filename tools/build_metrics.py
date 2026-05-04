@@ -608,6 +608,7 @@ body.light .report-btn{{color:#fff}}
   <button id="reportMdBtn" class="report-btn-secondary" title="Download the same report as plain Markdown">MD</button>
   <a class="nav-link" href="./index.html">Matrix &rarr;</a>
   <a class="nav-link" href="./cti.html">CTI Hub &rarr;</a>
+  <a class="nav-link" href="./threat-actors.html">Actors &rarr;</a>
   <button id="modeToggle" title="Toggle light/dark">\u263C</button>
 </header>
 

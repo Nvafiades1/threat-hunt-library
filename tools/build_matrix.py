@@ -498,6 +498,7 @@ details:not([open]) > summary .sub-count::before{{content:"\u25B8 "; color:var(-
   <button id="coverageBtn" class="nav-link nav-btn" title="Open coverage summary">Coverage Summary</button>
   <a class="nav-link" href="./metrics.html">Metrics &rarr;</a>
   <a class="nav-link" href="./cti.html">CTI Hub &rarr;</a>
+  <a class="nav-link" href="./threat-actors.html">Actors &rarr;</a>
   <input id="search" type="search" placeholder="Search techniques&hellip;" autocomplete="off">
   <button id="modeToggle" title="Toggle light/dark (Alt+D)" aria-label="Toggle theme">\u263C</button>
 </header>
