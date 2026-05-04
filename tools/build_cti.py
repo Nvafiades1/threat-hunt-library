@@ -621,6 +621,7 @@ main {{ padding: 16px 20px 60px; max-width: 1400px; margin: 0 auto; }}
   <button class="tab" data-cat="gov">Government</button>
   <button class="tab" data-cat="vuln">Vulnerabilities</button>
   <button class="tab" data-cat="ioc">IOCs</button>
+  <button class="tab" data-cat="iran" title="Iran-linked threat actors and malware (Sandstorm, Kitten, APT3x, MuddyWater, OilRig, etc.)">Iran-linked</button>
   <select id="time-range">
     <option value="1">Last 24h</option>
     <option value="7" selected>Last 7d</option>
@@ -738,9 +739,66 @@ main {{ padding: 16px 20px 60px; max-width: 1400px; margin: 0 auto; }}
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }}
 
+  // Iran-linked filter: two-tier match.
+  //   - IRAN_NAMED_RE: high-precision actor / malware / op / vendor-codename names.
+  //     Always counts (any category).
+  //   - IRAN_COUNTRY_RE: country / agency keywords. Only counts for non-IOC items;
+  //     IOC feeds (URLhaus, MalwareBazaar, ThreatFox) routinely include "iran" in
+  //     mechanical filename / payload titles unrelated to attribution.
+  // Suffix patterns Sandstorm / Kitten are vendor-reserved for Iran-nexus
+  // (Microsoft / CrowdStrike taxonomies respectively).
+  const IRAN_NAMED_RE = new RegExp([
+    "\\\\bSandstorm\\\\b",
+    "\\\\bKitten\\\\b",
+    "\\\\b(?:PHOSPHORUS|HOLMIUM|EUROPIUM|MAGNALLIUM)\\\\b",
+    "\\\\bMERCURY\\\\b(?=[^.]{{0,80}}\\\\b(?:actor|group|MuddyWater|Iran)\\\\b)",
+    "\\\\bDEV-(?:0270|0500|0832|0146|0861|0228)\\\\b",
+    "\\\\bStorm-(?:0784|0842|0894|1133|1364|1499|2035|0867|2308)\\\\b",
+    "\\\\bAPT(?:33|34|35|39|42)\\\\b",
+    "\\\\bTA(?:453|455|456)\\\\b",
+    "\\\\bUNC(?:757|788|1549|2428|3313|3890|4057|4393)\\\\b",
+    "\\\\bITG(?:07|18)\\\\b",
+    "\\\\bYellow\\\\s+(?:Garuda|Liderc|Maero|Saaremaa|Dev|Nix|Pondblue|Saturn)\\\\b",
+    "\\\\b(?:MuddyWater|Muddy\\\\s+Water|OilRig|Oil\\\\s+Rig|"
+      + "Cobalt\\\\s+(?:Mirage|Gypsy|Illusion|Sapling|Trinity|Edgewater)|"
+      + "Charming\\\\s+Kitten|Static\\\\s+Kitten|Pioneer\\\\s+Kitten|Fox\\\\s+Kitten|"
+      + "Imperial\\\\s+Kitten|Refined\\\\s+Kitten|Helix\\\\s+Kitten|Remix\\\\s+Kitten|"
+      + "Magic\\\\s+Kitten|Cutting\\\\s+Kitten|Rocket\\\\s+Kitten|Flying\\\\s+Kitten|"
+      + "Ferocious\\\\s+Kitten|Saber\\\\s+Kitten|Volatile\\\\s+Kitten|"
+      + "Magic\\\\s+Hound|Newscaster|Tortoiseshell|Moses\\\\s+Staff|Agrius|"
+      + "Educated\\\\s+Manticore|Scarred\\\\s+Manticore|Curious\\\\s+Serpens|"
+      + "Earth\\\\s+Vetala|Homeland\\\\s+Justice|Black\\\\s+Shadow|BlackShadow|"
+      + "CyberAv3ngers|DarkBit|Karma\\\\s+Power|N3tw0rm|Pay2Key|TunnelVision|"
+      + "Parisite|Hexane|Lyceum|Siamesekitten|Spirlin|Seedworm|Crambus|Elfin|"
+      + "Cadelle|Chafer|Greenbug|Group5|Leafminer|Madi|Handala|"
+      + "TEMP\\\\.Zagros|Ajax\\\\s+Security\\\\s+Team)\\\\b",
+    "\\\\bOperation\\\\s+(?:Cleaver|Newscaster|Saffron\\\\s+Rose|"
+      + "Wilted\\\\s+Tulip|Quicksand|Glass\\\\s+Jaw)\\\\b",
+    "\\\\b(?:Shamoon|DistTrack|StoneDrill|ZeroCleare|Dustman|"
+      + "POWERSTATS|POWGOOP|POWBAT|POWTON|POWERTON|"
+      + "TONEDEAF|DEADWOOD|Apostle\\\\s+wiper|"
+      + "BiBi(?:-(?:Linux|Windows))?\\\\s*wiper|"
+      + "DCSrv|Drokbk|DROPSHOT|Karkoff|RDAT|"
+      + "DanBot|Saitama|MuddyC2Go|"
+      + "NICECURL|TAMECAT|DRACOFRESH)\\\\b",
+  ].join("|"), "i");
+  const IRAN_COUNTRY_RE = /\\b(?:Iran(?:ian)?|Tehran|Persia(?:n)?|IRGC(?:-(?:CEC|IO))?|MOIS|Quds\\s+Force)\\b/i;
+
+  function isIranLinked(it) {{
+    const hay = (it.title || "") + " " + (it.summary || "") + " "
+              + ((it.tags || []).join(" ")) + " " + (it.source || "");
+    if (IRAN_NAMED_RE.test(hay)) return true;
+    if (it.category !== "ioc" && IRAN_COUNTRY_RE.test(hay)) return true;
+    return false;
+  }}
+
   function filtered() {{
     return items.filter(it => {{
-      if (activeCat !== "all" && it.category !== activeCat) return false;
+      if (activeCat === "iran") {{
+        if (!isIranLinked(it)) return false;
+      }} else if (activeCat !== "all" && it.category !== activeCat) {{
+        return false;
+      }}
       if (!within(it, activeDays)) return false;
       if (activeSource && it.source !== activeSource) return false;
       if (activeQuery) {{
