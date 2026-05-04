@@ -1,0 +1,317 @@
+[
+  {
+    "name": "LockBit",
+    "aliases": ["LockBit", "LockBit 3.0", "LockBit Black", "LockBit Green", "LockBit ransomware"],
+    "origin": "Russia (criminal)",
+    "motivation": "ransomware",
+    "sector_fit": 3,
+    "mitre_id": "G1015",
+    "notes": "Most-prolific RaaS; repeated US healthcare victims through 2024 despite Op Cronos disruption."
+  },
+  {
+    "name": "ALPHV / BlackCat",
+    "aliases": ["ALPHV", "BlackCat", "ALPHV/BlackCat", "Noberus", "BlackCat ransomware"],
+    "origin": "Russia (criminal)",
+    "motivation": "ransomware",
+    "sector_fit": 3,
+    "mitre_id": "G1010",
+    "notes": "Hit Change Healthcare / UnitedHealth (Feb 2024) — largest US healthcare data breach to date."
+  },
+  {
+    "name": "Cl0p",
+    "aliases": ["Cl0p", "Clop", "Cl0p ransomware", "Clop ransomware", "TA505"],
+    "origin": "Russia (criminal)",
+    "motivation": "ransomware",
+    "sector_fit": 3,
+    "mitre_id": "G0092",
+    "notes": "MOVEit, GoAnywhere, Accellion mass-exfil campaigns include HHS / state Medicaid victims."
+  },
+  {
+    "name": "Black Basta",
+    "aliases": ["Black Basta", "BlackBasta", "Black Basta ransomware"],
+    "origin": "Russia (criminal, Conti-linked)",
+    "motivation": "ransomware",
+    "sector_fit": 3,
+    "mitre_id": "G1037",
+    "notes": "Ascension Health attack (May 2024); CISA / HC3 joint advisory specifically calling out healthcare targeting."
+  },
+  {
+    "name": "Akira",
+    "aliases": ["Akira", "Akira ransomware"],
+    "origin": "Russia (criminal)",
+    "motivation": "ransomware",
+    "sector_fit": 2,
+    "mitre_id": "",
+    "notes": "Frequent mid-size healthcare and education victims; double-extortion."
+  },
+  {
+    "name": "Rhysida",
+    "aliases": ["Rhysida", "Rhysida ransomware"],
+    "origin": "criminal (uncategorised)",
+    "motivation": "ransomware",
+    "sector_fit": 3,
+    "mitre_id": "",
+    "notes": "Lurie Children's, Prospect Medical, multiple US hospital systems; HC3 sector alert."
+  },
+  {
+    "name": "Royal / DEV-0569",
+    "aliases": ["Royal ransomware", "DEV-0569", "Storm-0569", "Royal Group"],
+    "origin": "Russia (criminal)",
+    "motivation": "ransomware",
+    "sector_fit": 3,
+    "mitre_id": "",
+    "notes": "Conti-rebrand lineage; CISA #StopRansomware joint advisory citing healthcare victims."
+  },
+  {
+    "name": "Play",
+    "aliases": ["Play ransomware", "Playcrypt", "PlayCrypt"],
+    "origin": "Russia (criminal)",
+    "motivation": "ransomware",
+    "sector_fit": 2,
+    "mitre_id": "",
+    "notes": "CISA advisory; opportunistic healthcare hits."
+  },
+  {
+    "name": "Medusa",
+    "aliases": ["Medusa ransomware", "MedusaLocker", "Medusa Locker"],
+    "origin": "criminal (uncategorised)",
+    "motivation": "ransomware",
+    "sector_fit": 2,
+    "mitre_id": "",
+    "notes": "Distinct from Medusa botnet/Mirai; CISA #StopRansomware advisory March 2025."
+  },
+  {
+    "name": "BianLian",
+    "aliases": ["BianLian", "BianLian ransomware", "BianLian group"],
+    "origin": "criminal (uncategorised)",
+    "motivation": "ransomware",
+    "sector_fit": 3,
+    "mitre_id": "G1002",
+    "notes": "Pivoted to extortion-only; AHA / FBI advisories cite healthcare focus."
+  },
+  {
+    "name": "Hunters International",
+    "aliases": ["Hunters International", "HuntersInternational"],
+    "origin": "criminal (Hive successor)",
+    "motivation": "ransomware",
+    "sector_fit": 2,
+    "mitre_id": "",
+    "notes": "Inherited Hive infrastructure; healthcare among targeted sectors."
+  },
+  {
+    "name": "Qilin / Agenda",
+    "aliases": ["Qilin", "Qilin ransomware", "Agenda ransomware"],
+    "origin": "Russia (criminal)",
+    "motivation": "ransomware",
+    "sector_fit": 3,
+    "mitre_id": "",
+    "notes": "Synnovis / UK NHS pathology attack June 2024; demonstrated capacity against health labs."
+  },
+  {
+    "name": "RansomHub",
+    "aliases": ["RansomHub", "RansomHub RaaS"],
+    "origin": "criminal (post-ALPHV affiliate hub)",
+    "motivation": "ransomware",
+    "sector_fit": 3,
+    "mitre_id": "",
+    "notes": "Absorbed ALPHV affiliates after Change Healthcare exit-scam; CISA #StopRansomware advisory."
+  },
+  {
+    "name": "INC Ransom",
+    "aliases": ["INC Ransom", "INC ransomware", "Lynx ransomware"],
+    "origin": "criminal (uncategorised)",
+    "motivation": "ransomware",
+    "sector_fit": 2,
+    "mitre_id": "",
+    "notes": "Cropped up 2023; healthcare and government victims; possible Lynx rebrand."
+  },
+  {
+    "name": "Trinity",
+    "aliases": ["Trinity ransomware"],
+    "origin": "criminal (uncategorised)",
+    "motivation": "ransomware",
+    "sector_fit": 3,
+    "mitre_id": "",
+    "notes": "HC3 sector alert specifically citing US healthcare targeting; possible 2023Lock / Venus overlap."
+  },
+  {
+    "name": "APT41",
+    "aliases": ["APT41", "Wicked Panda", "Brass Typhoon", "BARIUM", "Winnti Group", "Double Dragon"],
+    "origin": "China",
+    "motivation": "espionage",
+    "sector_fit": 3,
+    "mitre_id": "G0096",
+    "notes": "Heavy biomed / pharma IP-theft; mixes state-aligned espionage with financial ops."
+  },
+  {
+    "name": "Mustang Panda",
+    "aliases": ["Mustang Panda", "TA416", "Bronze President", "RedDelta", "Earth Preta", "Twill Typhoon"],
+    "origin": "China",
+    "motivation": "espionage",
+    "sector_fit": 2,
+    "mitre_id": "G0129",
+    "notes": "Government / NGO / think-tank focus; PlugX / Korplug; recent FBI Aug 2024 takedown."
+  },
+  {
+    "name": "Volt Typhoon",
+    "aliases": ["Volt Typhoon", "Vanguard Panda", "BRONZE SILHOUETTE"],
+    "origin": "China",
+    "motivation": "espionage",
+    "sector_fit": 2,
+    "mitre_id": "G1017",
+    "notes": "US critical-infrastructure pre-positioning; healthcare considered in scope per CISA."
+  },
+  {
+    "name": "APT29 / Cozy Bear",
+    "aliases": ["APT29", "Cozy Bear", "Midnight Blizzard", "NOBELIUM", "The Dukes", "BlueBravo", "Iron Hemlock"],
+    "origin": "Russia (SVR)",
+    "motivation": "espionage",
+    "sector_fit": 3,
+    "mitre_id": "G0016",
+    "notes": "Targeted COVID-19 vaccine research orgs (NCSC/NSA 2020); SolarWinds; Microsoft 365 corp tenants."
+  },
+  {
+    "name": "Sandworm",
+    "aliases": ["Sandworm", "Sandworm Team", "BlackEnergy", "Voodoo Bear", "TeleBots", "Iron Viking", "Seashell Blizzard"],
+    "origin": "Russia (GRU 74455)",
+    "motivation": "destructive",
+    "sector_fit": 2,
+    "mitre_id": "G0034",
+    "notes": "ICS-capable wiper ops; healthcare facility OT exposure."
+  },
+  {
+    "name": "APT28 / Fancy Bear",
+    "aliases": ["APT28", "Fancy Bear", "Sofacy", "Forest Blizzard", "Strontium", "Pawn Storm", "Sednit"],
+    "origin": "Russia (GRU 26165)",
+    "motivation": "espionage",
+    "sector_fit": 2,
+    "mitre_id": "G0007",
+    "notes": "Government / political; secondary healthcare via federal targeting."
+  },
+  {
+    "name": "Kimsuky",
+    "aliases": ["Kimsuky", "Velvet Chollima", "Black Banshee", "Emerald Sleet", "THALLIUM", "ARCHIPELAGO"],
+    "origin": "DPRK",
+    "motivation": "espionage",
+    "sector_fit": 3,
+    "mitre_id": "G0094",
+    "notes": "Targeted COVID-19 / biomedical research orgs; academic and policy think-tanks."
+  },
+  {
+    "name": "Lazarus Group",
+    "aliases": ["Lazarus", "Lazarus Group", "Hidden Cobra", "Diamond Sleet", "ZINC", "Labyrinth Chollima"],
+    "origin": "DPRK",
+    "motivation": "financial",
+    "sector_fit": 2,
+    "mitre_id": "G0032",
+    "notes": "Supply-chain attacks (3CX, JumpCloud); occasional healthcare via downstream MSP compromise."
+  },
+  {
+    "name": "Andariel",
+    "aliases": ["Andariel", "Onyx Sleet", "PLUTONIUM", "Stonefly", "Silent Chollima", "Jumpy Pisces"],
+    "origin": "DPRK",
+    "motivation": "espionage",
+    "sector_fit": 3,
+    "mitre_id": "G0138",
+    "notes": "CISA/FBI/NSA advisory July 2024 explicitly calling out US healthcare and biomedical research."
+  },
+  {
+    "name": "APT35 / Mint Sandstorm",
+    "aliases": ["APT35", "Charming Kitten", "Mint Sandstorm", "PHOSPHORUS", "Magic Hound", "Newscaster", "TA453", "ITG18", "Educated Manticore"],
+    "origin": "Iran (IRGC-IO)",
+    "motivation": "espionage",
+    "sector_fit": 2,
+    "mitre_id": "G0059",
+    "notes": "COVID-19 research targeting (Microsoft 2020); academic / journalist / think-tank focus."
+  },
+  {
+    "name": "MuddyWater / Mango Sandstorm",
+    "aliases": ["MuddyWater", "Muddy Water", "Mango Sandstorm", "MERCURY", "Static Kitten", "TEMP.Zagros", "Seedworm", "Earth Vetala"],
+    "origin": "Iran (MOIS)",
+    "motivation": "espionage",
+    "sector_fit": 2,
+    "mitre_id": "G0069",
+    "notes": "Government and telecom focus; healthcare via shared Middle East/US targeting overlap."
+  },
+  {
+    "name": "Cobalt Mirage / Lemon Sandstorm",
+    "aliases": ["Cobalt Mirage", "Lemon Sandstorm", "TunnelVision", "DEV-0270", "Pioneer Kitten", "Fox Kitten", "Parisite"],
+    "origin": "Iran",
+    "motivation": "destructive",
+    "sector_fit": 2,
+    "mitre_id": "",
+    "notes": "Hit US local government and academic targets; ransomware-as-disruption (BitLocker abuse)."
+  },
+  {
+    "name": "Scattered Spider / UNC3944",
+    "aliases": ["Scattered Spider", "UNC3944", "Octo Tempest", "0ktapus", "Roasted 0ktapus", "Scatter Swine", "Muddled Libra", "Storm-0875"],
+    "origin": "US/UK (criminal)",
+    "motivation": "financial",
+    "sector_fit": 3,
+    "mitre_id": "G1015",
+    "notes": "Social-engineering helpdesks for SaaS access; recent healthcare and insurance victims."
+  },
+  {
+    "name": "FIN7",
+    "aliases": ["FIN7", "Carbon Spider", "Carbanak", "Sangria Tempest"],
+    "origin": "criminal (post-Soviet)",
+    "motivation": "financial",
+    "sector_fit": 2,
+    "mitre_id": "G0046",
+    "notes": "Pivoted to ransomware affiliate work; toolkit appears in healthcare intrusions."
+  },
+  {
+    "name": "FIN12",
+    "aliases": ["FIN12", "Wizard Spider"],
+    "origin": "criminal (post-Soviet)",
+    "motivation": "ransomware",
+    "sector_fit": 3,
+    "mitre_id": "G0102",
+    "notes": "20%+ of victims are healthcare per Mandiant; deploys Ryuk / Conti / Nokoyawa."
+  },
+  {
+    "name": "TA505",
+    "aliases": ["TA505", "Hive0065", "Graceful Spider", "GOLD TAHOE"],
+    "origin": "criminal (Russia-aligned)",
+    "motivation": "financial",
+    "sector_fit": 2,
+    "mitre_id": "G0092",
+    "notes": "Cl0p operator; banker / loader / IAB; healthcare via mass-exfil campaigns."
+  },
+  {
+    "name": "Anonymous Sudan",
+    "aliases": ["Anonymous Sudan", "Storm-1359"],
+    "origin": "hacktivist (alleged Russia-linked)",
+    "motivation": "hacktivism",
+    "sector_fit": 2,
+    "mitre_id": "",
+    "notes": "DDoS against US gov / hospitals; FBI indictment Oct 2024 named Sudanese operators."
+  },
+  {
+    "name": "Killnet",
+    "aliases": ["Killnet", "KillNet", "Killmilk"],
+    "origin": "hacktivist (Russia-aligned)",
+    "motivation": "hacktivism",
+    "sector_fit": 2,
+    "mitre_id": "",
+    "notes": "DDoS against US hospitals (Jan 2023 wave) and federal sites; HC3 specific alert."
+  },
+  {
+    "name": "Handala",
+    "aliases": ["Handala", "Handala Hack"],
+    "origin": "hacktivist (Iran-aligned)",
+    "motivation": "hacktivism",
+    "sector_fit": 2,
+    "mitre_id": "",
+    "notes": "Wiper attack on Stryker (medtech) reported 2026; Israel / US healthcare targeting pattern."
+  },
+  {
+    "name": "NoName057(16)",
+    "aliases": ["NoName057", "NoName057(16)", "NoName"],
+    "origin": "hacktivist (Russia-aligned)",
+    "motivation": "hacktivism",
+    "sector_fit": 1,
+    "mitre_id": "",
+    "notes": "DDoSia project; opportunistic gov + sector-aligned with Russia geopolitical posture."
+  }
+]

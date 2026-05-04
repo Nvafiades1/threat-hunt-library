@@ -446,6 +446,7 @@ NAV_HTML = """\
   <a href="index.html">Matrix</a>
   <a href="metrics.html">Metrics</a>
   <a href="cti.html" class="active">CTI Hub</a>
+  <a href="threat-actors.html">Actors</a>
   <a href="https://github.com/Nvafiades1/threat-hunt-library" target="_blank" rel="noopener">GitHub ↗</a>
 </nav>"""
 
