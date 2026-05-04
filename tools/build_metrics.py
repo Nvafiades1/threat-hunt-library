@@ -32,9 +32,9 @@ OWNER, REPO, BRANCH, TECH_PATH = (
 
 TACTICS = [
     "Reconnaissance", "Resource Development", "Initial Access", "Execution",
-    "Persistence", "Privilege Escalation", "Defense Evasion", "Credential Access",
-    "Discovery", "Lateral Movement", "Collection", "Command And Control",
-    "Exfiltration", "Impact",
+    "Persistence", "Privilege Escalation", "Stealth", "Defense Impairment",
+    "Credential Access", "Discovery", "Lateral Movement", "Collection",
+    "Command And Control", "Exfiltration", "Impact",
 ]
 
 IMPACT_IDS = {
