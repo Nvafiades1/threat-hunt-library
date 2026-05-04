@@ -55,6 +55,11 @@ SOURCES = [
     ("Trend Micro Research",    "vendor", "rss",  "https://news.trendmicro.com/feed/"),
     ("Securelist (Kaspersky)",  "vendor", "rss",  "https://securelist.com/feed/"),
     ("ESET WeLiveSecurity",     "vendor", "rss",  "https://www.welivesecurity.com/en/rss/feed/"),
+    ("Mandiant (Google TI)",    "vendor", "rss",  "https://cloudblog.withgoogle.com/topics/threat-intelligence/rss/"),
+    ("Volexity",                "vendor", "rss",  "https://www.volexity.com/feed/"),
+    ("Check Point Research",    "vendor", "rss",  "https://research.checkpoint.com/feed/"),
+    ("Recorded Future",         "vendor", "rss",  "https://www.recordedfuture.com/feed"),
+    ("Google Project Zero",     "vendor", "rss",  "https://googleprojectzero.blogspot.com/feeds/posts/default"),
 
     # News & industry
     ("BleepingComputer",        "news",   "rss",  "https://www.bleepingcomputer.com/feed/"),
@@ -74,6 +79,7 @@ SOURCES = [
     ("MS-ISAC Advisories",      "gov",    "rss",  "https://www.cisecurity.org/feed/advisories"),
     ("Health-ISAC",             "gov",    "rss",  "https://h-isac.org/feed/"),
     ("NCSC-UK",                 "gov",    "rss",  "https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml"),
+    ("CCCS (Canada)",           "gov",    "rss",  "https://www.cyber.gc.ca/api/cccs/atom/v1/get?feed=alerts_advisories&lang=en"),
 
     # Vulnerabilities (JSON)
     ("CISA KEV Catalog",        "vuln",   "kev",  "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"),
