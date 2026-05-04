@@ -1,21 +1,22 @@
-name: Build Threat Actor Priority
+name: Build Actor Reports
 
 on:
   schedule:
-    - cron: '0 9 1 * *'   # 09:00 UTC on the 1st of every month
+    - cron: '0 6 * * *'   # 06:00 UTC daily
   workflow_dispatch:
   push:
     branches: [ main ]
     paths:
-      - 'tools/build_threat_actors.py'
+      - 'tools/build_actor_reports.py'
       - 'tools/threat_actors_hhs.json'
-      - '.github/workflows/build_threat_actors.yml'
+      - 'tools/threat_actors_state.json'
+      - '.github/workflows/build_actor_reports.yml'
 
 permissions:
   contents: write
 
 concurrency:
-  group: build-threat-actors
+  group: build-actor-reports
   cancel-in-progress: false
 
 jobs:
@@ -33,24 +34,19 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Build threat-actor priority page
-        run: python tools/build_threat_actors.py
-
-      - name: Build actor reports (chained — refreshes top-10 reports on the
-              same monthly cycle so any new top-10 entrants get a report on
-              first appearance)
+      - name: Build actor reports
         run: python tools/build_actor_reports.py
 
       - name: Commit & push
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/threat-actors.html docs/actors/ tools/threat_actors_state.json
+          git add docs/actors/
           if git diff --cached --quiet; then
             echo "No changes"
             exit 0
           fi
-          git commit -m "Auto-build threat actor priority + reports [skip ci]"
+          git commit -m "Auto-build actor reports [skip ci]"
           for i in 1 2 3 4 5; do
             git pull --rebase origin main && git push && exit 0
             sleep 3

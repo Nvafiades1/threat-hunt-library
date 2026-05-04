@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Black Basta — HHS / NIH Threat Actor Report</title>
+<style>
+:root {
+  --bg:#0f1620; --surface:#17202c; --surface-2:#1e2833; --border:#2a3644;
+  --text:#e6ecf2; --text-dim:#8a97a8; --accent:#e87722; --good:#2fbf71;
+  --chip-bg:#243142; --chip-fg:#a9b4c2;
+  --bar:#5b75a0; --bar-now:#e87722;
+  --mot-ransomware:#dc2626; --mot-destructive:#b91c1c; --mot-espionage:#7c3aed;
+  --mot-financial:#0891b2; --mot-hacktivism:#65a30d; --mot-iab:#a16207;
+  --cat-vendor:#1e7ad6; --cat-news:#7c3aed; --cat-gov:#0891b2;
+  --cat-vuln:#b45309; --cat-ioc:#65a30d;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+body.light {
+  --bg:#f6f6f6; --surface:#ffffff; --surface-2:#fafbfc; --border:#dfe3e8;
+  --text:#23394a; --text-dim:#5b6a7a; --accent:#c75f11; --good:#17905a;
+  --chip-bg:#eef1f5; --chip-fg:#4a5a6c;
+  --bar:#719ec7; --bar-now:#c75f11;
+}
+*{box-sizing:border-box} html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+header{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:.75rem;
+  padding:.6rem 1rem;background:var(--surface);border-bottom:1px solid var(--border)}
+.brand{font-weight:600;font-size:1.05rem;margin-right:auto}
+.brand .accent{color:var(--accent)}
+.brand .sub{color:var(--text-dim);font-size:.78rem;font-weight:400;margin-left:.5rem}
+.nav-link{color:var(--text-dim);text-decoration:none;font-size:.82rem;
+  padding:.3rem .55rem;border:1px solid var(--border);border-radius:4px}
+.nav-link:hover{color:var(--accent);border-color:var(--accent)}
+#modeToggle{cursor:pointer;font-size:1rem;background:none;color:var(--text);
+  border:1px solid var(--border);border-radius:4px;padding:.3rem .55rem}
+main{max-width:1200px;margin:0 auto;padding:1.5rem 1.25rem 4rem}
+.hero h1{font-size:1.6rem;margin:0 0 .35rem}
+.hero .aliases{color:var(--text-dim);font-size:.8rem}
+.hero .aliases .chip{display:inline-block;background:var(--chip-bg);color:var(--chip-fg);
+  padding:.1rem .45rem;border-radius:3px;margin:.1rem .25rem .1rem 0;font-size:.72rem}
+.metagrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:.75rem;margin:1rem 0 1.4rem}
+.meta{background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:.7rem .85rem}
+.meta .lbl{font-size:.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px}
+.meta .val{font-size:1.1rem;margin-top:.2rem}
+.fit-dots{display:inline-flex;gap:3px;vertical-align:middle;margin-left:.5rem}
+.fit-dot{width:.55rem;height:.55rem;border-radius:50%;background:var(--border)}
+.fit-dot.on{background:var(--accent)}
+.motivation{font-size:.7rem;font-weight:600;padding:.15rem .45rem;border-radius:3px;
+  letter-spacing:.04em;color:#fff;text-transform:uppercase;display:inline-block}
+.mot-ransomware{background:var(--mot-ransomware)}
+.mot-destructive{background:var(--mot-destructive)}
+.mot-espionage{background:var(--mot-espionage)}
+.mot-financial{background:var(--mot-financial)}
+.mot-hacktivism{background:var(--mot-hacktivism)}
+.mot-iab{background:var(--mot-iab)}
+h2{font-size:1.05rem;margin:1.6rem 0 .55rem;display:flex;align-items:baseline;gap:.4rem}
+h2 .hint{color:var(--text-dim);font-size:.78rem;font-weight:400}
+.note{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:.85rem 1rem;color:var(--text)}
+.spark-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:.85rem 1rem;display:flex;flex-direction:column;gap:.6rem}
+.spark{display:flex;align-items:flex-end;gap:3px;height:64px}
+.spark .bar{flex:1;background:var(--bar);border-radius:2px 2px 0 0;min-height:1px;
+  transition:opacity .15s}
+.spark .bar:hover{opacity:.7}
+.spark .bar.now{background:var(--bar-now)}
+.spark-axis{display:flex;gap:3px;font-size:.65rem;color:var(--text-dim);font-variant-numeric:tabular-nums}
+.spark-axis div{flex:1;text-align:center}
+.totals{display:flex;gap:1.2rem;font-size:.85rem;color:var(--text-dim)}
+.totals b{color:var(--text);font-weight:600}
+table{width:100%;border-collapse:collapse;background:var(--surface);
+  border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:.85rem}
+thead th{background:var(--surface-2);text-align:left;font-size:.7rem;
+  text-transform:uppercase;letter-spacing:.04em;color:var(--text-dim);
+  padding:.5rem .65rem;border-bottom:1px solid var(--border)}
+tbody td{padding:.5rem .65rem;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:hover{background:var(--surface-2)}
+td.date{color:var(--text-dim);white-space:nowrap;font-variant-numeric:tabular-nums;width:6rem}
+td.src{color:var(--text-dim);white-space:nowrap;width:11rem}
+td.title a{color:var(--text);text-decoration:none}
+td.title a:hover{color:var(--accent);text-decoration:underline}
+.cat{font-size:.65rem;font-weight:600;padding:.1rem .35rem;border-radius:3px;
+  text-transform:uppercase;letter-spacing:.04em;color:#fff;display:inline-block}
+.cat-vendor{background:var(--cat-vendor)} .cat-news{background:var(--cat-news)}
+.cat-gov{background:var(--cat-gov)} .cat-vuln{background:var(--cat-vuln)}
+.cat-ioc{background:var(--cat-ioc)}
+.empty{padding:1rem;color:var(--text-dim);background:var(--surface);
+  border:1px solid var(--border);border-radius:8px;font-size:.85rem}
+.tags{display:flex;flex-wrap:wrap;gap:.3rem;background:var(--surface);
+  border:1px solid var(--border);border-radius:8px;padding:.7rem 1rem}
+.tags .tag{font-size:.72rem;padding:.15rem .5rem;background:var(--chip-bg);
+  color:var(--chip-fg);border-radius:3px;font-family:"SF Mono","Menlo",Consolas,monospace}
+.tags .tag.tool{font-family:var(--font-sans);font-size:.74rem}
+.foot{color:var(--text-dim);font-size:.72rem;margin-top:1.5rem;line-height:1.55}
+.foot a{color:var(--text-dim)}
+@media (max-width:680px){.metagrid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Black Basta <span class="accent">·</span>
+    <span class="sub">Threat Actor Report — built 2026-05-04 19:27 UTC</span>
+  </div>
+  <a class="nav-link" href="../threat-actors.html">&larr; Priority list</a>
+  <a class="nav-link" href="../cti.html">CTI Hub</a>
+  <a class="nav-link" href="../index.html">Matrix</a>
+  <button id="modeToggle" title="Toggle theme">☼</button>
+</header>
+
+<main>
+  <section class="hero">
+    <h1>Black Basta</h1>
+    <div class="aliases"><span class="chip">BlackBasta</span><span class="chip">Black Basta ransomware</span></div>
+  </section>
+
+  <div class="metagrid">
+    <div class="meta">
+      <div class="lbl">Origin</div>
+      <div class="val">Russia (criminal, Conti-linked)</div>
+    </div>
+    <div class="meta">
+      <div class="lbl">Motivation</div>
+      <div class="val"><span class="motivation mot-ransomware">Ransomware</span></div>
+    </div>
+    <div class="meta">
+      <div class="lbl">Sector fit (HHS / NIH)</div>
+      <div class="val">3 / 3 <span class="fit-dots"><span class="fit-dot on"></span><span class="fit-dot on"></span><span class="fit-dot on"></span></span></div>
+    </div>
+    <div class="meta">
+      <div class="lbl">MITRE Group</div>
+      <div class="val"><a href="https://attack.mitre.org/groups/G1037/" target="_blank" rel="noopener">G1037</a></div>
+    </div>
+    <div class="meta">
+      <div class="lbl">Mentions last 30d</div>
+      <div class="val">0</div>
+    </div>
+    <div class="meta">
+      <div class="lbl">Mentions last 90d</div>
+      <div class="val">0</div>
+    </div>
+    <div class="meta">
+      <div class="lbl">IOC indicators last 90d</div>
+      <div class="val">0</div>
+    </div>
+  </div>
+
+  <h2>Summary <span class="hint">— curated</span></h2>
+  <div class="note">Ascension Health attack (May 2024); CISA / HC3 joint advisory specifically calling out healthcare targeting.</div>
+
+  <h2>Mention timeline <span class="hint">— last 12 months · current month highlighted</span></h2>
+  <div class="spark-wrap">
+    <div class="spark"><div class="bar" style="height:1px" title="2025-06: 0 mentions"></div><div class="bar" style="height:1px" title="2025-07: 0 mentions"></div><div class="bar" style="height:1px" title="2025-08: 0 mentions"></div><div class="bar" style="height:1px" title="2025-09: 0 mentions"></div><div class="bar" style="height:1px" title="2025-10: 0 mentions"></div><div class="bar" style="height:1px" title="2025-11: 0 mentions"></div><div class="bar" style="height:1px" title="2025-12: 0 mentions"></div><div class="bar" style="height:1px" title="2026-01: 0 mentions"></div><div class="bar" style="height:1px" title="2026-02: 0 mentions"></div><div class="bar" style="height:1px" title="2026-03: 0 mentions"></div><div class="bar" style="height:1px" title="2026-04: 0 mentions"></div><div class="bar now" style="height:1px" title="2026-05: 0 mentions"></div></div><div class="spark-axis"><div>06</div><div>07</div><div>08</div><div>09</div><div>10</div><div>11</div><div>12</div><div>01</div><div>02</div><div>03</div><div>04</div><div>05</div></div>
+    <div class="totals">
+      <span>30d <b>0</b></span>
+      <span>90d <b>0</b></span>
+      <span>12m <b>0</b></span>
+    </div>
+  </div>
+
+  <h2>Recent activity <span class="hint">— feed items in last 90 days</span></h2>
+  <div class="empty">No feed items in the last 90 days mention this actor.</div>
+
+  <h2>MITRE techniques <span class="hint">— attributed to this group in ATT&CK</span></h2>
+  <div class="tags"><a class="tag" href="https://attack.mitre.org/techniques/T1027/009/" target="_blank" rel="noopener" title="Stealth">T1027.009 Embedded Payloads</a><a class="tag" href="https://attack.mitre.org/techniques/T1059/003/" target="_blank" rel="noopener" title="Execution">T1059.003 Windows Command Shell</a><a class="tag" href="https://attack.mitre.org/techniques/T1059/007/" target="_blank" rel="noopener" title="Execution">T1059.007 JavaScript</a><a class="tag" href="https://attack.mitre.org/techniques/T1204/001/" target="_blank" rel="noopener" title="Execution">T1204.001 Malicious Link</a><a class="tag" href="https://attack.mitre.org/techniques/T1566/002/" target="_blank" rel="noopener" title="Initial Access">T1566.002 Spearphishing Link</a><a class="tag" href="https://attack.mitre.org/techniques/T1586/002/" target="_blank" rel="noopener" title="Resource Development">T1586.002 Email Accounts</a></div>
+
+  <h2>Software <span class="hint">— malware &amp; tools attributed to this group</span></h2>
+  <div class="tags"><span class="tag tool" title="malware">Latrodectus</span><span class="tag tool" title="malware">Pikabot</span><span class="tag tool" title="malware">QakBot</span></div>
+
+  <div class="foot">
+    Auto-generated from <code>tools/threat_actors_hhs.json</code>, the rolling CTI Hub state,
+    and MITRE ATT&amp;CK Enterprise STIX. Recent-activity refreshes daily;
+    summary metadata + sector fit are curated and update only when
+    <a href="https://github.com/Nvafiades1/threat-hunt-library/blob/main/tools/threat_actors_hhs.json" target="_blank" rel="noopener">the JSON</a>
+    changes. Built 2026-05-04 19:27 UTC.
+  </div>
+</main>
+
+<script>
+(() => {
+  const body = document.body, toggle = document.getElementById('modeToggle');
+  function applyMode(light) {
+    body.classList.toggle('light', light);
+    toggle.textContent = light ? '☽' : '☼';
+  }
+  applyMode(localStorage.getItem('prefersLight') === 'true');
+  toggle.addEventListener('click', () => {
+    const toLight = !body.classList.contains('light');
+    applyMode(toLight);
+    localStorage.setItem('prefersLight', toLight);
+  });
+})();
+</script>
+</body></html>
