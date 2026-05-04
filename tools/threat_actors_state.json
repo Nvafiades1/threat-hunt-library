@@ -30,5 +30,17 @@
       "2026-05": 1
     }
   },
-  "last_built": "2026-05-04T19:08:45Z"
+  "last_built": "2026-05-04T19:26:02Z",
+  "top10_history": [
+    "ALPHV / BlackCat",
+    "APT28 / Fancy Bear",
+    "APT41",
+    "BianLian",
+    "Black Basta",
+    "Cl0p",
+    "FIN12",
+    "Handala",
+    "Lazarus Group",
+    "Scattered Spider / UNC3944"
+  ]
 }

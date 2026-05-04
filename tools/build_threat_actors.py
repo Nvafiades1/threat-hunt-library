@@ -194,6 +194,15 @@ for name, monthly in mentions.items():
     bucket = historic.setdefault(name, {})
     for mk, count in monthly.items():
         bucket[mk] = count
+
+# Track which actors have ever been in the top 10. Once an actor enters,
+# they keep their report — we never remove from this set, so historical
+# reports stay navigable as the priority list shifts month-to-month.
+TOP_N_FOR_REPORT = 10
+top10_history = set(actor_state.get("top10_history", []))
+top10_history.update(r["name"] for r in scored[:TOP_N_FOR_REPORT])
+actor_state["top10_history"] = sorted(top10_history)
+
 actor_state["last_built"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
 ACTOR_STATE.write_text(json.dumps(actor_state, indent=2, sort_keys=True) + "\n")
 
@@ -221,8 +230,15 @@ def heat_class(n: int) -> str:
     return "h5"
 
 def actor_link(r: dict) -> str:
-    """Return a URL: prefer threat-actor-profiles file, else MITRE Groups, else Google search."""
+    """Resolution order:
+      1. Generated report at docs/actors/<slug>.html (any actor that's ever made the top 10).
+      2. Curated profile in threat-actor-profiles/.
+      3. MITRE ATT&CK Groups page if a G-id is set.
+      4. MITRE Groups index as a final fallback.
+    """
     slug = slugify(r["name"])
+    if r["name"] in top10_history:
+        return f"./actors/{slug}.html"
     for stem, fname in profile_index.items():
         if stem.startswith(slug.split("-")[0][:6]) or slug in stem or stem in slug:
             return f"https://github.com/{OWNER}/{REPO}/blob/{BRANCH}/threat-actor-profiles/{fname}"

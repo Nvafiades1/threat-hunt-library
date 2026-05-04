@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>APT28 / Fancy Bear — HHS / NIH Threat Actor Report</title>
+<style>
+:root {
+  --bg:#0f1620; --surface:#17202c; --surface-2:#1e2833; --border:#2a3644;
+  --text:#e6ecf2; --text-dim:#8a97a8; --accent:#e87722; --good:#2fbf71;
+  --chip-bg:#243142; --chip-fg:#a9b4c2;
+  --bar:#5b75a0; --bar-now:#e87722;
+  --mot-ransomware:#dc2626; --mot-destructive:#b91c1c; --mot-espionage:#7c3aed;
+  --mot-financial:#0891b2; --mot-hacktivism:#65a30d; --mot-iab:#a16207;
+  --cat-vendor:#1e7ad6; --cat-news:#7c3aed; --cat-gov:#0891b2;
+  --cat-vuln:#b45309; --cat-ioc:#65a30d;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+body.light {
+  --bg:#f6f6f6; --surface:#ffffff; --surface-2:#fafbfc; --border:#dfe3e8;
+  --text:#23394a; --text-dim:#5b6a7a; --accent:#c75f11; --good:#17905a;
+  --chip-bg:#eef1f5; --chip-fg:#4a5a6c;
+  --bar:#719ec7; --bar-now:#c75f11;
+}
+*{box-sizing:border-box} html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+header{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:.75rem;
+  padding:.6rem 1rem;background:var(--surface);border-bottom:1px solid var(--border)}
+.brand{font-weight:600;font-size:1.05rem;margin-right:auto}
+.brand .accent{color:var(--accent)}
+.brand .sub{color:var(--text-dim);font-size:.78rem;font-weight:400;margin-left:.5rem}
+.nav-link{color:var(--text-dim);text-decoration:none;font-size:.82rem;
+  padding:.3rem .55rem;border:1px solid var(--border);border-radius:4px}
+.nav-link:hover{color:var(--accent);border-color:var(--accent)}
+#modeToggle{cursor:pointer;font-size:1rem;background:none;color:var(--text);
+  border:1px solid var(--border);border-radius:4px;padding:.3rem .55rem}
+main{max-width:1200px;margin:0 auto;padding:1.5rem 1.25rem 4rem}
+.hero h1{font-size:1.6rem;margin:0 0 .35rem}
+.hero .aliases{color:var(--text-dim);font-size:.8rem}
+.hero .aliases .chip{display:inline-block;background:var(--chip-bg);color:var(--chip-fg);
+  padding:.1rem .45rem;border-radius:3px;margin:.1rem .25rem .1rem 0;font-size:.72rem}
+.metagrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:.75rem;margin:1rem 0 1.4rem}
+.meta{background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:.7rem .85rem}
+.meta .lbl{font-size:.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px}
+.meta .val{font-size:1.1rem;margin-top:.2rem}
+.fit-dots{display:inline-flex;gap:3px;vertical-align:middle;margin-left:.5rem}
+.fit-dot{width:.55rem;height:.55rem;border-radius:50%;background:var(--border)}
+.fit-dot.on{background:var(--accent)}
+.motivation{font-size:.7rem;font-weight:600;padding:.15rem .45rem;border-radius:3px;
+  letter-spacing:.04em;color:#fff;text-transform:uppercase;display:inline-block}
+.mot-ransomware{background:var(--mot-ransomware)}
+.mot-destructive{background:var(--mot-destructive)}
+.mot-espionage{background:var(--mot-espionage)}
+.mot-financial{background:var(--mot-financial)}
+.mot-hacktivism{background:var(--mot-hacktivism)}
+.mot-iab{background:var(--mot-iab)}
+h2{font-size:1.05rem;margin:1.6rem 0 .55rem;display:flex;align-items:baseline;gap:.4rem}
+h2 .hint{color:var(--text-dim);font-size:.78rem;font-weight:400}
+.note{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:.85rem 1rem;color:var(--text)}
+.spark-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:.85rem 1rem;display:flex;flex-direction:column;gap:.6rem}
+.spark{display:flex;align-items:flex-end;gap:3px;height:64px}
+.spark .bar{flex:1;background:var(--bar);border-radius:2px 2px 0 0;min-height:1px;
+  transition:opacity .15s}
+.spark .bar:hover{opacity:.7}
+.spark .bar.now{background:var(--bar-now)}
+.spark-axis{display:flex;gap:3px;font-size:.65rem;color:var(--text-dim);font-variant-numeric:tabular-nums}
+.spark-axis div{flex:1;text-align:center}
+.totals{display:flex;gap:1.2rem;font-size:.85rem;color:var(--text-dim)}
+.totals b{color:var(--text);font-weight:600}
+table{width:100%;border-collapse:collapse;background:var(--surface);
+  border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:.85rem}
+thead th{background:var(--surface-2);text-align:left;font-size:.7rem;
+  text-transform:uppercase;letter-spacing:.04em;color:var(--text-dim);
+  padding:.5rem .65rem;border-bottom:1px solid var(--border)}
+tbody td{padding:.5rem .65rem;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:hover{background:var(--surface-2)}
+td.date{color:var(--text-dim);white-space:nowrap;font-variant-numeric:tabular-nums;width:6rem}
+td.src{color:var(--text-dim);white-space:nowrap;width:11rem}
+td.title a{color:var(--text);text-decoration:none}
+td.title a:hover{color:var(--accent);text-decoration:underline}
+.cat{font-size:.65rem;font-weight:600;padding:.1rem .35rem;border-radius:3px;
+  text-transform:uppercase;letter-spacing:.04em;color:#fff;display:inline-block}
+.cat-vendor{background:var(--cat-vendor)} .cat-news{background:var(--cat-news)}
+.cat-gov{background:var(--cat-gov)} .cat-vuln{background:var(--cat-vuln)}
+.cat-ioc{background:var(--cat-ioc)}
+.empty{padding:1rem;color:var(--text-dim);background:var(--surface);
+  border:1px solid var(--border);border-radius:8px;font-size:.85rem}
+.tags{display:flex;flex-wrap:wrap;gap:.3rem;background:var(--surface);
+  border:1px solid var(--border);border-radius:8px;padding:.7rem 1rem}
+.tags .tag{font-size:.72rem;padding:.15rem .5rem;background:var(--chip-bg);
+  color:var(--chip-fg);border-radius:3px;font-family:"SF Mono","Menlo",Consolas,monospace}
+.tags .tag.tool{font-family:var(--font-sans);font-size:.74rem}
+.foot{color:var(--text-dim);font-size:.72rem;margin-top:1.5rem;line-height:1.55}
+.foot a{color:var(--text-dim)}
+@media (max-width:680px){.metagrid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">APT28 / Fancy Bear <span class="accent">·</span>
+    <span class="sub">Threat Actor Report — built 2026-05-04 19:27 UTC</span>
+  </div>
+  <a class="nav-link" href="../threat-actors.html">&larr; Priority list</a>
+  <a class="nav-link" href="../cti.html">CTI Hub</a>
+  <a class="nav-link" href="../index.html">Matrix</a>
+  <button id="modeToggle" title="Toggle theme">☼</button>
+</header>
+
+<main>
+  <section class="hero">
+    <h1>APT28 / Fancy Bear</h1>
+    <div class="aliases"><span class="chip">APT28</span><span class="chip">Fancy Bear</span><span class="chip">Sofacy</span><span class="chip">Forest Blizzard</span><span class="chip">Strontium</span><span class="chip">Pawn Storm</span><span class="chip">Sednit</span></div>
+  </section>
+
+  <div class="metagrid">
+    <div class="meta">
+      <div class="lbl">Origin</div>
+      <div class="val">Russia (GRU 26165)</div>
+    </div>
+    <div class="meta">
+      <div class="lbl">Motivation</div>
+      <div class="val"><span class="motivation mot-espionage">Espionage</span></div>
+    </div>
+    <div class="meta">
+      <div class="lbl">Sector fit (HHS / NIH)</div>
+      <div class="val">2 / 3 <span class="fit-dots"><span class="fit-dot on"></span><span class="fit-dot on"></span><span class="fit-dot"></span></span></div>
+    </div>
+    <div class="meta">
+      <div class="lbl">MITRE Group</div>
+      <div class="val"><a href="https://attack.mitre.org/groups/G0007/" target="_blank" rel="noopener">G0007</a></div>
+    </div>
+    <div class="meta">
+      <div class="lbl">Mentions last 30d</div>
+      <div class="val">3</div>
+    </div>
+    <div class="meta">
+      <div class="lbl">Mentions last 90d</div>
+      <div class="val">5</div>
+    </div>
+    <div class="meta">
+      <div class="lbl">IOC indicators last 90d</div>
+      <div class="val">0</div>
+    </div>
+  </div>
+
+  <h2>Summary <span class="hint">— curated</span></h2>
+  <div class="note">Government / political; secondary healthcare via federal targeting.</div>
+
+  <h2>Mention timeline <span class="hint">— last 12 months · current month highlighted</span></h2>
+  <div class="spark-wrap">
+    <div class="spark"><div class="bar" style="height:1px" title="2025-06: 0 mentions"></div><div class="bar" style="height:1px" title="2025-07: 0 mentions"></div><div class="bar" style="height:1px" title="2025-08: 0 mentions"></div><div class="bar" style="height:1px" title="2025-09: 0 mentions"></div><div class="bar" style="height:1px" title="2025-10: 0 mentions"></div><div class="bar" style="height:1px" title="2025-11: 0 mentions"></div><div class="bar" style="height:1px" title="2025-12: 0 mentions"></div><div class="bar" style="height:1px" title="2026-01: 0 mentions"></div><div class="bar" style="height:19px" title="2026-02: 1 mention"></div><div class="bar" style="height:19px" title="2026-03: 1 mention"></div><div class="bar" style="height:56px" title="2026-04: 3 mentions"></div><div class="bar now" style="height:1px" title="2026-05: 0 mentions"></div></div><div class="spark-axis"><div>06</div><div>07</div><div>08</div><div>09</div><div>10</div><div>11</div><div>12</div><div>01</div><div>02</div><div>03</div><div>04</div><div>05</div></div>
+    <div class="totals">
+      <span>30d <b>3</b></span>
+      <span>90d <b>5</b></span>
+      <span>12m <b>5</b></span>
+    </div>
+  </div>
+
+  <h2>Recent activity <span class="hint">— feed items in last 90 days</span></h2>
+  <table><thead><tr><th>When</th><th>Source</th><th>Cat.</th><th>Title</th></tr></thead><tbody><tr><td class="date">7d ago</td><td class="src">SecurityWeek</td><td><span class="cat cat-news">news</span></td><td class="title"><a href="https://www.securityweek.com/incomplete-windows-patch-opens-door-to-zero-click-attacks/" target="_blank" rel="noopener">Incomplete Windows Patch Opens Door to Zero-Click Attacks</a></td></tr><tr><td class="date">27d ago</td><td class="src">NCSC-UK</td><td><span class="cat cat-gov">gov</span></td><td class="title"><a href="https://www.ncsc.gov.uk/news/apt28-exploit-routers-to-enable-dns-hijacking-operations" target="_blank" rel="noopener">APT28 exploit routers to enable DNS hijacking operations</a></td></tr><tr><td class="date">27d ago</td><td class="src">NCSC-UK</td><td><span class="cat cat-gov">gov</span></td><td class="title"><a href="https://www.ncsc.gov.uk/news/uk-exposes-russian-military-intelligence-hijacking-vulnerable-routers-for-cyber-attacks" target="_blank" rel="noopener">UK exposes Russian military intelligence hijacking vulnerable routers for cyber attacks</a></td></tr><tr><td class="date">1mo ago</td><td class="src">ESET WeLiveSecurity</td><td><span class="cat cat-vendor">vendor</span></td><td class="title"><a href="https://www.welivesecurity.com/en/eset-research/sednit-reloaded-back-trenches/" target="_blank" rel="noopener">Sednit reloaded: Back in the trenches</a></td></tr><tr><td class="date">2mo ago</td><td class="src">Recorded Future</td><td><span class="cat cat-vendor">vendor</span></td><td class="title"><a href="https://www.recordedfuture.com/blog/january-2026-cve-landscape" target="_blank" rel="noopener">January 2026 CVE Landscape: 23 Critical Vulnerabilities Mark 5% Increase, APT28 Exploits Microsoft Office Zero-Day</a></td></tr></tbody></table>
+
+  <h2>MITRE techniques <span class="hint">— attributed to this group in ATT&CK</span></h2>
+  <div class="tags"><a class="tag" href="https://attack.mitre.org/techniques/T1001/001/" target="_blank" rel="noopener" title="Command And Control">T1001.001 Junk Data</a><a class="tag" href="https://attack.mitre.org/techniques/T1003/" target="_blank" rel="noopener" title="Credential Access">T1003 OS Credential Dumping</a><a class="tag" href="https://attack.mitre.org/techniques/T1003/001/" target="_blank" rel="noopener" title="Credential Access">T1003.001 LSASS Memory</a><a class="tag" href="https://attack.mitre.org/techniques/T1003/003/" target="_blank" rel="noopener" title="Credential Access">T1003.003 NTDS</a><a class="tag" href="https://attack.mitre.org/techniques/T1005/" target="_blank" rel="noopener" title="Collection">T1005 Data from Local System</a><a class="tag" href="https://attack.mitre.org/techniques/T1014/" target="_blank" rel="noopener" title="Stealth">T1014 Rootkit</a><a class="tag" href="https://attack.mitre.org/techniques/T1021/002/" target="_blank" rel="noopener" title="Lateral Movement">T1021.002 SMB/Windows Admin Shares</a><a class="tag" href="https://attack.mitre.org/techniques/T1025/" target="_blank" rel="noopener" title="Collection">T1025 Data from Removable Media</a><a class="tag" href="https://attack.mitre.org/techniques/T1027/013/" target="_blank" rel="noopener" title="Stealth">T1027.013 Encrypted/Encoded File</a><a class="tag" href="https://attack.mitre.org/techniques/T1030/" target="_blank" rel="noopener" title="Exfiltration">T1030 Data Transfer Size Limits</a><a class="tag" href="https://attack.mitre.org/techniques/T1036/" target="_blank" rel="noopener" title="Stealth">T1036 Masquerading</a><a class="tag" href="https://attack.mitre.org/techniques/T1036/005/" target="_blank" rel="noopener" title="Stealth">T1036.005 Match Legitimate Resource Name or Location</a><a class="tag" href="https://attack.mitre.org/techniques/T1037/001/" target="_blank" rel="noopener" title="Persistence">T1037.001 Logon Script (Windows)</a><a class="tag" href="https://attack.mitre.org/techniques/T1039/" target="_blank" rel="noopener" title="Collection">T1039 Data from Network Shared Drive</a><a class="tag" href="https://attack.mitre.org/techniques/T1040/" target="_blank" rel="noopener" title="Credential Access">T1040 Network Sniffing</a><a class="tag" href="https://attack.mitre.org/techniques/T1048/002/" target="_blank" rel="noopener" title="Exfiltration">T1048.002 Exfiltration Over Asymmetric Encrypted Non-C2 Protocol</a><a class="tag" href="https://attack.mitre.org/techniques/T1056/001/" target="_blank" rel="noopener" title="Collection">T1056.001 Keylogging</a><a class="tag" href="https://attack.mitre.org/techniques/T1057/" target="_blank" rel="noopener" title="Discovery">T1057 Process Discovery</a><a class="tag" href="https://attack.mitre.org/techniques/T1059/001/" target="_blank" rel="noopener" title="Execution">T1059.001 PowerShell</a><a class="tag" href="https://attack.mitre.org/techniques/T1059/003/" target="_blank" rel="noopener" title="Execution">T1059.003 Windows Command Shell</a><a class="tag" href="https://attack.mitre.org/techniques/T1068/" target="_blank" rel="noopener" title="Privilege Escalation">T1068 Exploitation for Privilege Escalation</a><a class="tag" href="https://attack.mitre.org/techniques/T1070/004/" target="_blank" rel="noopener" title="Stealth">T1070.004 File Deletion</a><a class="tag" href="https://attack.mitre.org/techniques/T1070/006/" target="_blank" rel="noopener" title="Stealth">T1070.006 Timestomp</a><a class="tag" href="https://attack.mitre.org/techniques/T1071/001/" target="_blank" rel="noopener" title="Command And Control">T1071.001 Web Protocols</a><a class="tag" href="https://attack.mitre.org/techniques/T1071/003/" target="_blank" rel="noopener" title="Command And Control">T1071.003 Mail Protocols</a><a class="tag" href="https://attack.mitre.org/techniques/T1074/001/" target="_blank" rel="noopener" title="Collection">T1074.001 Local Data Staging</a><a class="tag" href="https://attack.mitre.org/techniques/T1074/002/" target="_blank" rel="noopener" title="Collection">T1074.002 Remote Data Staging</a><a class="tag" href="https://attack.mitre.org/techniques/T1078/" target="_blank" rel="noopener" title="Stealth">T1078 Valid Accounts</a><a class="tag" href="https://attack.mitre.org/techniques/T1078/004/" target="_blank" rel="noopener" title="Stealth">T1078.004 Cloud Accounts</a><a class="tag" href="https://attack.mitre.org/techniques/T1083/" target="_blank" rel="noopener" title="Discovery">T1083 File and Directory Discovery</a><a class="tag" href="https://attack.mitre.org/techniques/T1090/002/" target="_blank" rel="noopener" title="Command And Control">T1090.002 External Proxy</a><a class="tag" href="https://attack.mitre.org/techniques/T1090/003/" target="_blank" rel="noopener" title="Command And Control">T1090.003 Multi-hop Proxy</a><a class="tag" href="https://attack.mitre.org/techniques/T1091/" target="_blank" rel="noopener" title="Lateral Movement">T1091 Replication Through Removable Media</a><a class="tag" href="https://attack.mitre.org/techniques/T1092/" target="_blank" rel="noopener" title="Command And Control">T1092 Communication Through Removable Media</a><a class="tag" href="https://attack.mitre.org/techniques/T1098/002/" target="_blank" rel="noopener" title="Persistence">T1098.002 Additional Email Delegate Permissions</a><a class="tag" href="https://attack.mitre.org/techniques/T1102/002/" target="_blank" rel="noopener" title="Command And Control">T1102.002 Bidirectional Communication</a><a class="tag" href="https://attack.mitre.org/techniques/T1105/" target="_blank" rel="noopener" title="Command And Control">T1105 Ingress Tool Transfer</a><a class="tag" href="https://attack.mitre.org/techniques/T1110/" target="_blank" rel="noopener" title="Credential Access">T1110 Brute Force</a><a class="tag" href="https://attack.mitre.org/techniques/T1110/001/" target="_blank" rel="noopener" title="Credential Access">T1110.001 Password Guessing</a><a class="tag" href="https://attack.mitre.org/techniques/T1110/003/" target="_blank" rel="noopener" title="Credential Access">T1110.003 Password Spraying</a><a class="tag" href="https://attack.mitre.org/techniques/T1113/" target="_blank" rel="noopener" title="Collection">T1113 Screen Capture</a><a class="tag" href="https://attack.mitre.org/techniques/T1114/002/" target="_blank" rel="noopener" title="Collection">T1114.002 Remote Email Collection</a><a class="tag" href="https://attack.mitre.org/techniques/T1119/" target="_blank" rel="noopener" title="Collection">T1119 Automated Collection</a><a class="tag" href="https://attack.mitre.org/techniques/T1120/" target="_blank" rel="noopener" title="Discovery">T1120 Peripheral Device Discovery</a><a class="tag" href="https://attack.mitre.org/techniques/T1133/" target="_blank" rel="noopener" title="Persistence">T1133 External Remote Services</a><a class="tag" href="https://attack.mitre.org/techniques/T1134/001/" target="_blank" rel="noopener" title="Stealth">T1134.001 Token Impersonation/Theft</a><a class="tag" href="https://attack.mitre.org/techniques/T1137/002/" target="_blank" rel="noopener" title="Persistence">T1137.002 Office Test</a><a class="tag" href="https://attack.mitre.org/techniques/T1140/" target="_blank" rel="noopener" title="Stealth">T1140 Deobfuscate/Decode Files or Information</a><a class="tag" href="https://attack.mitre.org/techniques/T1189/" target="_blank" rel="noopener" title="Initial Access">T1189 Drive-by Compromise</a><a class="tag" href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener" title="Initial Access">T1190 Exploit Public-Facing Application</a><a class="tag" href="https://attack.mitre.org/techniques/T1199/" target="_blank" rel="noopener" title="Initial Access">T1199 Trusted Relationship</a><a class="tag" href="https://attack.mitre.org/techniques/T1203/" target="_blank" rel="noopener" title="Execution">T1203 Exploitation for Client Execution</a><a class="tag" href="https://attack.mitre.org/techniques/T1204/001/" target="_blank" rel="noopener" title="Execution">T1204.001 Malicious Link</a><a class="tag" href="https://attack.mitre.org/techniques/T1204/002/" target="_blank" rel="noopener" title="Execution">T1204.002 Malicious File</a><a class="tag" href="https://attack.mitre.org/techniques/T1210/" target="_blank" rel="noopener" title="Lateral Movement">T1210 Exploitation of Remote Services</a><a class="tag" href="https://attack.mitre.org/techniques/T1211/" target="_blank" rel="noopener" title="Stealth">T1211 Exploitation for Stealth</a><a class="tag" href="https://attack.mitre.org/techniques/T1213/" target="_blank" rel="noopener" title="Collection">T1213 Data from Information Repositories</a><a class="tag" href="https://attack.mitre.org/techniques/T1213/002/" target="_blank" rel="noopener" title="Collection">T1213.002 Sharepoint</a><a class="tag" href="https://attack.mitre.org/techniques/T1218/011/" target="_blank" rel="noopener" title="Stealth">T1218.011 Rundll32</a><a class="tag" href="https://attack.mitre.org/techniques/T1221/" target="_blank" rel="noopener" title="Stealth">T1221 Template Injection</a><a class="tag" href="https://attack.mitre.org/techniques/T1498/" target="_blank" rel="noopener" title="Impact">T1498 Network Denial of Service</a><a class="tag" href="https://attack.mitre.org/techniques/T1505/003/" target="_blank" rel="noopener" title="Persistence">T1505.003 Web Shell</a><a class="tag" href="https://attack.mitre.org/techniques/T1528/" target="_blank" rel="noopener" title="Credential Access">T1528 Steal Application Access Token</a><a class="tag" href="https://attack.mitre.org/techniques/T1542/003/" target="_blank" rel="noopener" title="Stealth">T1542.003 Bootkit</a><a class="tag" href="https://attack.mitre.org/techniques/T1546/015/" target="_blank" rel="noopener" title="Privilege Escalation">T1546.015 Component Object Model Hijacking</a><a class="tag" href="https://attack.mitre.org/techniques/T1547/001/" target="_blank" rel="noopener" title="Persistence">T1547.001 Registry Run Keys / Startup Folder</a><a class="tag" href="https://attack.mitre.org/techniques/T1550/001/" target="_blank" rel="noopener" title="Lateral Movement">T1550.001 Application Access Token</a><a class="tag" href="https://attack.mitre.org/techniques/T1550/002/" target="_blank" rel="noopener" title="Lateral Movement">T1550.002 Pass the Hash</a><a class="tag" href="https://attack.mitre.org/techniques/T1557/004/" target="_blank" rel="noopener" title="Credential Access">T1557.004 Evil Twin</a><a class="tag" href="https://attack.mitre.org/techniques/T1559/002/" target="_blank" rel="noopener" title="Execution">T1559.002 Dynamic Data Exchange</a><a class="tag" href="https://attack.mitre.org/techniques/T1560/" target="_blank" rel="noopener" title="Collection">T1560 Archive Collected Data</a><a class="tag" href="https://attack.mitre.org/techniques/T1560/001/" target="_blank" rel="noopener" title="Collection">T1560.001 Archive via Utility</a><a class="tag" href="https://attack.mitre.org/techniques/T1564/001/" target="_blank" rel="noopener" title="Stealth">T1564.001 Hidden Files and Directories</a><a class="tag" href="https://attack.mitre.org/techniques/T1564/003/" target="_blank" rel="noopener" title="Stealth">T1564.003 Hidden Window</a><a class="tag" href="https://attack.mitre.org/techniques/T1566/001/" target="_blank" rel="noopener" title="Initial Access">T1566.001 Spearphishing Attachment</a><a class="tag" href="https://attack.mitre.org/techniques/T1567/" target="_blank" rel="noopener" title="Exfiltration">T1567 Exfiltration Over Web Service</a><a class="tag" href="https://attack.mitre.org/techniques/T1573/001/" target="_blank" rel="noopener" title="Command And Control">T1573.001 Symmetric Cryptography</a><a class="tag" href="https://attack.mitre.org/techniques/T1583/001/" target="_blank" rel="noopener" title="Resource Development">T1583.001 Domains</a><a class="tag" href="https://attack.mitre.org/techniques/T1583/003/" target="_blank" rel="noopener" title="Resource Development">T1583.003 Virtual Private Server</a><a class="tag" href="https://attack.mitre.org/techniques/T1583/006/" target="_blank" rel="noopener" title="Resource Development">T1583.006 Web Services</a><a class="tag" href="https://attack.mitre.org/techniques/T1584/008/" target="_blank" rel="noopener" title="Resource Development">T1584.008 Network Devices</a><a class="tag" href="https://attack.mitre.org/techniques/T1586/002/" target="_blank" rel="noopener" title="Resource Development">T1586.002 Email Accounts</a><a class="tag" href="https://attack.mitre.org/techniques/T1588/002/" target="_blank" rel="noopener" title="Resource Development">T1588.002 Tool</a><a class="tag" href="https://attack.mitre.org/techniques/T1588/007/" target="_blank" rel="noopener" title="Resource Development">T1588.007 Artificial Intelligence</a><a class="tag" href="https://attack.mitre.org/techniques/T1589/001/" target="_blank" rel="noopener" title="Reconnaissance">T1589.001 Credentials</a><a class="tag" href="https://attack.mitre.org/techniques/T1591/" target="_blank" rel="noopener" title="Reconnaissance">T1591 Gather Victim Org Information</a><a class="tag" href="https://attack.mitre.org/techniques/T1595/002/" target="_blank" rel="noopener" title="Reconnaissance">T1595.002 Vulnerability Scanning</a><a class="tag" href="https://attack.mitre.org/techniques/T1596/" target="_blank" rel="noopener" title="Reconnaissance">T1596 Search Open Technical Databases</a><a class="tag" href="https://attack.mitre.org/techniques/T1598/" target="_blank" rel="noopener" title="Reconnaissance">T1598 Phishing for Information</a><a class="tag" href="https://attack.mitre.org/techniques/T1598/003/" target="_blank" rel="noopener" title="Reconnaissance">T1598.003 Spearphishing Link</a><a class="tag" href="https://attack.mitre.org/techniques/T1669/" target="_blank" rel="noopener" title="Initial Access">T1669 Wi-Fi Networks</a><a class="tag" href="https://attack.mitre.org/techniques/T1684/001/" target="_blank" rel="noopener" title="Stealth">T1684.001 Impersonation</a><a class="tag" href="https://attack.mitre.org/techniques/T1685/005/" target="_blank" rel="noopener" title="Defense Impairment">T1685.005 Clear Windows Event Logs</a></div>
+
+  <h2>Software <span class="hint">— malware &amp; tools attributed to this group</span></h2>
+  <div class="tags"><span class="tag tool" title="malware">ADVSTORESHELL</span><span class="tag tool" title="malware">Cannon</span><span class="tag tool" title="tool">certutil</span><span class="tag tool" title="malware">CHOPSTICK</span><span class="tag tool" title="tool">cipher.exe</span><span class="tag tool" title="malware">CORESHELL</span><span class="tag tool" title="malware">DealersChoice</span><span class="tag tool" title="malware">Downdelph</span><span class="tag tool" title="malware">Drovorub</span><span class="tag tool" title="tool">Forfiles</span><span class="tag tool" title="malware">Fysbis</span><span class="tag tool" title="malware">HIDEDRV</span><span class="tag tool" title="malware">JHUHUGIT</span><span class="tag tool" title="tool">Koadic</span><span class="tag tool" title="malware">Komplex</span><span class="tag tool" title="malware">LAMEHUG</span><span class="tag tool" title="malware">LoJax</span><span class="tag tool" title="tool">Mimikatz</span><span class="tag tool" title="tool">Net</span><span class="tag tool" title="malware">OLDBAIT</span><span class="tag tool" title="malware">reGeorg</span><span class="tag tool" title="tool">Responder</span><span class="tag tool" title="tool">Tor</span><span class="tag tool" title="malware">USBStealer</span><span class="tag tool" title="tool">Wevtutil</span><span class="tag tool" title="tool">Winexe</span><span class="tag tool" title="malware">XAgentOSX</span><span class="tag tool" title="malware">XTunnel</span><span class="tag tool" title="malware">Zebrocy</span></div>
+
+  <div class="foot">
+    Auto-generated from <code>tools/threat_actors_hhs.json</code>, the rolling CTI Hub state,
+    and MITRE ATT&amp;CK Enterprise STIX. Recent-activity refreshes daily;
+    summary metadata + sector fit are curated and update only when
+    <a href="https://github.com/Nvafiades1/threat-hunt-library/blob/main/tools/threat_actors_hhs.json" target="_blank" rel="noopener">the JSON</a>
+    changes. Built 2026-05-04 19:27 UTC.
+  </div>
+</main>
+
+<script>
+(() => {
+  const body = document.body, toggle = document.getElementById('modeToggle');
+  function applyMode(light) {
+    body.classList.toggle('light', light);
+    toggle.textContent = light ? '☽' : '☼';
+  }
+  applyMode(localStorage.getItem('prefersLight') === 'true');
+  toggle.addEventListener('click', () => {
+    const toLight = !body.classList.contains('light');
+    applyMode(toLight);
+    localStorage.setItem('prefersLight', toLight);
+  });
+})();
+</script>
+</body></html>

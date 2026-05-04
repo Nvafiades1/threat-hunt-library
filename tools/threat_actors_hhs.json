@@ -5,8 +5,8 @@
     "origin": "Russia (criminal)",
     "motivation": "ransomware",
     "sector_fit": 3,
-    "mitre_id": "G1015",
-    "notes": "Most-prolific RaaS; repeated US healthcare victims through 2024 despite Op Cronos disruption."
+    "mitre_id": "",
+    "notes": "Most-prolific RaaS; repeated US healthcare victims through 2024 despite Op Cronos disruption. Not yet catalogued as a MITRE Group."
   },
   {
     "name": "ALPHV / BlackCat",
@@ -14,8 +14,8 @@
     "origin": "Russia (criminal)",
     "motivation": "ransomware",
     "sector_fit": 3,
-    "mitre_id": "G1010",
-    "notes": "Hit Change Healthcare / UnitedHealth (Feb 2024) — largest US healthcare data breach to date."
+    "mitre_id": "",
+    "notes": "Hit Change Healthcare / UnitedHealth (Feb 2024) — largest US healthcare data breach to date. Not yet catalogued as a MITRE Group."
   },
   {
     "name": "Cl0p",
@@ -37,11 +37,11 @@
   },
   {
     "name": "Akira",
-    "aliases": ["Akira", "Akira ransomware"],
+    "aliases": ["Akira", "Akira ransomware", "GOLD SAHARA", "PUNK SPIDER", "Howling Scorpius"],
     "origin": "Russia (criminal)",
     "motivation": "ransomware",
     "sector_fit": 2,
-    "mitre_id": "",
+    "mitre_id": "G1024",
     "notes": "Frequent mid-size healthcare and education victims; double-extortion."
   },
   {
@@ -68,16 +68,16 @@
     "origin": "Russia (criminal)",
     "motivation": "ransomware",
     "sector_fit": 2,
-    "mitre_id": "",
+    "mitre_id": "G1040",
     "notes": "CISA advisory; opportunistic healthcare hits."
   },
   {
     "name": "Medusa",
-    "aliases": ["Medusa ransomware", "MedusaLocker", "Medusa Locker"],
+    "aliases": ["Medusa ransomware", "MedusaLocker", "Medusa Locker", "Medusa Group"],
     "origin": "criminal (uncategorised)",
     "motivation": "ransomware",
     "sector_fit": 2,
-    "mitre_id": "",
+    "mitre_id": "G1051",
     "notes": "Distinct from Medusa botnet/Mirai; CISA #StopRansomware advisory March 2025."
   },
   {
@@ -118,11 +118,11 @@
   },
   {
     "name": "INC Ransom",
-    "aliases": ["INC Ransom", "INC ransomware", "Lynx ransomware"],
+    "aliases": ["INC Ransom", "INC ransomware", "Lynx ransomware", "GOLD IONIC"],
     "origin": "criminal (uncategorised)",
     "motivation": "ransomware",
     "sector_fit": 2,
-    "mitre_id": "",
+    "mitre_id": "G1032",
     "notes": "Cropped up 2023; healthcare and government victims; possible Lynx rebrand."
   },
   {
@@ -235,11 +235,11 @@
   },
   {
     "name": "Cobalt Mirage / Lemon Sandstorm",
-    "aliases": ["Cobalt Mirage", "Lemon Sandstorm", "TunnelVision", "DEV-0270", "Pioneer Kitten", "Fox Kitten", "Parisite"],
+    "aliases": ["Cobalt Mirage", "Lemon Sandstorm", "TunnelVision", "DEV-0270", "Pioneer Kitten", "Fox Kitten", "Parisite", "UNC757", "RUBIDIUM"],
     "origin": "Iran",
     "motivation": "destructive",
     "sector_fit": 2,
-    "mitre_id": "",
+    "mitre_id": "G0117",
     "notes": "Hit US local government and academic targets; ransomware-as-disruption (BitLocker abuse)."
   },
   {
@@ -298,12 +298,12 @@
   },
   {
     "name": "Handala",
-    "aliases": ["Handala", "Handala Hack"],
+    "aliases": ["Handala", "Handala Hack", "VOID MANTICORE", "COBALT MYSTIQUE", "Homeland Justice", "Karma"],
     "origin": "hacktivist (Iran-aligned)",
     "motivation": "hacktivism",
     "sector_fit": 2,
-    "mitre_id": "",
-    "notes": "Wiper attack on Stryker (medtech) reported 2026; Israel / US healthcare targeting pattern."
+    "mitre_id": "G1055",
+    "notes": "Wiper attack on Stryker (medtech) reported 2026; Israel / US healthcare targeting pattern. Tracked by MITRE under VOID MANTICORE supercluster."
   },
   {
     "name": "NoName057(16)",
