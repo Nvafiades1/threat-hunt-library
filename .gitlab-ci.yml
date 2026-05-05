@@ -1,26 +1,21 @@
-# Threat Hunt Library — GitLab CI POC
+# Threat Hunt Library — GitLab CI (standalone mode)
 #
-# Architecture (POC mode):
-#   GitHub remains the source of truth — all auto-commit workflows continue
-#   to run there (every 15 min CTI, daily actor reports, monthly priority).
-#   This GitLab project is a pull-mirror of the GitHub repo (configured in
-#   Settings → Repository → Mirroring repositories), so any commit on GH
-#   flows here within ~1 hour.
+# This file makes GitLab the sole CI/CD platform for the project. No
+# dependence on GitHub Actions; the build scripts run here, commit their
+# state files back to the repo here, and Pages publishes from here.
 #
-#   When the mirror lands a commit, this pipeline runs `pages` which
-#   re-renders the static site from the mirrored sources and publishes to
-#   GitLab Pages. No commits are pushed back from GitLab → no auth token
-#   needed, no risk of bidirectional-sync conflicts.
+# Setup checklist (one-time):
+#   1. Project Access Token with `write_repository` scope, stored as a
+#      masked + protected CI/CD variable named  CI_PUSH_TOKEN.
+#   2. main branch must be a "Protected branch" (it is by default).
+#   3. Three Pipeline Schedules created (UI: Build → Pipeline schedules):
+#        - "CTI feed rebuild"        — cron `*/15 * * * *`  vars: RUN_JOB=cti
+#        - "Daily actor reports"     — cron `0 6 * * *`     vars: RUN_JOB=actor_reports
+#        - "Monthly priority + reports" — cron `0 9 1 * *`  vars: RUN_JOB=monthly
+#      `tools/setup_pipeline_schedules.sh` will create all three via the
+#      GitLab API if you'd rather not click through the UI three times.
 #
-# To graduate from POC → full migration:
-#   1. Disable the GitHub Actions workflows you no longer want.
-#   2. Add a Project Access Token with `write_repository` scope, store as
-#      a masked CI/CD variable named CI_PUSH_TOKEN.
-#   3. Uncomment the build_cti, build_threat_actors, build_actor_reports
-#      jobs below — they include the auto-commit logic, gated on
-#      Pipeline Schedules created via the GitLab UI.
-#
-# See MIGRATION.md for the full setup walkthrough.
+# See MIGRATION.md for the full walkthrough.
 
 stages:
   - build
@@ -33,32 +28,134 @@ default:
     - pip install --quiet -r requirements.txt
 
 variables:
-  # These are read by tools/repo_urls.py to switch URL generation away from
-  # the GitHub-hosted defaults. Override in CI/CD settings if your GitLab
-  # path is different.
+  # Drive tools/repo_urls.py so the rendered pages link at the GitLab URLs
+  # rather than the GitHub defaults. Override these in CI/CD Variables if
+  # your project path differs.
   REPO_HOST:   "gitlab.com"
   REPO_OWNER:  "nvafiades11-group"
   REPO_NAME:   "threat-hunt-library"
   REPO_BRANCH: "main"
+  GIT_DEPTH:   "0"   # full clone needed for rebase-on-conflict in auto-commit
 
 # ──────────────────────────────────────────────────────────────────────────
-# pages: the only job that runs in POC mode.
-#
-# Re-renders matrix / metrics / threat-actor pages (fast, deterministic —
-# they read pre-computed state files committed by the GH side). Skips
-# build_cti.py because it would refetch every external RSS/JSON feed
-# (slow + flaky in CI); the docs/cti.html mirrored from GH is current.
+# Reusable: configure git + the authenticated push remote.
+# Used by every job that commits back to the repo.
+# ──────────────────────────────────────────────────────────────────────────
+.auto_commit_setup: &auto_commit_setup
+  - git config user.name  "ci-bot"
+  - git config user.email "ci-bot@noreply.${CI_SERVER_HOST}"
+  - if [ -z "$CI_PUSH_TOKEN" ]; then
+      echo "ERROR: CI_PUSH_TOKEN is not set — see MIGRATION.md step 2." >&2;
+      exit 1;
+    fi
+  - git remote set-url origin "https://oauth2:${CI_PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+
+# ──────────────────────────────────────────────────────────────────────────
+# build_cti — every 15 min via Pipeline Schedule with RUN_JOB=cti
+# Also auto-runs on push when the build script changes.
+# ──────────────────────────────────────────────────────────────────────────
+build_cti:
+  stage: build
+  script:
+    - python tools/build_cti.py
+    - *auto_commit_setup
+    - git add docs/cti.html tools/cti_state.json
+    - if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+    - git commit -m "Auto-build CTI hub [skip ci]"
+    - for i in 1 2 3 4 5; do
+        git pull --rebase origin "$CI_DEFAULT_BRANCH" && git push origin HEAD:"$CI_DEFAULT_BRANCH" && exit 0;
+        sleep 3;
+      done
+    - echo "Push failed after retries" >&2; exit 1
+  rules:
+    - if: '$RUN_JOB == "cti"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes: ["tools/build_cti.py", ".gitlab-ci.yml"]
+
+# ──────────────────────────────────────────────────────────────────────────
+# build_actor_reports_daily — daily at 06:00 UTC via Pipeline Schedule
+# with RUN_JOB=actor_reports. Refreshes the "Recent activity" section of
+# every existing per-actor report.
+# ──────────────────────────────────────────────────────────────────────────
+build_actor_reports_daily:
+  stage: build
+  script:
+    - python tools/build_actor_reports.py
+    - *auto_commit_setup
+    - git add docs/actors/
+    - if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+    - git commit -m "Auto-build actor reports [skip ci]"
+    - for i in 1 2 3 4 5; do
+        git pull --rebase origin "$CI_DEFAULT_BRANCH" && git push origin HEAD:"$CI_DEFAULT_BRANCH" && exit 0;
+        sleep 3;
+      done
+    - echo "Push failed after retries" >&2; exit 1
+  rules:
+    - if: '$RUN_JOB == "actor_reports"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes: ["tools/build_actor_reports.py"]
+
+# ──────────────────────────────────────────────────────────────────────────
+# build_monthly — 1st of month, 09:00 UTC via Pipeline Schedule with
+# RUN_JOB=monthly. Recomputes the priority list, updates top10_history,
+# then chains the actor-report build so any new top-10 entrants get a
+# report on first appearance.
+# ──────────────────────────────────────────────────────────────────────────
+build_monthly:
+  stage: build
+  script:
+    - python tools/build_threat_actors.py
+    - python tools/build_actor_reports.py
+    - *auto_commit_setup
+    - git add docs/threat-actors.html docs/actors/ tools/threat_actors_state.json
+    - if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+    - git commit -m "Auto-build threat actor priority + reports [skip ci]"
+    - for i in 1 2 3 4 5; do
+        git pull --rebase origin "$CI_DEFAULT_BRANCH" && git push origin HEAD:"$CI_DEFAULT_BRANCH" && exit 0;
+        sleep 3;
+      done
+    - echo "Push failed after retries" >&2; exit 1
+  rules:
+    - if: '$RUN_JOB == "monthly"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes: ["tools/build_threat_actors.py", "tools/threat_actors_hhs.json"]
+
+# ──────────────────────────────────────────────────────────────────────────
+# build_matrix_and_metrics — runs on push when the matrix or metrics
+# script (or the MITRE mapping) changes. No schedule needed; these pages
+# are deterministic given the input data.
+# ──────────────────────────────────────────────────────────────────────────
+build_matrix_and_metrics:
+  stage: build
+  script:
+    - python tools/build_matrix.py
+    - python tools/build_metrics.py
+    - *auto_commit_setup
+    - git add docs/index.html docs/metrics.html
+    - if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+    - git commit -m "Auto-build matrix & metrics [skip ci]"
+    - for i in 1 2 3 4 5; do
+        git pull --rebase origin "$CI_DEFAULT_BRANCH" && git push origin HEAD:"$CI_DEFAULT_BRANCH" && exit 0;
+        sleep 3;
+      done
+    - echo "Push failed after retries" >&2; exit 1
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes:
+        - tools/build_matrix.py
+        - tools/build_metrics.py
+        - mitre_ttp_mapping.json
+
+# ──────────────────────────────────────────────────────────────────────────
+# pages — publishes docs/ to GitLab Pages on every commit to main.
+# Always copies the current docs/ snapshot from the repo.
 # ──────────────────────────────────────────────────────────────────────────
 pages:
   stage: deploy
   script:
-    - python tools/build_matrix.py
-    - python tools/build_metrics.py
-    - python tools/build_threat_actors.py
-    - python tools/build_actor_reports.py
     - mkdir -p public
     - cp -r docs/. public/
-    - echo "Published $(find public -type f | wc -l) files to GitLab Pages"
+    - echo "Published $(find public -type f | wc -l) files."
   artifacts:
     paths:
       - public
@@ -67,8 +164,8 @@ pages:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
 
 # ──────────────────────────────────────────────────────────────────────────
-# Optional: a fast validation job for merge requests (won't deploy, but
-# confirms the build scripts run cleanly against the proposed change).
+# validate_build — runs on merge requests. Does not deploy or commit;
+# just confirms the build scripts run cleanly against the proposed change.
 # ──────────────────────────────────────────────────────────────────────────
 validate_build:
   stage: build
@@ -78,58 +175,3 @@ validate_build:
     - python tools/build_threat_actors.py
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-
-# ══════════════════════════════════════════════════════════════════════════
-# The rest of this file is commented out — uncomment and configure when
-# graduating from POC mode to full migration. Each job below mirrors one
-# of the GH Actions workflows.
-# ══════════════════════════════════════════════════════════════════════════
-
-# .auto_commit: &auto_commit
-#   - git config user.name  "ci-bot"
-#   - git config user.email "ci-bot@noreply.${CI_SERVER_HOST}"
-#   - git remote set-url origin "https://oauth2:${CI_PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
-#
-# build_cti:
-#   stage: build
-#   script:
-#     - python tools/build_cti.py
-#     - !reference [.auto_commit]
-#     - git add docs/cti.html tools/cti_state.json
-#     - git diff --cached --quiet && echo "No changes" && exit 0 || true
-#     - git commit -m "Auto-build CTI [skip ci]"
-#     - for i in 1 2 3 4 5; do git pull --rebase origin "$CI_DEFAULT_BRANCH" && git push origin HEAD:"$CI_DEFAULT_BRANCH" && exit 0; sleep 3; done
-#     - exit 1
-#   rules:
-#     - if: '$RUN_JOB == "cti" && $CI_PIPELINE_SOURCE == "schedule"'
-#     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
-#       changes: ["tools/build_cti.py"]
-#
-# build_threat_actors:
-#   stage: build
-#   script:
-#     - python tools/build_threat_actors.py
-#     - python tools/build_actor_reports.py
-#     - !reference [.auto_commit]
-#     - git add docs/threat-actors.html docs/actors/ tools/threat_actors_state.json
-#     - git diff --cached --quiet && echo "No changes" && exit 0 || true
-#     - git commit -m "Auto-build threat actor priority + reports [skip ci]"
-#     - for i in 1 2 3 4 5; do git pull --rebase origin "$CI_DEFAULT_BRANCH" && git push origin HEAD:"$CI_DEFAULT_BRANCH" && exit 0; sleep 3; done
-#     - exit 1
-#   rules:
-#     - if: '$RUN_JOB == "threat_actors" && $CI_PIPELINE_SOURCE == "schedule"'
-#     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
-#       changes: ["tools/build_threat_actors.py", "tools/threat_actors_hhs.json"]
-#
-# build_actor_reports_daily:
-#   stage: build
-#   script:
-#     - python tools/build_actor_reports.py
-#     - !reference [.auto_commit]
-#     - git add docs/actors/
-#     - git diff --cached --quiet && echo "No changes" && exit 0 || true
-#     - git commit -m "Auto-build actor reports [skip ci]"
-#     - for i in 1 2 3 4 5; do git pull --rebase origin "$CI_DEFAULT_BRANCH" && git push origin HEAD:"$CI_DEFAULT_BRANCH" && exit 0; sleep 3; done
-#     - exit 1
-#   rules:
-#     - if: '$RUN_JOB == "actor_reports" && $CI_PIPELINE_SOURCE == "schedule"'
