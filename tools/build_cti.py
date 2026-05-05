@@ -37,10 +37,15 @@ OUT_PATH = ROOT / "docs" / "cti.html"
 ROLLING_DAYS = 90
 HTTP_TIMEOUT = 25
 MAX_WORKERS = 10
+
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from repo_urls import REPO_HOME_URL, REPO_HOST_LABEL
+
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 "
-    "threat-hunt-library-cti-bot/1.0 (+https://github.com/Nvafiades1/threat-hunt-library)"
+    f"threat-hunt-library-cti-bot/1.0 (+{REPO_HOME_URL})"
 )
 
 # (display name, category, fetcher key, url)
@@ -441,13 +446,13 @@ def merge(new_items: list[dict], state: dict, build_time: datetime) -> tuple[lis
 
 # ── HTML rendering ───────────────────────────────────────────────────────────
 
-NAV_HTML = """\
+NAV_HTML = f"""\
 <nav class="thl-nav">
   <a href="index.html">Matrix</a>
   <a href="metrics.html">Metrics</a>
   <a href="cti.html" class="active">CTI Hub</a>
   <a href="threat-actors.html">Actors</a>
-  <a href="https://github.com/Nvafiades1/threat-hunt-library" target="_blank" rel="noopener">GitHub ↗</a>
+  <a href="{REPO_HOME_URL}" target="_blank" rel="noopener">{REPO_HOST_LABEL} ↗</a>
 </nav>"""
 
 def render_html(items: list[dict], statuses: list[dict], new_ids: set[str], build_time: datetime) -> str:

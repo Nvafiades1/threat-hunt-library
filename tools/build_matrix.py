@@ -18,9 +18,11 @@ import html, json, pathlib, re, sys
 from collections import defaultdict
 
 # ── repo specifics ───────────────────────────────────────────────────────────
-OWNER, REPO, BRANCH, TECH_PATH = (
-    "Nvafiades1", "threat-hunt-library", "main", "techniques",
-)
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from repo_urls import REPO_TREE_URL, REPO_OWNER as OWNER, REPO_NAME as REPO, REPO_BRANCH as BRANCH
+
+TECH_PATH = "techniques"
 
 TACTICS = [
     "Reconnaissance", "Resource Development", "Initial Access", "Execution",
@@ -149,7 +151,7 @@ def render_column(tact, idx, extra_class=""):
         subs   = info["subs"]
         p_id, p_name, p_filled = p_info
         p_cls  = "filled" if p_filled else ""
-        p_url  = f"https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_PATH}/{p_id}"
+        p_url  = f"{REPO_TREE_URL}/{TECH_PATH}/{p_id}"
         p_tip  = html.escape(read_snippet(TECH_DIR / p_id))
         p_title= f' title="{p_tip}"' if p_tip else ""
         name_html = f'<span class="t-name">{esc(p_name)}</span>' if p_name else ''
@@ -158,7 +160,7 @@ def render_column(tact, idx, extra_class=""):
             sub_html = ""
             for s_id, s_name, s_filled in sorted(subs, key=lambda x: x[0]):
                 s_cls  = "filled" if s_filled else ""
-                s_url  = f"https://github.com/{OWNER}/{REPO}/tree/{BRANCH}/{TECH_PATH}/{s_id}"
+                s_url  = f"{REPO_TREE_URL}/{TECH_PATH}/{s_id}"
                 s_tip  = html.escape(read_snippet(TECH_DIR / s_id))
                 s_title= f' title="{s_tip}"' if s_tip else ""
                 s_name_html = f'<span class="t-name">{esc(s_name)}</span>' if s_name else ''
