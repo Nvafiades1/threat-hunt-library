@@ -26,9 +26,11 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 
 # ── repo specifics ───────────────────────────────────────────────────────────
-OWNER, REPO, BRANCH, TECH_PATH = (
-    "Nvafiades1", "threat-hunt-library", "main", "techniques",
-)
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from repo_urls import REPO_HOME_URL, REPO_OWNER as OWNER, REPO_NAME as REPO, REPO_BRANCH as BRANCH
+
+TECH_PATH = "techniques"
 
 TACTICS = [
     "Reconnaissance", "Resource Development", "Initial Access", "Execution",
@@ -1536,7 +1538,7 @@ function generateReportMarkdown() {{
 
   lines.push('---');
   lines.push('');
-  lines.push(`_Source: Threat Hunt Library \u00B7 https://github.com/{OWNER}/{REPO}_`);
+  lines.push(`_Source: Threat Hunt Library \u00B7 {REPO_HOME_URL}_`);
   downloadFile(lines.join('\\n'), `threat-hunt-report-${{today}}.md`, 'text/markdown');
 }}
 
@@ -1584,7 +1586,7 @@ function generateReportWord() {{
     }}
   }}
 
-  body += `<p class="footer"><i>Source: Threat Hunt Library &middot; https://github.com/{OWNER}/{REPO}</i></p>`;
+  body += `<p class="footer"><i>Source: Threat Hunt Library &middot; {REPO_HOME_URL}</i></p>`;
 
   const html =
 `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">

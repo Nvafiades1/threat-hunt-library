@@ -37,7 +37,9 @@ ACTOR_STATE   = ROOT / "tools" / "threat_actors_state.json"
 PROFILES_DIR  = ROOT / "threat-actor-profiles"
 OUTPUT        = ROOT / "docs" / "threat-actors.html"
 
-OWNER, REPO, BRANCH = "Nvafiades1", "threat-hunt-library", "main"
+import os, sys as _sys
+_sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from repo_urls import REPO_BLOB_URL, REPO_OWNER as OWNER, REPO_NAME as REPO, REPO_BRANCH as BRANCH
 
 HEATMAP_MONTHS = 12          # columns
 HEATMAP_TOP_N  = 30          # rows in the heatmap (full table is unbounded)
@@ -241,7 +243,7 @@ def actor_link(r: dict) -> str:
         return f"./actors/{slug}.html"
     for stem, fname in profile_index.items():
         if stem.startswith(slug.split("-")[0][:6]) or slug in stem or stem in slug:
-            return f"https://github.com/{OWNER}/{REPO}/blob/{BRANCH}/threat-actor-profiles/{fname}"
+            return f"{REPO_BLOB_URL}/threat-actor-profiles/{fname}"
     if r["mitre_id"]:
         return f"https://attack.mitre.org/groups/{r['mitre_id']}/"
     return f"https://attack.mitre.org/groups/"
@@ -463,7 +465,7 @@ td a:hover{{color:var(--accent);text-decoration:underline}}
     where recency = (last 30d × 3) + (last 90d × 1), severity is motivation-based
     (ransomware/destructive = 3.0, IAB = 2.5, financial/espionage = 2.0, hacktivism = 1.0),
     and sector_fit is a 0–3 curated fit-to-HHS/NIH score. Edit
-    <a href="https://github.com/{OWNER}/{REPO}/blob/{BRANCH}/tools/threat_actors_hhs.json" target="_blank" rel="noopener">the actor list</a>
+    <a href="{REPO_BLOB_URL}/tools/threat_actors_hhs.json" target="_blank" rel="noopener">the actor list</a>
     to tune.
   </div>
 </main>

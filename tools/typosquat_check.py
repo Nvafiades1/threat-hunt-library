@@ -29,7 +29,10 @@ SEEDS = [
 NRD_URL = "https://raw.githubusercontent.com/cenk/nrd/main/nrd-last-10-days.txt"
 CRT_URL = "https://crt.sh/?q={q}&output=json"
 STATE_PATH = Path("tools/typosquat_state.json")
-USER_AGENT = "threat-hunt-library-bot/1.0 (+https://github.com/Nvafiades1/threat-hunt-library)"
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from repo_urls import REPO_HOME_URL
+USER_AGENT = f"threat-hunt-library-bot/1.0 (+{REPO_HOME_URL})"
 
 DNSTWIST_THREADS = 30
 DNSTWIST_TIMEOUT = 600

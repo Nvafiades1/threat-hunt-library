@@ -42,7 +42,9 @@ STIX_URL      = "https://raw.githubusercontent.com/mitre-attack/attack-stix-data
 STIX_CACHE    = ROOT / "tools" / ".stix-cache.json"
 CACHE_MAX_AGE = 86400  # 24 h
 
-OWNER, REPO, BRANCH = "Nvafiades1", "threat-hunt-library", "main"
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from repo_urls import REPO_BLOB_URL, REPO_OWNER as OWNER, REPO_NAME as REPO, REPO_BRANCH as BRANCH
 
 HEATMAP_MONTHS    = 12
 RECENT_DAYS       = 90
@@ -455,7 +457,7 @@ def render_report(actor: dict, monthly: list[int], months: list[str],
     Auto-generated from <code>tools/threat_actors_hhs.json</code>, the rolling CTI Hub state,
     and MITRE ATT&amp;CK Enterprise STIX. Recent-activity refreshes daily;
     summary metadata + sector fit are curated and update only when
-    <a href="https://github.com/{OWNER}/{REPO}/blob/{BRANCH}/tools/threat_actors_hhs.json" target="_blank" rel="noopener">the JSON</a>
+    <a href="{REPO_BLOB_URL}/tools/threat_actors_hhs.json" target="_blank" rel="noopener">the JSON</a>
     changes. Built {esc(build_time.strftime("%Y-%m-%d %H:%M UTC"))}.
   </div>
 </main>
