@@ -10,7 +10,7 @@ index=vm sourcetype IN ("vmware:esxlog:envoy-access","vmware:esxlog:perfcharts-l
 | eval decoded_value=trim(urldecode(param_value))
 | where len(decoded_value) >= 20
 | where match(decoded_value, "^[A-Za-z0-9+/_\-]{20,}={0,2}$")
-| eval decrypted=base64decode(decoded_value)
+| decrypt field=decoded_value b64()
 | where isnotnull(decrypted) AND len(decrypted) > 0
 | eval ascii_only=replace(decrypted, "[^\x20-\x7e\t\n\r]", "")
 | eval printability=if(len(decrypted)>0, round(len(ascii_only)/len(decrypted), 2), 0)
