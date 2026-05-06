@@ -1,0 +1,214 @@
+= Cyber Threat Hunt Escalation Playbook =
+
+''Role Responsibilities, Workflow, and Decision Framework''
+
+{| class="wikitable"
+|-
+! Field !! Value
+|-
+| '''Document Owner''' || Threat Hunt Program Lead
+|-
+| '''Version''' || 2.0
+|-
+| '''Last Reviewed''' || May 2026
+|-
+| '''Framework Alignment''' || PEAK (Prepare, Execute, Act, Knowledge)
+|}
+
+__TOC__
+
+----
+
+== 1. Purpose and Scope ==
+
+This playbook defines the end-to-end workflow for Cyber Threat Hunters during hunt operations, from initial intake through escalation and knowledge capture. It establishes phased responsibilities, decision criteria for escalation, validation requirements, and required output deliverables. All hunt operations follow the PEAK Framework methodology.
+
+This document applies to all personnel assigned to the Threat Hunt team, including contractors and embedded analysts supporting hunt operations.
+
+----
+
+== 2. Phased Hunt Workflow ==
+
+=== Phase 1: Intake & Hypothesis Refinement ''(~1–2 hours)'' ===
+
+* Receive the hunt package: escalation package, intelligence report, or PEAK hunt hypothesis with associated queries and timeline.
+* Review available threat intelligence and map expected attacker TTPs to MITRE ATT&CK.
+* Refine the hunt hypothesis based on expected attacker behavior, available telemetry sources, and environmental context.
+* Identify which data sources are required and confirm log availability, retention depth, and ingestion health.
+
+<blockquote>'''Decision gate:''' Confirm telemetry coverage is sufficient to test the hypothesis. If gaps exist, document them and adjust scope before execution.</blockquote>
+
+=== Phase 2: Execution & Analysis ''(variable — hours to days)'' ===
+
+* Execute hunting queries across SIEM, EDR, identity, network, and cloud telemetry. Reference the Tool Guidance Matrix (Section 5) for platform-specific query routing.
+* Pivot on process hashes, command lines, network indicators, account activity, and host behavior to develop leads.
+* Correlate events across hosts, users, sessions, and network connections to build attack chain context.
+* Identify credential access indicators: LSASS access, token theft, abnormal logons, Kerberoasting, DCSync, or suspicious authentication patterns.
+* Identify lateral movement indicators: RDP, SMB, WMI, remote service creation, admin share access, PsExec, or remote execution artifacts.
+* Identify persistence mechanisms: registry run keys, scheduled tasks, services, startup items, WMI event subscriptions, or DLL side-loading.
+* Identify C2 activity: beaconing patterns, DNS tunneling, HTTP/S polling cadence anomalies, Telegram/cloud API abuse, or encrypted channel indicators.
+* Validate exploit activity by mapping CVE behavior to observed telemetry and known exploit signatures.
+
+<blockquote>'''Decision gate:''' If findings meet any P1 escalation criteria (Section 4), notify the Federal Lead and Fusion Lead immediately and continue analysis in parallel. Do not wait for full scope determination before escalating P1 findings.</blockquote>
+
+=== Phase 3: Scoping & Validation ''(~2–8 hours)'' ===
+
+* Expand the hunt across the environment using new indicators and derived behaviors discovered in Phase 2.
+* Reconstruct the attack chain from initial access through current scope of impact.
+* Complete multi-source validation: confirm findings with a minimum of two independent data sources (e.g., one host-based + one network-based indicator). Rule out legitimate administrative activity and known-good automation.
+* Determine scope boundaries: identify all affected hosts, accounts, and systems. Confirm whether lateral movement is ongoing or historical.
+
+<blockquote>'''Decision gate:''' Confirm the attack chain is validated and scope is bounded (or actively being bounded). Proceed to reporting.</blockquote>
+
+=== Phase 4: Reporting & Knowledge Capture ''(~2–4 hours)'' ===
+
+* Document findings, timeline, scope, and MITRE ATT&CK mapping in the PEAK hunt report template.
+* Prepare the escalation package for leadership review (see Section 6: Required Outputs).
+* Submit IOCs and behavioral signatures to Detection Engineering for new analytic development or tuning.
+* Update the hunt knowledge base (SharePoint/Wiki) with findings, false positive patterns, and environmental learnings.
+* If the hunt transitions to Incident Response, execute a formal handoff including: current scope summary, active containment recommendations, all queries used, and raw evidence references.
+
+----
+
+== 3. Validation Requirements ==
+
+Before escalation or final reporting, the following validation criteria must be satisfied:
+
+{| class="wikitable"
+|-
+! Requirement !! Standard
+|-
+| '''Multi-Source Corroboration''' || Minimum two independent data sources confirm the finding (e.g., EDR process telemetry + network flow data). A single alert or log event is insufficient.
+|-
+| '''Attack Chain Validation''' || At least two consecutive MITRE ATT&CK tactics are confirmed with supporting evidence. Isolated indicators require additional corroboration before escalation.
+|-
+| '''Scope Determination''' || All known affected hosts, accounts, and services are identified. If scope is still expanding, this must be explicitly noted with current boundaries.
+|-
+| '''Benign Activity Exclusion''' || Known administrative tools, scheduled automation, vulnerability scanners, and authorized RMM tools have been ruled out as the source of the activity. Reference the authorized software inventory.
+|-
+| '''Evidence Integrity''' || Raw log evidence, query results, and timestamps are preserved and referenced. Screenshots alone are not sufficient for evidentiary purposes.
+|}
+
+----
+
+== 4. Escalation Criteria ==
+
+Escalation is tiered by severity. The hunter is responsible for making the initial severity determination; the Fusion Lead may adjust after review.
+
+=== P1 — Critical ===
+
+'''Immediate notification to Federal Lead, then Fusion Lead (Teams + email + phone call). Do not wait for full scope.'''
+
+* Confirmed active compromise with evidence of ongoing attacker access
+* Active lateral movement observed (in-progress, not historical)
+* Active C2 channel identified with confirmed beaconing or data staging
+* Evidence of data exfiltration or staging for exfiltration
+* Credential compromise affecting privileged accounts (Domain Admin, service accounts, cloud admin roles)
+
+=== P2 — High ===
+
+'''Notify Fusion Lead within 4 hours via Teams and email. Detailed report within 24 hours.'''
+
+* Confirmed persistence mechanism deployed but no evidence of active attacker session
+* Historical lateral movement artifacts (completed, not in-progress)
+* Credential access or privilege escalation indicators without confirmed compromise (e.g., Kerberoasting attempts, LSASS access without confirmed credential dump)
+* Suspicious C2-like patterns requiring additional analysis to confirm (e.g., periodic beaconing to a non-categorized domain)
+
+=== P3 — Medium ===
+
+'''Document in hunt report. Include in weekly hunt review. No immediate escalation required.'''
+
+* Policy violations or misconfigurations with security implications but no confirmed malicious activity
+* Unauthorized software or shadow IT discoveries
+* Telemetry gaps or logging deficiencies discovered during the hunt
+* Behavioral anomalies not yet corroborated as malicious
+
+----
+
+== 5. Tool Guidance Matrix ==
+
+Route queries to the appropriate platform based on the data domain. Analysts should prioritize the primary tool for each domain and use secondary sources for corroboration. Note: NetWitness operates as a standalone platform outside of Splunk and requires direct console access for packet-level analysis.
+
+{| class="wikitable"
+|-
+! Data Domain !! Primary Tool !! Secondary !! Key Telemetry
+|-
+| '''Endpoint Process / File''' || MDE || Splunk || Process trees, file writes, module loads, device timeline
+|-
+| '''Identity / Auth''' || Microsoft Sentinel || Splunk || Sign-in logs, Entra audit, ADFS events
+|-
+| '''Network Flow / DNS''' || NetWitness || Sentinel || Full packet capture, DNS queries, flow records, session reconstruction
+|-
+| '''Cloud / SaaS Activity''' || Microsoft Sentinel || Splunk || Azure Activity, Graph API, O365 UAL
+|-
+| '''Email / Phishing''' || Cofense || Sentinel / Splunk || Reported phish, mail flow, triage outcomes, IOC extraction
+|-
+| '''Infrastructure Logs''' || Splunk || Sentinel || Firewall, proxy, VPN, load balancer logs
+|-
+| '''Threat Intel Correlation''' || SnapAttack || Splunk ES || IOC matching, hunt collections, detection rules
+|}
+
+----
+
+== 6. Required Outputs ==
+
+Every hunt operation must produce the following deliverables, regardless of whether findings are positive or negative. Null-result hunts still generate knowledge and detection gap documentation.
+
+{| class="wikitable"
+|-
+! Deliverable !! Contents !! Destination
+|-
+| '''PEAK Hunt Report''' || Hypothesis, methodology, queries executed, findings (positive or negative), MITRE mapping, analyst notes || SharePoint Hunt Library (TH-2026-XXXX)
+|-
+| '''Attack Timeline''' || Chronological sequence of attacker actions with timestamps, source evidence references, and affected assets || Included in PEAK report; standalone for IR handoff
+|-
+| '''IOC Package''' || Atomic indicators (hashes, IPs, domains), behavioral indicators (query logic), and context notes for detection engineering || Detection Engineering backlog / SnapAttack
+|-
+| '''MITRE ATT&CK Mapping''' || Confirmed and suspected techniques with evidence confidence levels per technique || PEAK report + Navigator layer export
+|-
+| '''Containment Recommendations''' || Immediate containment actions, long-term remediation steps, and risk assessment if containment is delayed || Escalation package for Fusion Lead
+|-
+| '''Detection Gap Analysis''' || Telemetry gaps, missing log sources, rule coverage gaps, and recommended new detections identified during the hunt || Detection Engineering + Hunt Knowledge Base
+|}
+
+----
+
+== 7. Hunt-to-IR Transition Decision Framework ==
+
+The following decision criteria determine when a hunt operation transitions to a formal Incident Response engagement. The threat hunter does not unilaterally transition; the Fusion Lead authorizes the handoff based on the hunter's recommendation.
+
+=== Transition Triggers (any one is sufficient) ===
+
+* Confirmed active compromise requiring containment actions beyond the hunt team's authority
+* Scope exceeds what a single hunter or hunt pair can manage (>10 affected systems or >3 affected identity domains)
+* Evidence of data exfiltration or destruction requiring forensic preservation
+* Attacker activity is ongoing and requires real-time monitoring beyond hunt cadence
+* Regulatory or compliance notification thresholds may be met (PII/PHI exposure, FISMA reporting)
+
+=== Handoff Requirements ===
+
+* Current scope summary with affected asset inventory
+* All hunting queries used (SPL and KQL), with result counts and date ranges
+* Raw evidence references (Splunk job IDs, Sentinel incident IDs, MDE device timeline links, NetWitness session IDs)
+* Preliminary attack timeline
+* Active containment recommendations with urgency assessment
+* Known gaps in visibility or scope that IR should prioritize
+
+----
+
+== 8. Detection Engineering Feedback Loop ==
+
+Every completed hunt, regardless of outcome, should feed back into the detection engineering pipeline. The hunter is responsible for submitting at least one of the following within 5 business days of hunt closure:
+
+* '''New Detection Rule Proposal:''' If the hunt identified attacker behavior not covered by existing detections, submit a detection proposal with the query logic, expected false positive rate, and MITRE technique mapping.
+* '''Detection Tuning Request:''' If existing detections generated excessive false positives or missed relevant activity during the hunt, submit a tuning request with specific examples.
+* '''Telemetry Gap Report:''' If the hunt was limited by missing or incomplete data sources, document the gap and submit a request to the platform engineering or logging team.
+* '''Null-Result Documentation:''' If the hunt found no malicious activity, document the hypothesis tested, queries used, and environmental baseline observations. This prevents re-hunting the same hypothesis without new intelligence.
+
+----
+
+''END OF DOCUMENT — Threat Hunt Program''
+
+[[Category:Threat Hunting]]
+[[Category:Playbooks]]
+[[Category:Incident Response]]
